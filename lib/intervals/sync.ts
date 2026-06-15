@@ -9,6 +9,10 @@ import {
   computeReadiness,
   type ReadinessResult,
 } from "@/lib/readiness";
+import {
+  hrvProtocolFromPreferences,
+  type HrvProtocol,
+} from "@/lib/hrv";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -40,6 +44,7 @@ export interface MirrorData {
   };
   wellness_30d: WellnessDay[];
   activities_90d: IntervalsActivity[];
+  hrv_protocol: HrvProtocol;
   readiness_today: ReadinessResult;
   data_quality_warning: "strava_source_detected" | null;
 }
@@ -85,7 +90,11 @@ function computeDataQualityLevel(
       : 0;
 
   const hasWellnessSignals = wellness.some(
-    (w) => w.hrv != null || w.restingHR != null || w.sleepSecs != null
+    (w) =>
+      w.hrv != null ||
+      w.hrvSDNN != null ||
+      w.restingHR != null ||
+      w.sleepSecs != null
   );
   const hasRpe = activities.some((a) => a.perceived_exertion != null);
 
@@ -108,6 +117,18 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
   if (!connection) {
     return { ok: false, reason: "not_connected" };
   }
+
+  const { data: athleteSettings, error: settingsError } = await admin
+    .from("athlete_profiles")
+    .select("preferences")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (settingsError) {
+    console.error("Lettura preferenza HRV fallita:", settingsError.message);
+  }
+  const hrvProtocol = hrvProtocolFromPreferences(
+    athleteSettings?.preferences
+  );
 
   let fetcher: IntervalsFetcher;
   try {
@@ -175,7 +196,9 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
   );
   const wellnessToday = wellnessSorted.at(-1) ?? null;
   const history7d = wellnessSorted.slice(-8, -1);
-  const readinessToday = computeReadiness(wellnessToday, history7d);
+  const readinessToday = computeReadiness(wellnessToday, history7d, {
+    hrvProtocol,
+  });
 
   // --- Profilo: sottoinsieme verificato ------------------------------------
   const profile = profileRaw as Record<string, unknown>;
@@ -193,6 +216,7 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
     athlete_profile: athleteProfile,
     wellness_30d: wellnessSorted,
     activities_90d: activities90d,
+    hrv_protocol: hrvProtocol,
     readiness_today: readinessToday,
     data_quality_warning: stravaWarning ? "strava_source_detected" : null,
   };

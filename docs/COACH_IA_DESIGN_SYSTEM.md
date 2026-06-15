@@ -1,16 +1,24 @@
-# Coach IA — Design System (Dark Premium / Ambra)
+# Coach IA — Design System (Light Premium / Petrolio)
 
-Direzione visiva approvata: **dark premium, accento ambra, colori semaforici per la readiness.**
-Questo file è la fonte unica dei token. Ogni pagina deve derivare i colori da qui, nessun valore inventato altrove.
+Direzione visiva approvata: **light premium, identità blu petrolio, accento
+rame caldo, colori semaforici per la readiness.**
+Questo file è la fonte unica dei token. Ogni pagina deve derivare i colori da
+qui, nessun valore inventato altrove.
 
 ---
 
 ## 1. Principio
 
-- **Sfondo scuro caldo**, non nero puro (il nero puro è freddo e generico).
-- **Ambra = identità di brand.** Usata con parsimonia: logo, valori chiave, azioni primarie, accenti. Mai per grandi superfici.
-- **Verde / giallo / rosso = solo readiness e stati funzionali.** Il colore semaforico è *informazione*, non decorazione. Non usarlo per estetica.
-- **I dati sono i protagonisti.** Numeri grandi, alto contrasto, molto respiro. Niente glass effect, niente gradienti pesanti, niente ombre drammatiche: l'app si usa ogni giorno, deve restare leggibile e riposante.
+- **Sfondo chiaro neutro**, non bianco puro su tutta la pagina. Il bianco è
+  riservato alle superfici per rendere immediata la separazione dei contenuti.
+- **Blu petrolio = identità e orientamento.** È usato per navigazione, focus,
+  azioni primarie e codici visivi delle sezioni.
+- **Rame = accento caldo.** È usato con parsimonia per dati chiave, grafici e
+  dettagli editoriali. Mai per testo lungo o grandi superfici.
+- **Verde / giallo / rosso = solo readiness e stati funzionali.** Il colore
+  semaforico è informazione, non decorazione.
+- **I dati sono i protagonisti.** Numeri grandi, alto contrasto, molto respiro.
+  Niente glass effect, gradienti pesanti o ombre drammatiche.
 - Coerenza totale tra le pagine: stesso header, stessi raggi, stessa spaziatura.
 
 ---
@@ -18,73 +26,88 @@ Questo file è la fonte unica dei token. Ogni pagina deve derivare i colori da q
 ## 2. Palette (valori esatti)
 
 ### Sfondi
-| Token | Hex | Uso |
+| Token | Valore | Uso |
 |---|---|---|
-| `bg-base` | `#16130E` | sfondo pagina (marrone-carbone caldo) |
-| `bg-surface` | `#1C1810` | card, pannelli |
-| `bg-surface-2` | `#221E16` | elementi attivi, hover, tab selezionato |
-| `bg-border` | `#262219` | divisori, bordi interni |
+| `bg-base` | `#F2F2F2` | sfondo pagina |
+| `bg-surface` | `#FFFFFF` | card, pannelli, form |
+| `bg-surface-2` | `#E7EEF2` | elementi attivi, hover, tab selezionato |
+| `bg-border` | `#D5DEE3` | divisori e bordi interni |
 
 ### Testo
-| Token | Hex | Uso |
+| Token | Valore | Uso |
 |---|---|---|
-| `text-primary` | `#F5F2EC` | titoli, numeri, testo principale |
-| `text-secondary` | `#B8B2A6` | sottotitoli, testo corpo |
-| `text-muted` | `#9A9488` | label, metadati |
-| `text-faint` | `#6B665C` | hint, note, caption |
+| `text-primary` | `#183443` | titoli, numeri, testo principale |
+| `text-secondary` | `#405966` | sottotitoli e testo corpo |
+| `text-muted` | `#566B75` | label e metadati |
+| `text-faint` | `#60717A` | hint, note e caption |
 
-### Accento ambra (brand)
-| Token | Hex | Uso |
+### Identità blu petrolio
+| Token | Valore | Uso |
 |---|---|---|
-| `amber` | `#F59E0B` | accento primario, bottoni, valori chiave |
-| `amber-hover` | `#E08E07` | hover su bottoni ambra |
-| `amber-dim` | `rgba(245,158,11,.12)` | sfondo tenue per badge/highlight ambra |
+| `brand` | `#42708C` | navigazione, focus, azioni primarie |
+| `brand-hover` | `#365F78` | hover su elementi brand |
+| `brand-dim` | `rgba(66,112,140,.12)` | sfondo tenue per selezioni |
+| `brand-on` | `#FFFFFF` | testo su fondo brand |
 
-Testo su bottone ambra: **`#16130E`** (lo sfondo base scuro), mai bianco.
+### Accento rame
+| Token | Valore | Uso |
+|---|---|---|
+| `amber` | `#8C6746` | dati chiave, grafici, accenti |
+| `amber-hover` | `#745238` | hover su elementi rame |
+| `amber-dim` | `rgba(140,103,70,.12)` | sfondo tenue rame |
+| `amber-on` | `#FFFFFF` | testo su fondo rame |
 
 ### Semaforico readiness (SOLO per stato)
 | Stato | Colore | Bordo card | Uso |
 |---|---|---|---|
-| GO | `#22C55E` | `rgba(34,197,94,.35)` | readiness verde |
-| MODIFY | `#EAB308` | `rgba(234,179,8,.35)` | readiness gialla |
-| SKIP | `#EF4444` | `rgba(239,68,68,.35)` | readiness rossa |
+| GO | `#117136` | `rgba(17,113,54,.28)` | readiness verde |
+| MODIFY | `#925A06` | `rgba(146,90,6,.28)` | readiness gialla |
+| SKIP | `#C92323` | `rgba(201,35,35,.28)` | readiness rossa |
 
-Le card readiness hanno una barra laterale di 3px del colore di stato + bordo sottile dello stesso colore semitrasparente.
+Le card readiness mantengono una barra laterale di 3px del colore di stato e
+un bordo sottile dello stesso colore semitrasparente.
 
 ---
 
 ## 3. Layout e forme
 
-- Raggi: card grandi `16px`, card interne/metriche `11px`, bottoni `9px`, input `9px`.
+- Raggi: card grandi `16px`, card interne/metriche `11px`, bottoni `9px`,
+  input `9px`.
 - Spaziatura verticale: ritmo a `1rem / 1.25rem / 1.5rem / 1.75rem`.
 - Padding card: `1.5rem` per le grandi, `0.9rem` per le metriche.
-- Header app: logo ambra (quadrato 28px, raggio 7px, lettera "C" su sfondo ambra) + "Coach IA" + nav a destra (Oggi / Profilo / Piano), tab attivo con `bg-surface-2`.
-- Larghezza contenuto: max ~960px centrata su desktop, padding laterale su mobile.
+- Larghezza contenuto: max ~960px centrata su desktop, padding laterale mobile.
+- Le superfici si distinguono tramite contrasto di fondo e bordi leggeri, non
+  tramite ombre pesanti.
 
 ## 4. Tipografia
 
-- Numeri e titoli: peso 500-700, `text-primary`.
-- Readiness (GO/MODIFY/SKIP): 42px, peso 700, colore di stato.
-- Metriche (CTL, ATL...): valore 22px peso 500, label 11px uppercase `text-muted` letter-spacing .06em.
+- Numeri e titoli: peso 500–700, `text-primary`.
+- Readiness: 42px, peso 700, colore di stato.
+- Metriche: valore 22px peso 500; label 11–12px `text-muted`.
 - Corpo: 14px, `line-height` 1.6, `text-secondary`.
-- Mai ALL CAPS se non micro-label (uppercase + letter-spacing su label da 11-12px).
+- Mai ALL CAPS se non per micro-label.
 
 ## 5. Componenti chiave
 
-- **Bottone primario:** sfondo `amber`, testo `#16130E`, raggio 9px, hover `amber-hover`. Icona Tabler opzionale a sinistra.
-- **Bottone secondario:** trasparente, bordo `0.5px` `bg-border`, testo `text-secondary`, hover `bg-surface-2`.
-- **Card metrica:** `bg-surface`, raggio 11px, label uppercase muted + valore grande. Valori "chiave" (es. TSB) in ambra.
-- **Card readiness:** `bg-surface`, barra laterale 3px colore stato, bordo stato semitrasparente, label uppercase + valore enorme colorato + frase di spiegazione.
-- **Riga lista (attività/sedute):** nome `text-primary` 14px peso 500, metadati `text-faint` 12px, valore a destra in ambra. Divisori `bg-border` 0.5px.
-- **Input/form:** sfondo `bg-surface`, bordo `0.5px bg-border`, testo `text-primary`, focus ring ambra sottile. Label sopra in `text-muted` 13px.
-- **Tab toggle:** contenitore `bg-surface`, tab attivo `bg-surface-2` + testo `text-primary`, inattivo `text-muted`.
+- **Bottone primario:** sfondo `brand`, testo `brand-on`, raggio 9px, hover
+  `brand-hover`.
+- **Bottone secondario:** trasparente, bordo `0.5px bg-border`, testo
+  `text-secondary`, hover `bg-surface-2`.
+- **Card metrica:** `bg-surface`, raggio 11px, label muted e valore grande.
+- **Card readiness:** `bg-surface`, barra laterale e bordo nel colore di stato.
+- **Riga lista:** nome `text-primary`, metadati `text-faint`, divisori
+  `bg-border`.
+- **Input/form:** `bg-surface`, bordo `bg-border`, testo `text-primary`, focus
+  ring blu petrolio.
+- **Tab toggle:** contenitore `bg-surface`, tab attivo `bg-surface-2`.
 
 ## 6. Regole ferme
 
-- Dark mode è l'unico tema (no toggle chiaro per ora).
-- L'accento ambra non si usa mai per testo lungo, solo per accenti e numeri chiave.
-- Il colore semaforico non si usa mai fuori dal contesto readiness/stato.
-- Niente gradienti, glass/blur, ombre colorate, neon.
-- Contrasto AA minimo su tutto il testo (verificare text-secondary su bg-surface).
-- Accessibilità: focus visibile (ring ambra), `prefers-reduced-motion` rispettato, tap target ≥ 40px.
+- Il tema chiaro è il tema corrente. Nessun toggle in questo milestone.
+- Il blu petrolio orienta e identifica, il rame evidenzia dati e grafici.
+- Il colore semaforico non si usa mai fuori da readiness e stati funzionali.
+- Niente gradienti, glass/blur, ombre colorate o neon.
+- Contrasto AA minimo su tutto il testo.
+- Accessibilità: focus visibile, `prefers-reduced-motion` rispettato, tap target
+  almeno 40px.
 - Ogni pagina riusa lo stesso header e lo stesso contenitore.

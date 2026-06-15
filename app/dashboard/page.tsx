@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { ReadinessHero } from "@/components/dashboard/readiness-hero";
+import { HrvMetric } from "@/components/dashboard/hrv-metric";
 import { SyncButton } from "@/components/dashboard/sync-button";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
@@ -8,6 +9,11 @@ import { Button } from "@/components/ui/button";
 import { MetricStat } from "@/components/ui/metric-stat";
 import { MetricStrip } from "@/components/ui/metric-strip";
 import { SectionHeader } from "@/components/ui/section-header";
+import {
+  latestHrvMeasurement,
+  normalizeHrvProtocol,
+} from "@/lib/hrv";
+import type { WellnessDay } from "@/lib/intervals-client";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -68,12 +74,6 @@ const METRIC_COPY = {
     acronym: "ACWR",
     tooltip:
       "Confronta quanto ti alleni adesso rispetto alle ultime settimane. Tra 0.8 e 1.3 è la zona sicura. Troppo alto = rischio di strafare.",
-  },
-  hrv: {
-    label: "Variabilità cardiaca",
-    acronym: "HRV",
-    tooltip:
-      "Quanto varia il tempo tra un battito e l'altro a riposo. Più è alta, più il tuo sistema nervoso è recuperato. Si misura al mattino con una fascia cardio o uno smartwatch compatibile.",
   },
   rhr: {
     label: "Battito a riposo",
@@ -157,6 +157,34 @@ function dataQualityCopy(level: number | null | undefined) {
   return DATA_QUALITY_COPY[level];
 }
 
+interface WellnessMeasurement {
+  value: number;
+  date: string;
+}
+
+function latestMeasurement(
+  days: WellnessDay[],
+  field: "restingHR"
+): WellnessMeasurement | null {
+  for (let index = days.length - 1; index >= 0; index -= 1) {
+    const day = days[index];
+    const value = day[field];
+    if (value != null) return { value, date: day.date };
+  }
+  return null;
+}
+
+function formatWellnessDate(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("it-IT", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function measurementRecency(date: string, currentDate: string | null): string {
+  return date === currentDate ? "oggi" : `ultima misura ${formatWellnessDate(date)}`;
+}
+
 /** Secondi → "1h 23m" per la lista attività. */
 function formatDuration(seconds: number | null): string {
   if (seconds == null) return "—";
@@ -182,11 +210,18 @@ export default async function DashboardPage() {
     redirect("/login"); // difesa in profondità oltre il middleware
   }
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("intervals_athlete_name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: userRow }, { data: preferenceRow }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("intervals_athlete_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("athlete_profiles")
+      .select("preferences")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
   const name = userRow?.intervals_athlete_name ?? "atleta";
 
   // Ultimo snapshot: la dashboard mostra sempre il sync più recente.
@@ -200,10 +235,28 @@ export default async function DashboardPage() {
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
+  const preferences =
+    preferenceRow?.preferences != null &&
+    typeof preferenceRow.preferences === "object" &&
+    !Array.isArray(preferenceRow.preferences)
+      ? (preferenceRow.preferences as Record<string, unknown>)
+      : {};
+  const hrvProtocol = normalizeHrvProtocol(
+    preferences.hrv_protocol ?? mirror?.hrv_protocol
+  );
 
   // Wellness di oggi = ultima riga della finestra 30g (ordinata per data).
   const wellnessToday = mirror?.wellness_30d.at(-1) ?? null;
   const wellnessPrevious = mirror?.wellness_30d.at(-2) ?? null;
+  const latestRmssd = mirror
+    ? latestHrvMeasurement(mirror.wellness_30d, "rmssd")
+    : null;
+  const latestSdnn = mirror
+    ? latestHrvMeasurement(mirror.wellness_30d, "sdnn")
+    : null;
+  const latestRhr = mirror
+    ? latestMeasurement(mirror.wellness_30d, "restingHR")
+    : null;
   const ctl = wellnessToday?.ctl ?? null;
   const atl = wellnessToday?.atl ?? null;
   // TSB/ACWR: stesse semplici operazioni della readiness (lettura, non derivazione).
@@ -300,24 +353,22 @@ export default async function DashboardPage() {
               status={acwrStatus?.status}
               tone={acwrStatus?.tone}
             />
-            <MetricStat
-              {...METRIC_COPY.hrv}
-              value={<MetricValue value={wellnessToday?.hrv} decimals={0} />}
-              status={
-                wellnessToday?.hrv == null
-                  ? "Collega una misurazione mattutina per attivarla"
-                  : undefined
-              }
+            <HrvMetric
+              initialProtocol={hrvProtocol}
+              currentDate={wellnessToday?.date ?? null}
+              rmssd={latestRmssd}
+              sdnn={latestSdnn}
             />
             <MetricStat
               {...METRIC_COPY.rhr}
-              value={
-                <MetricValue value={wellnessToday?.restingHR} decimals={0} />
-              }
+              value={<MetricValue value={latestRhr?.value} decimals={0} />}
               status={
-                wellnessToday?.restingHR == null
+                latestRhr == null
                   ? "Collega una misurazione mattutina per attivarla"
-                  : undefined
+                  : measurementRecency(
+                      latestRhr.date,
+                      wellnessToday?.date ?? null
+                    )
               }
             />
           </MetricStrip>

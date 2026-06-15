@@ -35,14 +35,19 @@ Profilo atleta: `weight`, `resting_hr`, `zones`, FTP nel campo `icu_ftp`
 ### `GET /api/v1/athlete/0/wellness?oldest=YYYY-MM-DD&newest=YYYY-MM-DD&fields=...`
 
 Campi richiesti:
-`id,ctl,atl,rampRate,weight,restingHR,hrv,sleepSecs,soreness,fatigue,mood`
+`id,ctl,atl,rampRate,weight,restingHR,hrv,hrvSDNN,sleepSecs,soreness,fatigue,mood`
 
 - `ctl` e `atl` sono **pre-calcolati da Intervals**: si leggono, non si
   ricalcolano.
 - `TSB = ctl − atl` e `ACWR = atl / ctl` sono semplici sottrazioni/rapporti
   sui valori letti, non derivazioni.
-- Il campo HRV può chiamarsi `hrv` **o** `hrv_rmssd`: gestire entrambi con
-  fallback.
+- `hrv` contiene HRV rMSSD; `hrvSDNN` contiene HRV SDNN. Sono misure
+  distinte: conservarle separate e non usarle come fallback reciproco nei
+  calcoli readiness.
+- L'utente sceglie il protocollo prodotto dal proprio dispositivo. La
+  preferenza persistita `athlete_profiles.preferences.hrv_protocol`
+  (`rmssd` oppure `sdnn`) decide quale serie mostrare e usare per baseline e
+  readiness; entrambi i valori restano comunque registrati nel mirror.
 - `id` è la data del giorno (`YYYY-MM-DD`).
 
 ### `GET /api/v1/athlete/0/activities?oldest=YYYY-MM-DD&fields=...`

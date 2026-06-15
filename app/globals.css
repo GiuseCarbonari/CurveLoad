@@ -3,44 +3,47 @@
 @tailwind utilities;
 
 /*
-  Coach IA — Design System (Dark Premium / Ambra).
+  Coach IA — Design System (Light Premium / Petrolio).
   Fonte unica: docs/COACH_IA_DESIGN_SYSTEM.md. Nessun valore inventato qui:
   ogni token deriva esattamente dalla palette del documento.
-  Dark mode è l'unico tema → i token vivono su :root (sempre attivi).
+  Il tema chiaro corrente vive su :root.
 */
 @layer base {
   :root {
     /* --- Sfondi --- */
-    --bg-base: #16130e;        /* sfondo pagina (marrone-carbone caldo) */
-    --bg-surface: #1c1810;     /* card, pannelli */
-    --bg-surface-2: #221e16;   /* elementi attivi, hover, tab selezionato */
-    --bg-border: #262219;      /* divisori, bordi interni */
+    --bg-base: #f2f2f2;
+    --bg-surface: #ffffff;
+    --bg-surface-2: #e7eef2;
+    --bg-border: #d5dee3;
 
     /* --- Testo --- */
-    --text-primary: #f5f2ec;   /* titoli, numeri, testo principale */
-    --text-secondary: #b8b2a6; /* sottotitoli, testo corpo */
-    --text-muted: #9a9488;     /* label, metadati */
-    --text-faint: #6b665c;     /* hint, note, caption */
+    --text-primary: #183443;
+    --text-secondary: #405966;
+    --text-muted: #566b75;
+    --text-faint: #60717a;
 
-    /* --- Accento ambra (brand) --- */
-    --amber: #f59e0b;
-    --amber-hover: #e08e07;
-    --amber-dim: rgba(245, 158, 11, 0.12);
-    --amber-on: #16130e;       /* testo su bottone ambra (mai bianco) */
+    /* --- Identità blu petrolio --- */
+    --brand: #42708c;
+    --brand-hover: #365f78;
+    --brand-dim: rgba(66, 112, 140, 0.12);
+    --brand-on: #ffffff;
+
+    /* --- Accento rame caldo --- */
+    --amber: #8c6746;
+    --amber-hover: #745238;
+    --amber-dim: rgba(140, 103, 70, 0.12);
+    --amber-on: #ffffff;
 
     /* --- Semaforico readiness (solo per stato) --- */
-    --ready-go: #22c55e;
-    --ready-go-border: rgba(34, 197, 94, 0.35);
-    --ready-modify: #eab308;
-    --ready-modify-border: rgba(234, 179, 8, 0.35);
-    --ready-skip: #ef4444;
-    --ready-skip-border: rgba(239, 68, 68, 0.35);
+    --ready-go: #117136;
+    --ready-go-border: rgba(17, 113, 54, 0.28);
+    --ready-modify: #925a06;
+    --ready-modify-border: rgba(146, 90, 6, 0.28);
+    --ready-skip: #c92323;
+    --ready-skip-border: rgba(201, 35, 35, 0.28);
 
     /*
       Mapping dei token semantici shadcn/ui sulla palette del design system.
-      Permette ai componenti esistenti di adottare il tema dark premium
-      senza modificarne markup o logica. Valori in hex/rgba (Tailwind li usa
-      raw via var(), senza wrapper hsl()).
     */
     --background: var(--bg-base);
     --foreground: var(--text-primary);
@@ -48,8 +51,8 @@
     --card-foreground: var(--text-primary);
     --popover: var(--bg-surface);
     --popover-foreground: var(--text-primary);
-    --primary: var(--amber);
-    --primary-foreground: var(--amber-on);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-on);
     --secondary: var(--text-secondary);
     --secondary-foreground: var(--text-primary);
     --muted: var(--text-muted);
@@ -60,7 +63,7 @@
     --destructive-foreground: var(--text-primary);
     --border: var(--bg-border);
     --input: var(--bg-border);
-    --ring: var(--amber);
+    --ring: var(--brand);
     --radius: 9px;
   }
 }
@@ -70,17 +73,17 @@
     @apply border-border;
   }
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
   body {
     @apply bg-base text-sm leading-[1.6] text-foreground;
   }
   ::selection {
-    background: var(--amber-dim);
+    background: var(--brand-dim);
     color: var(--text-primary);
   }
   :focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--amber) 65%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--brand) 65%, transparent);
     outline-offset: 2px;
   }
 }

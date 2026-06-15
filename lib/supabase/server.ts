@@ -1,39 +1,46 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import {
+  applyRememberAccessToCookieOptions,
+  REMEMBER_ACCESS_COOKIE,
+  shouldRememberAccess,
+} from "@/lib/supabase/session-persistence";
+
 /**
- * Client Supabase per il SERVER (Server Components, Route Handlers, Server Actions).
+ * Client Supabase per Server Components, Route Handlers e Server Actions.
  *
- * Perché esiste: lato server la sessione utente vive nei cookie della
- * richiesta, non in localStorage. Questo client legge/scrive i cookie di
- * sessione così che le query rispettino l'identità dell'utente loggato
- * (e quindi le policy RLS), anche durante il rendering server-side.
+ * I cookie della richiesta trasportano la sessione utente. Nei Server
+ * Component puri lo store e read-only; in quel caso il rinnovo dei cookie
+ * viene propagato dal middleware.
  */
 export function createClient() {
   const cookieStore = cookies();
+  const rememberAccess = shouldRememberAccess(
+    cookieStore.get(REMEMBER_ACCESS_COOKIE)?.value
+  );
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(
+          cookiesToSet: { name: string; value: string; options: CookieOptions }[]
+        ) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set({
+                name,
+                value,
+                ...applyRememberAccessToCookieOptions(options, rememberAccess),
+              });
+            });
           } catch {
-            // set() fallisce se chiamato da un Server Component puro:
-            // lì i cookie sono read-only. È atteso e innocuo quando il
-            // refresh della sessione è gestito altrove (es. middleware).
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // Vedi nota sopra: read-only nei Server Component puri.
+            // Atteso nei Server Component con cookie read-only.
           }
         },
       },

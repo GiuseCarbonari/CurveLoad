@@ -121,3 +121,13 @@ test("Fallback HRV: senza baseline il segnale HRV è unavailable", () => {
   const hrvSignal = result.signals.find((s) => s.name === "hrv");
   assert.equal(hrvSignal?.status, "unavailable");
 });
+
+test("Readiness usa SDNN quando è il protocollo selezionato", () => {
+  const today = day({ hrv: null, hrvSDNN: 50 });
+  const baseline = history({ hrv: null, hrvSDNN: 70 });
+  const result = computeReadiness(today, baseline, { hrvProtocol: "sdnn" });
+  const hrvSignal = result.signals.find((signal) => signal.name === "hrv");
+
+  assert.equal(hrvSignal?.status, "red");
+  assert.match(hrvSignal?.detail ?? "", /HRV SDNN/);
+});

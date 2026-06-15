@@ -18,6 +18,12 @@
  * vengono forniti P0 non può scattare.
  */
 
+import {
+  HRV_PROTOCOL_LABELS,
+  hrvValue,
+  type HrvProtocol,
+} from "@/lib/hrv";
+
 /** Giorno wellness minimo richiesto dal motore (sottoinsieme di WellnessDay). */
 export interface ReadinessInputDay {
   date: string;
@@ -25,6 +31,7 @@ export interface ReadinessInputDay {
   atl: number | null;
   restingHR: number | null;
   hrv: number | null;
+  hrvSDNN?: number | null;
   sleepSecs: number | null;
 }
 
@@ -32,6 +39,7 @@ export interface ReadinessInputDay {
 export interface ReadinessExtras {
   recoveryIndex?: number | null;
   tier1AlarmActive?: boolean;
+  hrvProtocol?: HrvProtocol;
 }
 
 export type SignalStatus = "green" | "amber" | "red" | "unavailable";
@@ -67,6 +75,8 @@ export function computeReadiness(
 ): ReadinessResult {
   const signals: ReadinessSignal[] = [];
   const reasons: string[] = [];
+  const hrvProtocol = extras.hrvProtocol ?? "rmssd";
+  const hrvLabel = HRV_PROTOCOL_LABELS[hrvProtocol];
 
   // --- Metriche di carico: lette, non ricalcolate -------------------------
   const ctl = wellnessToday?.ctl ?? null;
@@ -77,10 +87,12 @@ export function computeReadiness(
   const acwr = ctl != null && atl != null ? (ctl === 0 ? 0 : atl / ctl) : null;
 
   // --- Baseline 7 giorni precedenti ---------------------------------------
-  const hrvBaseline = meanOf(wellnessHistory7d.map((d) => d.hrv));
+  const hrvBaseline = meanOf(
+    wellnessHistory7d.map((day) => hrvValue(day, hrvProtocol))
+  );
   const rhrBaseline = meanOf(wellnessHistory7d.map((d) => d.restingHR));
 
-  const hrvToday = wellnessToday?.hrv ?? null;
+  const hrvToday = hrvValue(wellnessToday, hrvProtocol);
   const rhrToday = wellnessToday?.restingHR ?? null;
   const sleepHours =
     wellnessToday?.sleepSecs != null ? wellnessToday.sleepSecs / 3600 : null;
@@ -102,7 +114,7 @@ export function computeReadiness(
       name: "hrv",
       value: hrvToday,
       status: "unavailable",
-      detail: "HRV non disponibile (serve il dato di oggi e una baseline 7g)",
+      detail: `HRV ${hrvLabel} non disponibile (serve il dato di oggi e una baseline 7g)`,
     });
   } else {
     const status: SignalStatus =
@@ -111,7 +123,7 @@ export function computeReadiness(
       name: "hrv",
       value: hrvToday,
       status,
-      detail: `HRV ${hrvDropPct > 0 ? "↓" : "↑"}${Math.abs(hrvDropPct).toFixed(0)}% vs baseline 7g`,
+      detail: `HRV ${hrvLabel} ${hrvDropPct > 0 ? "↓" : "↑"}${Math.abs(hrvDropPct).toFixed(0)}% vs baseline 7g`,
     });
   }
 

@@ -14,11 +14,11 @@ import type { ActivityStream } from "@/lib/terrain/velocity-signature";
 
 const INTERVALS_API_BASE = "https://intervals.icu/api/v1";
 
-// Campi richiesti agli endpoint, come da verifica congiunta.
-// Nota: si chiedono sia `hrv` che `hrv_rmssd` perché il nome del campo HRV
-// varia; la normalizzazione fa il fallback (vedi normalizeWellnessDay).
+// Campi richiesti agli endpoint, come da schema OpenAPI ufficiale.
+// `hrv` = rMSSD; `hrvSDNN` è una misura distinta e non va usata come
+// sostituto silenzioso nei calcoli readiness.
 const WELLNESS_FIELDS =
-  "id,ctl,atl,rampRate,weight,restingHR,hrv,hrv_rmssd,sleepSecs,soreness,fatigue,mood";
+  "id,ctl,atl,rampRate,weight,restingHR,hrv,hrvSDNN,sleepSecs,soreness,fatigue,mood";
 const ACTIVITY_FIELDS =
   "id,name,type,start_date_local,moving_time,distance,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type";
 
@@ -45,7 +45,7 @@ export interface IntervalsWellnessRaw {
   weight?: number | null;
   restingHR?: number | null;
   hrv?: number | null;
-  hrv_rmssd?: number | null;
+  hrvSDNN?: number | null;
   sleepSecs?: number | null;
   soreness?: number | null;
   fatigue?: number | null;
@@ -60,7 +60,10 @@ export interface WellnessDay {
   rampRate: number | null;
   weight: number | null;
   restingHR: number | null;
+  /** HRV rMSSD, campo `hrv` di Intervals.icu. */
   hrv: number | null;
+  /** HRV SDNN, mantenuta separata perché non intercambiabile con rMSSD. */
+  hrvSDNN: number | null;
   sleepSecs: number | null;
   soreness: number | null;
   fatigue: number | null;
@@ -101,9 +104,8 @@ export interface IntervalsActivity {
 }
 
 /**
- * Unifica il campo HRV (`hrv` oppure `hrv_rmssd`) e rende espliciti i null.
- * Perché: il resto del sistema deve poter contare su UNA forma sola del
- * dato; le ambiguità della fonte si risolvono qui, al confine.
+ * Normalizza i campi wellness e rende espliciti i null.
+ * rMSSD e SDNN restano separati per non mescolare metriche HRV diverse.
  */
 export function normalizeWellnessDay(raw: IntervalsWellnessRaw): WellnessDay {
   return {
@@ -113,7 +115,8 @@ export function normalizeWellnessDay(raw: IntervalsWellnessRaw): WellnessDay {
     rampRate: raw.rampRate ?? null,
     weight: raw.weight ?? null,
     restingHR: raw.restingHR ?? null,
-    hrv: raw.hrv ?? raw.hrv_rmssd ?? null,
+    hrv: raw.hrv ?? null,
+    hrvSDNN: raw.hrvSDNN ?? null,
     sleepSecs: raw.sleepSecs ?? null,
     soreness: raw.soreness ?? null,
     fatigue: raw.fatigue ?? null,

@@ -23,6 +23,7 @@ export function MetricStat({
   tone = "neutral",
   direction,
   accent = false,
+  footer,
   className,
 }: {
   label: string;
@@ -33,6 +34,7 @@ export function MetricStat({
   tone?: MetricTone;
   direction?: MetricDirection;
   accent?: boolean;
+  footer?: React.ReactNode;
   className?: string;
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
@@ -76,6 +78,8 @@ export function MetricStat({
           {tooltip}
         </p>
       )}
+
+      {footer}
     </div>
   );
 }
