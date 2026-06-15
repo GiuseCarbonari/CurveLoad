@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Bottone "💬 Spiega il mio profilo" nella card fenotipo (M3 passo 3).
+ * Bottone "Spiega il mio profilo" nella sintesi atleta.
  *
  * - Senza API key (`configured` false): disabilitato, con tooltip che spiega
  *   come attivarlo. L'app resta perfettamente funzionante.
@@ -58,8 +58,8 @@ export function ExplainButton({
   }
 
   return (
-    <div className="mt-4 border-t pt-4">
-      <div className="flex items-center gap-3">
+    <div className="mt-5 border-t border-border pt-5">
+      <div className="flex flex-wrap items-center gap-3">
         {comment ? (
           <Button
             variant="outline"
@@ -76,7 +76,7 @@ export function ExplainButton({
             disabled={loading || !configured}
             title={configured ? undefined : NOT_CONFIGURED_HINT}
           >
-            {loading ? "Genero il commento…" : "💬 Spiega il mio profilo"}
+            {loading ? "Genero il commento…" : "Spiega il mio profilo"}
           </Button>
         )}
         {!configured && !comment && (
@@ -89,7 +89,7 @@ export function ExplainButton({
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
 
       {comment && (
-        <div className="mt-4 rounded-[11px] border border-border bg-surface-2 p-4">
+        <div className="mt-5 border-l-2 border-amber pl-4">
           <div className="space-y-2 text-sm leading-relaxed">
             {comment.split(/\n{2,}/).map((para, i) => (
               <p key={i}>{para.trim()}</p>

@@ -15,7 +15,7 @@ const STORAGE_KEY = "coach-ia:how-to-read-open";
 
 export function HowToRead() {
   // Aperto di default; al mount sincronizzo con la preferenza salvata (se c'è).
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -31,12 +31,12 @@ export function HowToRead() {
   }
 
   return (
-    <section className="rounded-2xl border border-l-[3px] border-border border-l-amber bg-surface">
+    <section className="rounded-[11px] border border-border bg-surface">
       <button
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        className="flex min-h-10 w-full items-center gap-2 rounded-2xl px-4 py-3 text-left font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+        className="flex min-h-10 w-full items-center gap-2 rounded-[11px] px-4 py-3 text-left text-sm font-medium text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
       >
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
         <span className="flex-1">{HOW_TO_READ.title}</span>

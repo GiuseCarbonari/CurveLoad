@@ -1,11 +1,15 @@
 import { redirect } from "next/navigation";
 
+import { ReadinessHero } from "@/components/dashboard/readiness-hero";
 import { SyncButton } from "@/components/dashboard/sync-button";
 import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { MetricStrip } from "@/components/ui/metric-strip";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Stat } from "@/components/ui/stat";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
 
 /**
  * Dashboard readiness (Milestone 2, punto 4).
@@ -16,45 +20,15 @@ import { cn } from "@/lib/utils";
  * mai Intervals direttamente e non calcola nulla: presenta.
  */
 
-// Stili semaforici readiness derivati dai token del design system:
-// barra laterale 3px del colore di stato + bordo semitrasparente, su bg-surface.
-const DECISION_STYLES: Record<
-  MirrorData["readiness_today"]["decision"],
-  { label: string; text: string; border: string; bar: string }
-> = {
-  GO: {
-    label: "GO",
-    text: "text-ready-go",
-    border: "border-ready-go-border",
-    bar: "border-l-ready-go",
-  },
-  MODIFY: {
-    label: "MODIFY",
-    text: "text-ready-modify",
-    border: "border-ready-modify-border",
-    bar: "border-l-ready-modify",
-  },
-  SKIP: {
-    label: "SKIP",
-    text: "text-ready-skip",
-    border: "border-ready-skip-border",
-    bar: "border-l-ready-skip",
-  },
-};
-
-const CONFIDENCE_LABELS: Record<string, string> = {
-  high: "alta",
-  medium: "media",
-  low: "bassa",
-};
-
 /** "—" con tooltip quando il dato manca (possibile fonte Strava, PRD §11). */
 function MetricValue({
   value,
   decimals = 1,
+  showSign = false,
 }: {
   value: number | null | undefined;
   decimals?: number;
+  showSign?: boolean;
 }) {
   if (value == null) {
     return (
@@ -66,34 +40,8 @@ function MetricValue({
       </span>
     );
   }
-  return <span>{value.toFixed(decimals)}</span>;
-}
-
-/** Cella metrica del design system: label uppercase muted + valore grande. */
-function MetricCell({
-  label,
-  accent = false,
-  children,
-}: {
-  label: string;
-  accent?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[11px] bg-surface-2 p-[0.9rem]">
-      <dt className="text-[11px] uppercase tracking-[0.06em] text-muted">
-        {label}
-      </dt>
-      <dd
-        className={cn(
-          "mt-1 text-[22px] font-medium",
-          accent ? "text-amber" : "text-foreground"
-        )}
-      >
-        {children}
-      </dd>
-    </div>
-  );
+  const formatted = value.toFixed(decimals);
+  return <span>{showSign && value > 0 ? `+${formatted}` : formatted}</span>;
 }
 
 /** Secondi → "1h 23m" per la lista attività. */
@@ -102,6 +50,14 @@ function formatDuration(seconds: number | null): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
   return h > 0 ? `${h}h ${m.toString().padStart(2, "0")}m` : `${m}m`;
+}
+
+/** Data attività compatta, localizzata in italiano. */
+function formatActivityDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("it-IT", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 export default async function DashboardPage() {
@@ -143,173 +99,142 @@ export default async function DashboardPage() {
   const recentActivities = mirror
     ? [...mirror.activities_90d]
         .sort((a, b) => b.start_date_local.localeCompare(a.start_date_local))
-        .slice(0, 5)
+        .slice(0, 3)
     : [];
 
-  const triggeredSignals =
-    readiness?.signals.filter(
-      (s) => s.status === "amber" || s.status === "red"
-    ) ?? [];
-
   return (
-    <AppShell>
-        {/* Intro pagina */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Ciao {name}
-            </h1>
-            <p className="mt-1 text-sm text-secondary">
-              Connesso a Intervals.icu · qualità dati{" "}
-              <span className="font-medium text-amber">
-                {snapshot?.data_quality_level ?? "—"}
-              </span>
-              /4 ·{" "}
-              <a
-                href="/settings/profile"
-                className="text-muted underline-offset-4 hover:text-foreground hover:underline"
-              >
-                modifica profilo
-              </a>
-            </p>
-          </div>
-          <SyncButton lastFetchedAt={mirror?.fetched_at ?? null} />
-        </div>
-
-        {/* Banner gate Strava (PRD §11) — stato funzionale, semaforico giallo */}
-        {mirror?.data_quality_warning === "strava_source_detected" && (
-          <div className="rounded-2xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface p-4 text-sm text-secondary">
-            I tuoi dati arrivano via Strava — alcuni valori potrebbero essere
-            incompleti. Collega il device direttamente a Intervals.icu per dati
-            completi.
-          </div>
-        )}
-
-        {!mirror && (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-center text-sm text-muted">
-            Nessun dato ancora: premi «Aggiorna dati» per la prima
-            sincronizzazione.
-          </div>
-        )}
-
-        {/* Card "Oggi" — readiness */}
-        {readiness && (
-          <section
-            className={cn(
-              "rounded-2xl border border-l-[3px] bg-surface p-6",
-              DECISION_STYLES[readiness.decision].border,
-              DECISION_STYLES[readiness.decision].bar
-            )}
-          >
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-                Oggi
-              </h2>
-              <span className="text-xs text-muted">
-                confidenza {CONFIDENCE_LABELS[readiness.confidence]}
-              </span>
-            </div>
-            <p
-              className={cn(
-                "my-2 text-[42px] font-bold leading-none",
-                DECISION_STYLES[readiness.decision].text
-              )}
+    <AppShell className="gap-10 py-10 sm:py-12">
+      <PageHeader
+        eyebrow="Il tuo stato"
+        title={`Ciao ${name}`}
+        description={
+          <>
+            Dati Intervals.icu aggiornati con qualità{" "}
+            <span className="font-medium text-foreground">
+              {snapshot?.data_quality_level ?? "—"}/4
+            </span>
+            .{" "}
+            <a
+              href="/settings/profile"
+              className="text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
-              {DECISION_STYLES[readiness.decision].label}
-            </p>
-            {triggeredSignals.length > 0 ? (
-              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-secondary">
-                {triggeredSignals.map((signal) => (
-                  <li key={signal.name}>{signal.detail}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-secondary">
-                Nessun segnale critico nei dati di oggi.
-              </p>
-            )}
-          </section>
-        )}
+              Modifica profilo
+            </a>
+          </>
+        }
+        action={<SyncButton lastFetchedAt={mirror?.fetched_at ?? null} />}
+      />
 
-        {/* Card metriche wellness */}
-        {mirror && (
-          <section className="rounded-2xl bg-surface p-6">
-            <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-              Metriche di oggi
-            </h2>
-            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <MetricCell label="CTL">
-                <MetricValue value={ctl} />
-              </MetricCell>
-              <MetricCell label="ATL">
-                <MetricValue value={atl} />
-              </MetricCell>
-              <MetricCell label="TSB" accent>
-                <MetricValue value={tsb} />
-              </MetricCell>
-              <MetricCell label="ACWR">
-                <MetricValue value={acwr} decimals={2} />
-              </MetricCell>
-              <MetricCell label="HRV">
-                <MetricValue value={wellnessToday?.hrv} decimals={0} />
-              </MetricCell>
-              <MetricCell label="RHR">
+      {mirror?.data_quality_warning === "strava_source_detected" && (
+        <div className="rounded-2xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-5 py-4 text-sm text-secondary">
+          I tuoi dati arrivano via Strava: alcuni valori potrebbero essere
+          incompleti. Collega il device direttamente a Intervals.icu per dati
+          completi.
+        </div>
+      )}
+
+      {!mirror && (
+        <div className="rounded-2xl border border-border bg-surface px-6 py-10 text-center">
+          <p className="text-base font-medium text-foreground">
+            Il tuo spazio dati è ancora vuoto.
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            Premi «Aggiorna dati» per avviare la prima sincronizzazione.
+          </p>
+        </div>
+      )}
+
+      {readiness && <ReadinessHero readiness={readiness} />}
+
+      {mirror && (
+        <section className="space-y-4">
+          <SectionHeader
+            label="Carico e recupero"
+            title="Metriche di oggi"
+          />
+          <MetricStrip>
+            <Stat label="CTL" value={<MetricValue value={ctl} />} />
+            <Stat label="ATL" value={<MetricValue value={atl} />} />
+            <Stat
+              label="TSB"
+              value={<MetricValue value={tsb} showSign />}
+              accent
+            />
+            <Stat
+              label="ACWR"
+              value={<MetricValue value={acwr} decimals={2} />}
+            />
+            <Stat
+              label="HRV"
+              value={<MetricValue value={wellnessToday?.hrv} decimals={0} />}
+            />
+            <Stat
+              label="RHR"
+              value={
                 <MetricValue value={wellnessToday?.restingHR} decimals={0} />
-              </MetricCell>
-            </dl>
-          </section>
-        )}
+              }
+            />
+          </MetricStrip>
+        </section>
+      )}
 
-        {/* Ultime 5 attività */}
-        {mirror && (
-          <section className="rounded-2xl bg-surface p-6">
-            <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-              Ultime attività
-            </h2>
-            {recentActivities.length === 0 ? (
-              <p className="text-sm text-muted">
-                Nessuna attività negli ultimi 90 giorni.
-              </p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {recentActivities.map((activity) => (
-                  <li
-                    key={activity.id}
-                    className="flex items-center justify-between gap-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {activity.name ?? "Attività"}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        {activity.sport_type ?? activity.type ?? "—"} ·{" "}
-                        {activity.start_date_local.slice(0, 10)}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-medium text-amber">
-                        {formatDuration(activity.moving_time)}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        TSS{" "}
-                        {activity.icu_training_load != null
-                          ? Math.round(activity.icu_training_load)
-                          : "—"}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+      {mirror && (
+        <section className="space-y-4">
+          <SectionHeader
+            label="Storico recente"
+            title="Ultime attività"
+            description="Le tre sessioni più recenti sincronizzate da Intervals.icu."
+          />
+          {recentActivities.length === 0 ? (
+            <p className="border-t border-border py-6 text-sm text-muted">
+              Nessuna attività negli ultimi 90 giorni.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border border-y border-border">
+              {recentActivities.map((activity) => (
+                <li
+                  key={activity.id}
+                  className="flex min-h-[72px] items-center justify-between gap-5 py-4"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-medium text-foreground">
+                      {activity.name ?? "Attività"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {activity.sport_type ?? activity.type ?? "—"} ·{" "}
+                      {formatActivityDate(activity.start_date_local)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[15px] font-medium text-foreground">
+                      {formatDuration(activity.moving_time)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      TSS{" "}
+                      {activity.icu_training_load != null
+                        ? Math.round(activity.icu_training_load)
+                        : "—"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
-        {/* Disconnessione (da Milestone 1) */}
+      <footer className="border-t border-border pt-5">
         <form action="/api/auth/intervals/disconnect" method="post">
-          <Button type="submit" variant="outline" size="sm">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="px-0 text-xs text-muted hover:bg-transparent hover:text-ready-skip"
+          >
             Disconnetti Intervals.icu
           </Button>
         </form>
+      </footer>
     </AppShell>
   );
 }

@@ -87,10 +87,10 @@
 
 @layer components {
   .app-container {
-    @apply mx-auto w-full max-w-[960px] px-4;
+    @apply mx-auto w-full max-w-[960px] px-5;
   }
   .page-stack {
-    @apply flex flex-col gap-6 py-8;
+    @apply flex flex-col gap-8 py-10;
   }
   .panel {
     @apply rounded-2xl border border-border bg-surface p-6;
