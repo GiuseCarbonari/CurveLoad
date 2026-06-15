@@ -117,7 +117,7 @@ export default function LoginPage() {
             Coach IA
           </p>
           <p className="mt-1 text-[13px] text-muted">
-            Il tuo coach endurance basato su dati reali
+            Accedi al tuo account Coach IA
           </p>
         </div>
 
@@ -138,6 +138,12 @@ export default function LoginPage() {
             Registrati
           </button>
         </div>
+
+        <p className="mb-5 text-center text-[13px] leading-5 text-muted">
+          {isSignin
+            ? "Usa le credenziali di Coach IA. Il collegamento a Intervals.icu resta separato."
+            : "Crea prima il tuo account Coach IA. Collegherai Intervals.icu nel passaggio successivo."}
+        </p>
 
         {/* 3. Form */}
         <form

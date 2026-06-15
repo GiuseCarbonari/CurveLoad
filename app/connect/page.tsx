@@ -2,24 +2,25 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 
 /**
- * Pagina /connect — invito a collegare Intervals.icu (Milestone 1, punto 5).
- *
- * Ci si arriva dal middleware quando l'utente è autenticato su Supabase ma
- * non ha ancora una riga in intervals_connections. Il bottone avvia il
- * flusso OAuth (GET /api/auth/intervals/login → consent page Intervals).
+ * Secondo passaggio del setup: l'utente è già autenticato a Coach IA e
+ * autorizza separatamente l'accesso ai propri dati Intervals.icu.
  */
 export default function ConnectPage() {
   return (
     <AppShell className="items-center justify-center">
       <section className="panel flex w-full max-w-lg flex-col items-center gap-5 text-center">
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">
+          Passaggio 2 di 2
+        </p>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           Collega Intervals.icu
         </h1>
         <p className="max-w-md text-secondary">
-          Connetti il tuo account Intervals.icu per iniziare.
+          Hai effettuato l&apos;accesso a Coach IA. Ora collega Intervals.icu
+          per importare attività, carico e profilo di potenza.
         </p>
         <Button asChild size="lg">
-          <a href="/api/auth/intervals/login">Connetti Intervals.icu</a>
+          <a href="/api/auth/intervals/login">Collega Intervals.icu</a>
         </Button>
       </section>
     </AppShell>

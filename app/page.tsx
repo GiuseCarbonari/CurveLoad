@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 
 /**
- * Landing page (Milestone 0, attivata in Milestone 1).
- *
- * Il bottone porta a /login (sessione Supabase): da lì il middleware guida
- * l'utente verso /connect per il collegamento OAuth a Intervals.icu.
+ * Landing pubblica. L'account Coach IA e il collegamento a Intervals.icu
+ * sono due passaggi distinti e vengono descritti come tali.
  */
 export default function LandingPage() {
   return (
@@ -17,19 +15,19 @@ export default function LandingPage() {
           Coach IA
         </h1>
         <p className="max-w-xl text-lg text-secondary">
-          Il tuo coach endurance basato sul protocollo Section 11. Accedi con
-          il tuo account Intervals.icu, ricevi ogni giorno una decisione chiara
-          sul tuo allenamento e un programma costruito sui tuoi dati reali.
+          Il tuo coach endurance basato sul protocollo Section 11. Crea il tuo
+          account Coach IA e collega Intervals.icu per ricevere ogni giorno una
+          decisione chiara e un programma costruito sui tuoi dati reali.
         </p>
       </div>
 
       <Button asChild size="lg">
-        <a href="/login">Accedi con Intervals.icu</a>
+        <a href="/login">Accedi a Coach IA</a>
       </Button>
 
       <p className="max-w-md text-center text-sm text-muted">
-        Più dati hai su Intervals.icu, più il coach sarà preciso. Nessuna
-        metrica inventata: ogni numero viene dai tuoi dati reali.
+        Non hai ancora un account? Potrai registrarti nella schermata
+        successiva e collegare Intervals.icu subito dopo.
       </p>
     </main>
   );

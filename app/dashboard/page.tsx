@@ -224,14 +224,22 @@ export default async function DashboardPage() {
       )}
 
       <footer className="border-t border-border pt-5">
-        <form action="/api/auth/intervals/disconnect" method="post">
+        <p className="text-xs leading-5 text-faint">
+          Questa operazione rimuove solo l&apos;accesso ai dati Intervals.icu.
+          Il tuo account Coach IA resta attivo.
+        </p>
+        <form
+          action="/api/auth/intervals/disconnect"
+          method="post"
+          className="mt-1"
+        >
           <Button
             type="submit"
             variant="ghost"
             size="sm"
             className="px-0 text-xs text-muted hover:bg-transparent hover:text-ready-skip"
           >
-            Disconnetti Intervals.icu
+            Scollega Intervals.icu
           </Button>
         </form>
       </footer>
