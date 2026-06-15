@@ -26,15 +26,15 @@ const DAY_SHORT: Record<DayKey, string> = {
 };
 
 const READINESS_STYLE: Record<string, { label: string; classes: string }> = {
-  GO: { label: "GO", classes: "bg-green-600 text-white" },
-  MODIFY: { label: "MODIFY", classes: "bg-yellow-500 text-white" },
-  SKIP: { label: "SKIP", classes: "bg-red-600 text-white" },
+  GO: { label: "GO", classes: "border-ready-go-border text-ready-go" },
+  MODIFY: { label: "MODIFY", classes: "border-ready-modify-border text-ready-modify" },
+  SKIP: { label: "SKIP", classes: "border-ready-skip-border text-ready-skip" },
 };
 
 function cardTone(session: BuiltSession): string {
-  if (session.rest) return "border-border bg-muted/40";
-  if (session.is_hard) return "border-red-300 bg-red-50";
-  return "border-green-300 bg-green-50";
+  if (session.rest) return "border-border bg-surface-2";
+  if (session.is_hard) return "border-border border-l-[3px] border-l-amber bg-surface";
+  return "border-border bg-surface";
 }
 
 export function WeekGrid({
@@ -63,7 +63,7 @@ export function WeekGrid({
     <section className="space-y-2">
       {pushedAt && (
         <div className="flex justify-end">
-          <span className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800">
+          <span className="rounded-[9px] border border-ready-go-border bg-surface px-3 py-1 text-xs font-medium text-ready-go">
             Inviata il{" "}
             {new Date(pushedAt).toLocaleDateString("it-IT", {
               timeZone: "Europe/Rome",
@@ -94,21 +94,21 @@ export function WeekGrid({
           return (
             <div
               key={day}
-              className={`flex flex-col rounded-lg border p-3 text-sm ${cardTone(session)} ${
-                isToday ? "ring-2 ring-offset-1 ring-blue-400" : ""
+              className={`flex flex-col rounded-[11px] border p-3 text-sm ${cardTone(session)} ${
+                isToday ? "ring-2 ring-amber" : ""
               } ${isOpen ? "lg:col-span-7" : ""}`}
             >
             <div className="flex items-center justify-between">
               <span className="font-semibold">{DAY_SHORT[day]}</span>
               {readiness && (
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${readiness.classes}`}>
+                <span className={`rounded-[7px] border bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold ${readiness.classes}`}>
                   {readiness.label}
                 </span>
               )}
             </div>
 
             {session.rest ? (
-              <p className="mt-1 text-muted-foreground">Riposo</p>
+              <p className="mt-1 text-muted">Riposo</p>
             ) : (
               <button
                 type="button"
@@ -118,12 +118,12 @@ export function WeekGrid({
                 <span className="font-medium">
                   {session.library_id}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted">
                   {session.estimated_duration_min != null ? `${session.estimated_duration_min}′ · ` : ""}
                   {session.power_target_zone}
                 </span>
-                <span className="line-clamp-3 text-xs">{session.session_objective}</span>
-                <span className="mt-auto text-[11px] text-blue-700 underline">
+                <span className="line-clamp-3 text-xs text-secondary">{session.session_objective}</span>
+                <span className="mt-auto text-[11px] text-amber underline">
                   {isOpen ? "chiudi" : "dettaglio"}
                 </span>
               </button>
@@ -133,7 +133,7 @@ export function WeekGrid({
               <button
                 type="button"
                 onClick={() => onBlockDay!(session.date, day)}
-                className="mt-2 self-start text-[11px] text-muted-foreground underline hover:text-destructive"
+                className="mt-2 min-h-10 self-start text-[11px] text-muted underline hover:text-ready-skip"
               >
                 Non posso questo giorno
               </button>
@@ -157,7 +157,7 @@ export function WeekGrid({
                   />
                 )}
                 {session.frameworks_cited.length > 0 && (
-                  <p className="pt-1 text-[11px] text-muted-foreground">
+                  <p className="pt-1 text-[11px] text-muted">
                     Riferimenti: {session.frameworks_cited.join(" · ")}
                   </p>
                 )}
@@ -174,7 +174,7 @@ export function WeekGrid({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <p>
-      <span className="font-medium text-muted-foreground">{label}: </span>
+      <span className="font-medium text-muted">{label}: </span>
       {value}
     </p>
   );

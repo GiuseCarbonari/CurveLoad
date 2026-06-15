@@ -80,7 +80,7 @@ export function ExplainButton({
           </Button>
         )}
         {!configured && !comment && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted">
             {NOT_CONFIGURED_HINT}
           </span>
         )}
@@ -89,13 +89,13 @@ export function ExplainButton({
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
 
       {comment && (
-        <div className="mt-4 rounded-md border bg-muted/40 p-4">
+        <div className="mt-4 rounded-[11px] border border-border bg-surface-2 p-4">
           <div className="space-y-2 text-sm leading-relaxed">
             {comment.split(/\n{2,}/).map((para, i) => (
               <p key={i}>{para.trim()}</p>
             ))}
           </div>
-          <p className="mt-3 text-xs italic text-muted-foreground">
+          <p className="mt-3 text-xs italic text-muted">
             Commento generato dall&apos;AI a partire dai tuoi dati — non
             sostituisce un preparatore
             {commentAt &&

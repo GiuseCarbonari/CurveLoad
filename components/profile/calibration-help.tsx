@@ -13,12 +13,12 @@ export function CalibrationHelp() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="rounded-lg border border-sky-200 bg-sky-50/60 text-sky-950">
+    <section className="rounded-2xl border border-l-[3px] border-border border-l-amber bg-surface">
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-4 py-3 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-h-10 w-full items-center gap-2 rounded-2xl px-4 py-3 text-left font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
       >
         <Gauge className="h-4 w-4 shrink-0" aria-hidden />
         <span className="flex-1">Come funziona la calibrazione</span>
@@ -28,7 +28,7 @@ export function CalibrationHelp() {
         />
       </button>
       {open && (
-        <p className="px-4 pb-4 text-sm leading-relaxed text-sky-900">
+        <p className="px-4 pb-4 text-sm leading-relaxed text-secondary">
           La stima analizza le tue uscite MTB passate e impara la tua velocità
           reale su salite, discese e tratti pianeggianti. Più uscite MTB hai su
           Intervals.icu, più la stima è accurata. Finché non ci sono abbastanza

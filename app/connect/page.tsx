@@ -1,3 +1,4 @@
+import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -9,16 +10,18 @@ import { Button } from "@/components/ui/button";
  */
 export default function ConnectPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4">
-      <h1 className="text-3xl font-bold tracking-tight">
-        Collega Intervals.icu
-      </h1>
-      <p className="max-w-md text-center text-muted-foreground">
-        Connetti il tuo account Intervals.icu per iniziare.
-      </p>
-      <Button asChild size="lg">
-        <a href="/api/auth/intervals/login">Connetti Intervals.icu</a>
-      </Button>
-    </main>
+    <AppShell className="items-center justify-center">
+      <section className="panel flex w-full max-w-lg flex-col items-center gap-5 text-center">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Collega Intervals.icu
+        </h1>
+        <p className="max-w-md text-secondary">
+          Connetti il tuo account Intervals.icu per iniziare.
+        </p>
+        <Button asChild size="lg">
+          <a href="/api/auth/intervals/login">Connetti Intervals.icu</a>
+        </Button>
+      </section>
+    </AppShell>
   );
 }

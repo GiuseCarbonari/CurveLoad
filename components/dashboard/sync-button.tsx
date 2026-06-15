@@ -76,7 +76,7 @@ export function SyncButton({
         {loading ? "Sincronizzazione…" : "Aggiorna dati"}
       </Button>
       {stamp && !error && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted">
           Aggiornato alle {stamp}
         </span>
       )}

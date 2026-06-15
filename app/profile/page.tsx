@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AppShell } from "@/components/layout/app-shell";
 import { BuildProfileButton } from "@/components/profile/build-button";
 import { CalibrateButton } from "@/components/profile/calibrate-button";
 import { CalibrationHelp } from "@/components/profile/calibration-help";
@@ -102,15 +102,14 @@ export default async function ProfilePage() {
   const raceEstimate = (row?.race_estimate ?? null) as RaceEstimateV2 | null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-4 py-10">
+    <AppShell>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Scheda atleta</h1>
-          <p className="text-sm text-muted-foreground">
-            Profilo fenotipo dai tuoi sforzi reali su Intervals.icu ·{" "}
-            <Link href="/dashboard" className="underline">
-              torna alla dashboard
-            </Link>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Scheda atleta
+          </h1>
+          <p className="mt-1 text-sm text-secondary">
+            Profilo fenotipo costruito dai tuoi sforzi reali su Intervals.icu.
           </p>
         </div>
         <BuildProfileButton />
@@ -120,14 +119,14 @@ export default async function ProfilePage() {
       <HowToRead />
 
       {profile?.weight_source === "STRAVA" && (
-        <div className="rounded-md border border-yellow-500 bg-yellow-50 p-4 text-sm text-yellow-900">
+        <div className="rounded-2xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface p-4 text-sm text-secondary">
           Peso sincronizzato da Strava: i W/kg potrebbero non riflettere il
           peso più recente.
         </div>
       )}
 
       {!profile && (
-        <div className="rounded-md border p-6 text-center text-muted-foreground">
+        <div className="panel text-center text-muted">
           Nessun profilo ancora: premi «Aggiorna profilo» per costruirlo dai
           tuoi dati Intervals.
         </div>
@@ -137,7 +136,7 @@ export default async function ProfilePage() {
         <>
           {/* Confidence bassa: dirlo chiaro, non nasconderlo (regola ferma). */}
           {profile.meta.confidence === "low" && (
-            <div className="rounded-md border border-yellow-500 bg-yellow-50 p-4 text-sm text-yellow-900">
+            <div className="rounded-2xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface p-4 text-sm text-secondary">
               Confidenza BASSA: mancano sforzi massimali recenti su durate
               chiave (o il modello CP non è disponibile). Il profilo è
               indicativo — più sforzi massimali registri, più diventa
@@ -147,31 +146,31 @@ export default async function ProfilePage() {
 
           {/* Card Fenotipo */}
           {phenotype && (
-            <section className="rounded-lg border p-6">
+            <section className="panel">
               <div className="flex items-baseline justify-between">
-                <h2 className="flex items-center gap-1.5 text-lg font-semibold">
+                <h2 className="panel-title flex items-center gap-1.5">
                   Fenotipo
                   <InfoTooltip term="fenotipo" />
                 </h2>
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs text-muted">
                   confidenza {CONFIDENCE_LABELS[phenotype.confidence]}
                   <InfoTooltip term="confidenza" />
                 </span>
               </div>
-              <p className="my-2 flex flex-wrap items-center gap-x-1 text-3xl font-bold">
+              <p className="my-3 flex flex-wrap items-center gap-x-1 text-3xl font-semibold text-amber">
                 {PHENOTYPE_LABELS[phenotype.primary]}
                 <InfoTooltip term={phenotype.primary} />
                 {phenotype.secondary && (
-                  <span className="text-xl font-medium text-muted-foreground">
+                  <span className="text-xl font-medium text-secondary">
                     {" "}
                     · punta {PHENOTYPE_LABELS[phenotype.secondary]}
                   </span>
                 )}
               </p>
-              <p className="text-sm">
+              <p className="text-sm text-secondary">
                 {phenotypePhrase(phenotype.primary, phenotype.secondary)}
               </p>
-              <p className="mt-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <p className="mt-3 flex flex-wrap items-center gap-1 text-xs text-muted">
                 Indicatori: {phenotype.basis.join(" · ")} — classificazione su
                 soglie v0
                 <InfoTooltip term="soglie_v0" />
@@ -188,14 +187,14 @@ export default async function ProfilePage() {
           )}
 
           {/* Card CP / W' */}
-          <section className="rounded-lg border p-6">
-            <h2 className="mb-2 flex items-center gap-1.5 text-lg font-semibold">
+          <section className="panel">
+            <h2 className="panel-title mb-3 flex items-center gap-1.5">
               Critical Power
               <InfoTooltip term="cp" />
             </h2>
             {cpw ? (
               <p
-                className="flex flex-wrap items-center gap-x-1 text-xl font-medium"
+                className="flex flex-wrap items-center gap-x-1 text-[22px] font-medium text-amber"
                 title="Letto da Intervals.icu, non ricalcolato"
               >
                 CP {Math.round(cpw.cp_w)} W
@@ -208,7 +207,7 @@ export default async function ProfilePage() {
                 </span>
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-secondary">
                 Nessun modello CP disponibile da Intervals: servono sforzi
                 massimali tra ~3 e ~15 minuti nella finestra di 90 giorni.
               </p>
@@ -217,39 +216,39 @@ export default async function ProfilePage() {
 
           {/* Card APR/MPR */}
           {apr && (
-            <section className="rounded-lg border p-6">
-              <h2 className="mb-4 flex items-center gap-1.5 text-lg font-semibold">
+            <section className="panel">
+              <h2 className="panel-title mb-4 flex items-center gap-1.5">
                 Riserva anaerobica (MPR)
                 <InfoTooltip term="apr" />
               </h2>
-              <dl className="grid grid-cols-3 gap-4">
-                <div>
-                  <dt className="flex items-center gap-1 text-xs uppercase text-muted-foreground">
+              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="metric-card">
+                  <dt className="flex items-center gap-1 text-[11px] uppercase tracking-[0.06em] text-muted">
                     MSP
                     <InfoTooltip term="msp" />
                   </dt>
-                  <dd className="text-2xl font-semibold">
+                  <dd className="mt-1 text-[22px] font-medium">
                     {Math.round(apr.msp)} W
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-xs uppercase text-muted-foreground">
+                <div className="metric-card">
+                  <dt className="text-[11px] uppercase tracking-[0.06em] text-muted">
                     APR (MSP − CP)
                   </dt>
-                  <dd className="text-2xl font-semibold">
+                  <dd className="mt-1 text-[22px] font-medium text-amber">
                     {Math.round(apr.apr)} W
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-xs uppercase text-muted-foreground">
+                <div className="metric-card">
+                  <dt className="text-[11px] uppercase tracking-[0.06em] text-muted">
                     Ratio
                   </dt>
-                  <dd className="text-2xl font-semibold">
+                  <dd className="mt-1 text-[22px] font-medium">
                     {apr.apr_ratio.toFixed(2)}
                   </dd>
                 </div>
               </dl>
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-xs text-muted">
                 Denominatore CP (MPR, PRD §33 C.3): la MAP della risposta
                 Intervals non è affidabile.
               </p>
@@ -257,14 +256,14 @@ export default async function ProfilePage() {
           )}
 
           {/* Tabella RPP */}
-          <section className="rounded-lg border p-6">
-            <h2 className="mb-4 flex items-center gap-1.5 text-lg font-semibold">
+          <section className="panel">
+            <h2 className="panel-title mb-4 flex items-center gap-1.5">
               Record Power Profile (90 giorni)
               <InfoTooltip term="rpp" />
             </h2>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                <tr className="border-b text-left text-[11px] uppercase tracking-[0.06em] text-muted">
                   <th className="py-2">Durata</th>
                   <th className="py-2 text-right">Watt</th>
                   <th className="py-2 text-right">W/kg</th>
@@ -285,7 +284,7 @@ export default async function ProfilePage() {
                         {label}
                         {point && !point.exact && (
                           <span
-                            className="cursor-help text-muted-foreground"
+                            className="cursor-help text-muted"
                             title={`Durata esatta non presente: valore del punto più vicino (${point.actual_secs ?? "—"}s)`}
                           >
                             {" "}
@@ -293,7 +292,7 @@ export default async function ProfilePage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 text-right">
+                      <td className="py-2 text-right text-amber">
                         {point?.watts != null ? Math.round(point.watts) : "—"}
                       </td>
                       <td className="py-2 text-right">
@@ -309,7 +308,7 @@ export default async function ProfilePage() {
                 })}
               </tbody>
             </table>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-muted">
               Finestra corrente 90g · colonna «Best 1y» = riferimento
               potenziale (PRD §33 C.1). Tutti i valori letti da
               Intervals.icu.
@@ -318,7 +317,7 @@ export default async function ProfilePage() {
 
           {/* Analisi evento target (gap analysis, §33 C.6) */}
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-secondary">
               Confronta il tuo profilo con le richieste della gara target dal
               tuo dossier.
             </p>
@@ -340,11 +339,11 @@ export default async function ProfilePage() {
 
               {/* a) Non calibrata */}
               {signatureLevel == null && (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 p-5">
-                  <p className="font-medium text-amber-900">
+                <div className="rounded-2xl border border-border bg-surface p-5">
+                  <p className="font-medium text-amber">
                     Stima tempi non ancora calibrata
                   </p>
-                  <p className="mt-1 text-sm text-amber-900">
+                  <p className="mt-1 text-sm text-secondary">
                     Useremo le tue ultime attività MTB per imparare la tua
                     velocità reale su ogni tipo di terreno.
                   </p>
@@ -356,12 +355,12 @@ export default async function ProfilePage() {
 
               {/* b) Archetipo (livello 2) */}
               {signatureLevel === 2 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-orange-300 bg-orange-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ready-modify-border bg-surface p-4">
                   <div>
-                    <span className="rounded-full border border-orange-400 bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-900">
-                      📊 Basata su valori medi MTB
+                    <span className="rounded-[9px] bg-surface-2 px-2 py-1 text-xs font-medium text-ready-modify">
+                      Basata su valori medi MTB
                     </span>
-                    <p className="mt-1 text-sm text-orange-900">
+                    <p className="mt-2 text-sm text-secondary">
                       {raceEstimate?.activities_used != null
                         ? `Hai ${raceEstimate.activities_used} attività MTB analizzate. `
                         : ""}
@@ -374,12 +373,12 @@ export default async function ProfilePage() {
 
               {/* c) Personale (livello 1) */}
               {signatureLevel === 1 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-green-300 bg-green-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ready-go-border bg-surface p-4">
                   <div>
-                    <span className="rounded-full border border-green-400 bg-green-100 px-2 py-0.5 text-xs font-medium text-green-900">
+                    <span className="rounded-[9px] bg-surface-2 px-2 py-1 text-xs font-medium text-ready-go">
                       ✓ Calibrata sui tuoi dati
                     </span>
-                    <p className="mt-1 text-sm text-green-900">
+                    <p className="mt-2 text-sm text-secondary">
                       {raceEstimate?.source_breakdown
                         ? `Copertura terreno: ${raceEstimate.source_breakdown.L1}% dai tuoi dati`
                         : "Stima personalizzata sulle tue uscite MTB."}
@@ -398,13 +397,13 @@ export default async function ProfilePage() {
                     generatedAt={(row?.race_estimate_at ?? null) as string | null}
                   />
                   {raceEstimate.source_breakdown && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted">
                       Fonte della stima per distanza:{" "}
-                      <span className="text-green-700">L1 (tuoi dati) {raceEstimate.source_breakdown.L1}%</span>{" "}
+                      <span className="text-ready-go">L1 (tuoi dati) {raceEstimate.source_breakdown.L1}%</span>{" "}
                       ·{" "}
-                      <span className="text-orange-700">L2 (archetipo) {raceEstimate.source_breakdown.L2}%</span>{" "}
+                      <span className="text-ready-modify">L2 (archetipo) {raceEstimate.source_breakdown.L2}%</span>{" "}
                       ·{" "}
-                      <span className="text-sky-700">L3 (fisica salita) {raceEstimate.source_breakdown.L3}%</span>
+                      <span className="text-secondary">L3 (fisica salita) {raceEstimate.source_breakdown.L3}%</span>
                     </p>
                   )}
                 </>
@@ -412,7 +411,7 @@ export default async function ProfilePage() {
 
               {/* Calibrata ma senza percorso analizzato: invita alla gap analysis */}
               {signatureLevel != null && !raceEstimate && (
-                <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                <p className="rounded-[11px] border border-border bg-surface p-4 text-sm text-secondary">
                   Firma di velocità pronta. Analizza un evento qui sopra per
                   vedere la stima tempi sul tuo percorso.
                 </p>
@@ -421,6 +420,6 @@ export default async function ProfilePage() {
           )}
         </>
       )}
-    </main>
+    </AppShell>
   );
 }

@@ -107,7 +107,7 @@ export function PushButton({
   if (!canWriteCalendar) {
     return (
       <div className="flex max-w-sm flex-col items-end gap-2 text-right">
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-amber">
           Devi riautorizzare l&apos;app per abilitare la scrittura sul calendario
         </p>
         <Button asChild variant="outline" size="sm">
@@ -133,7 +133,7 @@ export function PushButton({
               : "Invia a Intervals.icu"}
         </Button>
         {success && (
-          <span className="text-right text-xs text-green-700">
+          <span className="text-right text-xs text-ready-go">
             ✓ Settimana inviata a Intervals.icu ·{" "}
             <a
               className="underline"
@@ -152,17 +152,17 @@ export function PushButton({
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-base/90 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="push-modal-title"
         >
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-background shadow-xl">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-surface">
             <div className="border-b p-5">
               <h2 id="push-modal-title" className="text-lg font-semibold">
                 Conferma invio a Intervals.icu
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-secondary">
                 Questi allenamenti verranno aggiunti al tuo calendario Intervals.icu
                 e sincronizzati sul tuo dispositivo. Gli allenamenti già inviati
                 per questa settimana verranno aggiornati, non duplicati.
@@ -171,11 +171,11 @@ export function PushButton({
 
             <div className="space-y-3 overflow-y-auto p-5">
               {events.map((event) => (
-                <article key={event.uid} className="rounded-md border p-4">
+                <article key={event.uid} className="rounded-[11px] border border-border bg-surface-2 p-4">
                   <h3 className="font-medium">
                     {formatEventDate(event.start_date_local)} · {event.name}
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted">
                     {Math.round(event.moving_time / 60)} min · {typeLabel(event.type)}
                   </p>
                   <pre className="mt-3 whitespace-pre-wrap font-sans text-xs leading-relaxed">
@@ -185,7 +185,7 @@ export function PushButton({
               ))}
 
               {error && (
-                <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                <div className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
                   <p>{error}</p>
                   {pushErrors.length > 0 && (
                     <ul className="mt-2 list-disc space-y-1 pl-5">

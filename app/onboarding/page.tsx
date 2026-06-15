@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { OnboardingWizard } from "@/components/onboarding/wizard";
+import { AppShell } from "@/components/layout/app-shell";
 import {
   DOSSIER_COLUMNS,
   FIRST_STEP,
@@ -46,10 +47,12 @@ export default async function OnboardingPage() {
   const initialStep = Math.min(Math.max(savedStep, FIRST_STEP), LAST_STEP);
 
   return (
-    <OnboardingWizard
-      initialForm={rowToForm(profileRow)}
-      initialStep={initialStep}
-      initialConsent={userRow?.gdpr_consent ?? false}
-    />
+    <AppShell>
+      <OnboardingWizard
+        initialForm={rowToForm(profileRow)}
+        initialStep={initialStep}
+        initialConsent={userRow?.gdpr_consent ?? false}
+      />
+    </AppShell>
   );
 }

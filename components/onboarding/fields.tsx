@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
  * Stile coerente con il resto dell'app (bordi morbidi, input shadcn-like).
  */
 
+// Input del design system: sfondo bg-surface, bordo 0.5px, raggio 9px,
+// focus ring ambra sottile, placeholder faint.
 const inputClass =
-  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "form-control w-full";
 
 export function Field({
   label,
@@ -21,9 +23,9 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-[13px] text-muted">{label}</span>
       {children}
-      {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      {hint && <span className="text-xs text-muted">{hint}</span>}
     </label>
   );
 }
@@ -79,7 +81,7 @@ export function TextAreaField({
         rows={rows}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="form-control w-full p-3"
       />
     </Field>
   );
@@ -146,8 +148,8 @@ export function ChipMultiSelect({
               className={cn(
                 "rounded-full border px-3 py-1 text-sm transition-colors",
                 active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input hover:bg-accent"
+                  ? "border-amber bg-amber text-amber-on"
+                  : "border-border text-secondary hover:bg-surface-2"
               )}
             >
               {o.label}
@@ -182,10 +184,10 @@ export function YesNoField({
             aria-pressed={value === v}
             onClick={() => onChange(v)}
             className={cn(
-              "flex-1 rounded-md border px-3 py-2 text-sm transition-colors",
+              "flex-1 rounded-[9px] border px-3 py-2 text-sm transition-colors",
               value === v
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-input hover:bg-accent"
+                ? "border-amber bg-amber text-amber-on"
+                : "border-border text-secondary hover:bg-surface-2"
             )}
           >
             {l}

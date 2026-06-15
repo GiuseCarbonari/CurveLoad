@@ -102,16 +102,16 @@ export function OnboardingWizard({
   const progressPct = Math.round((step / LAST_STEP) * 100);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       {/* Progress bar */}
       <div>
-        <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mb-2 flex items-center justify-between text-sm text-muted">
           <span>{STEP_LABELS[step]}</span>
           <span>Passo {step} di {LAST_STEP}</span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
           <div
-            className="h-full bg-primary transition-all"
+            className="h-full bg-amber transition-all"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -122,17 +122,19 @@ export function OnboardingWizard({
       {/* Step 3 — Consenso privacy */}
       {step === 3 && (
         <section className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-tight">Consenso privacy</h1>
-          <p className="text-sm leading-relaxed">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Consenso privacy
+          </h1>
+          <p className="text-sm leading-relaxed text-secondary">
             Tratteremo i tuoi dati di allenamento e benessere per generare piani
             personalizzati. Vedi la privacy policy.
           </p>
-          <label className="flex items-start gap-3 rounded-md border p-4 text-sm">
+          <label className="flex items-start gap-3 rounded-[11px] border border-border bg-surface p-4 text-sm text-secondary">
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4"
+              className="mt-0.5 h-4 w-4 accent-amber"
             />
             <span>
               Acconsento al trattamento dei miei dati di allenamento e benessere
@@ -153,8 +155,10 @@ export function OnboardingWizard({
       {/* Step 4 — Messaggio educativo (§12.3) */}
       {step === 4 && (
         <section className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-tight">Come funziona</h1>
-          <div className="rounded-lg border border-sky-200 bg-sky-50/60 p-5 text-sm leading-relaxed text-sky-950">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Come funziona
+          </h1>
+          <div className="rounded-2xl border border-l-[3px] border-border border-l-amber bg-surface p-5 text-sm leading-relaxed text-secondary">
             {EDU_MESSAGE}
           </div>
           <div className="flex justify-end">
@@ -168,7 +172,9 @@ export function OnboardingWizard({
       {/* Step 5 — Dossier (pagina A e B) */}
       {step === 5 && (
         <section className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-tight">Dossier atleta</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Dossier atleta
+          </h1>
           {dossierPage === "A" ? (
             <>
               <DossierPageA form={form} update={update} />
@@ -184,7 +190,7 @@ export function OnboardingWizard({
                 </Button>
               </div>
               {form.nome.trim() === "" && (
-                <p className="text-right text-xs text-muted-foreground">
+                <p className="text-right text-xs text-muted">
                   Il nome è l&apos;unico campo obbligatorio.
                 </p>
               )}
@@ -213,7 +219,7 @@ export function OnboardingWizard({
       {/* Step 6 — Attrezzatura e limiti */}
       {step === 6 && (
         <section className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Attrezzatura e limiti
           </h1>
           <DossierEquipment form={form} update={update} />
@@ -254,15 +260,17 @@ export function OnboardingWizard({
             </>
           ) : (
             <>
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
-              <p className="text-lg font-medium">Sto leggendo i tuoi dati…</p>
-              <p className="text-sm text-muted-foreground">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-surface-2 border-t-amber" />
+              <p className="text-lg font-medium text-foreground">
+                Sto leggendo i tuoi dati…
+              </p>
+              <p className="text-sm text-muted">
                 Sincronizzo Intervals.icu e costruisco la tua scheda atleta.
               </p>
             </>
           )}
         </section>
       )}
-    </main>
+    </div>
   );
 }

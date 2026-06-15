@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
 import {
   DossierEquipment,
@@ -46,34 +45,33 @@ export function SettingsDossierForm({ initialForm }: { initialForm: DossierForm 
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Modifica profilo</h1>
-        <p className="text-sm text-muted-foreground">
-          Aggiorna il tuo dossier in qualsiasi momento ·{" "}
-          <Link href="/dashboard" className="underline">
-            torna alla dashboard
-          </Link>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Modifica profilo
+        </h1>
+        <p className="mt-1 text-sm text-secondary">
+          Aggiorna il tuo dossier in qualsiasi momento.
         </p>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Anagrafica e sport</h2>
+      <section className="panel flex flex-col gap-4">
+        <h2 className="panel-title">Anagrafica e sport</h2>
         <DossierPageA form={form} update={update} />
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Obiettivi e disponibilità</h2>
+      <section className="panel flex flex-col gap-4">
+        <h2 className="panel-title">Obiettivi e disponibilità</h2>
         <DossierPageB form={form} update={update} />
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Attrezzatura e limiti</h2>
+      <section className="panel flex flex-col gap-4">
+        <h2 className="panel-title">Attrezzatura e limiti</h2>
         <DossierEquipment form={form} update={update} />
       </section>
 
-      <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-background/95 py-4">
-        {saved && <span className="text-sm text-green-700">Salvato ✓</span>}
+      <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border bg-base/95 py-4">
+        {saved && <span className="text-sm text-ready-go">Salvato ✓</span>}
         {error && <span className="text-sm text-destructive">{error}</span>}
         <Button
           onClick={() => void handleSave()}
@@ -82,6 +80,6 @@ export function SettingsDossierForm({ initialForm }: { initialForm: DossierForm 
           {saving ? "Salvo…" : "Salva modifiche"}
         </Button>
       </div>
-    </main>
+    </div>
   );
 }

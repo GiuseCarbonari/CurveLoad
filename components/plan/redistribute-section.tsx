@@ -43,7 +43,7 @@ function changeIcon(
   isHard?: boolean
 ): string {
   if (action === "moved") return "✓";
-  if (action === "dropped" && isHard) return "⚠";
+  if (action === "dropped" && isHard) return "!";
   return "✓";
 }
 
@@ -158,19 +158,19 @@ export function RedistributeSection({
       />
 
       {loadingDate && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           Calcolo ridistribuzione per {loadingDate}…
         </p>
       )}
 
       {!preview && error && (
-        <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <p className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
           {error}
         </p>
       )}
 
       {showReconnectNote && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-[11px] border border-border bg-amber-dim p-3 text-sm text-secondary">
           La settimana è stata aggiornata. Ricorda di aggiornare su Intervals.icu
           con il bottone «Aggiorna su Intervals.icu».
         </p>
@@ -179,12 +179,12 @@ export function RedistributeSection({
       {/* Modale di anteprima / conferma */}
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-base/90 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="redistribute-modal-title"
         >
-          <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-lg bg-background shadow-xl">
+          <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-border bg-surface">
             <div className="border-b p-5">
               <h2
                 id="redistribute-modal-title"
@@ -192,7 +192,7 @@ export function RedistributeSection({
               >
                 Ecco come cambia la settimana
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-secondary">
                 Stai bloccando{" "}
                 <strong>
                   {DAY_LABELS[preview.blocked_day ?? ""] ??
@@ -212,7 +212,7 @@ export function RedistributeSection({
                 return (
                   <p
                     key={i}
-                    className={`text-sm ${c.action === "dropped" && isHard ? "text-amber-800" : "text-foreground"}`}
+                    className={`text-sm ${c.action === "dropped" && isHard ? "text-amber" : "text-foreground"}`}
                   >
                     {icon} {label}
                   </p>
@@ -220,9 +220,9 @@ export function RedistributeSection({
               })}
 
               {preview.volume_reduced && (
-                <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="mt-3 rounded-[11px] border border-border bg-amber-dim p-3 text-sm text-secondary">
                   <p className="font-medium">
-                    ⚠ Questa settimana avrà meno sedute dure del pianificato.
+                    Attenzione: questa settimana avrà meno sedute dure del pianificato.
                   </p>
                   <p className="mt-1">
                     Non c&apos;era spazio per recuperarla rispettando il riposo
@@ -233,7 +233,7 @@ export function RedistributeSection({
               )}
 
               {error && (
-                <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                <p className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
                   {error}
                 </p>
               )}

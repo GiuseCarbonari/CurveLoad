@@ -118,8 +118,8 @@ export function DossierPageB({
         placeholder="Cosa vuoi ottenere? (es. arrivare in forma alla gara, migliorare in salita…)"
       />
 
-      <fieldset className="rounded-md border p-4">
-        <legend className="px-1 text-sm font-medium">
+      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           Gara target principale
         </legend>
         <div className="flex flex-col gap-4">

@@ -27,16 +27,16 @@ const COURSE_CHARACTER: Record<
   CourseCharacter,
   { label: string; classes: string }
 > = {
-  flat: { label: "Pianeggiante", classes: "border-slate-300 bg-slate-100 text-slate-700" },
-  rolling: { label: "Ondulato", classes: "border-green-300 bg-green-100 text-green-800" },
-  hilly: { label: "Collinare", classes: "border-amber-300 bg-amber-100 text-amber-800" },
-  mountain: { label: "Montagnoso", classes: "border-red-300 bg-red-100 text-red-800" },
+  flat: { label: "Pianeggiante", classes: "border-border bg-surface-2 text-secondary" },
+  rolling: { label: "Ondulato", classes: "border-border bg-surface-2 text-secondary" },
+  hilly: { label: "Collinare", classes: "border-border bg-surface-2 text-amber" },
+  mountain: { label: "Montagnoso", classes: "border-border bg-surface-2 text-amber" },
 };
 
-const SEVERITY_BADGE: Record<Severity, { icon: string; label: string }> = {
-  high: { icon: "🔴", label: "alta" },
-  medium: { icon: "🟡", label: "media" },
-  low: { icon: "🟢", label: "bassa" },
+const SEVERITY_BADGE: Record<Severity, { label: string; classes: string }> = {
+  high: { label: "alta", classes: "text-ready-skip" },
+  medium: { label: "media", classes: "text-ready-modify" },
+  low: { label: "bassa", classes: "text-ready-go" },
 };
 
 const LEVER_LABELS: Record<string, string> = {
@@ -87,7 +87,7 @@ function ElevationProfile({ terrain }: { terrain: TerrainSummary }) {
   const poly = terrain.polyline;
   if (poly.length < 2) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         Profilo altimetrico non disponibile (percorso troppo corto).
       </p>
     );
@@ -126,17 +126,17 @@ function ElevationProfile({ terrain }: { terrain: TerrainSummary }) {
             y={0}
             width={Math.max(1, x1 - x0)}
             height={SVG_H}
-            fill="hsl(var(--destructive))"
+            fill="var(--ready-modify)"
             opacity={0.13}
           />
         );
       })}
       {/* Area + linea di elevazione */}
-      <path d={areaPath} fill="hsl(var(--primary))" opacity={0.12} />
+      <path d={areaPath} fill="var(--amber)" opacity={0.12} />
       <path
         d={linePath}
         fill="none"
-        stroke="hsl(var(--primary))"
+        stroke="var(--amber)"
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
       />
@@ -163,8 +163,8 @@ export function EventAnalysis({
   });
 
   return (
-    <section className="rounded-lg border p-6">
-      <h2 className="text-lg font-semibold">Analisi evento</h2>
+    <section className="panel">
+      <h2 className="panel-title">Analisi evento</h2>
 
       {/* a) Header evento */}
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -181,14 +181,14 @@ export function EventAnalysis({
       </div>
 
       {analysis.note && (
-        <p className="mt-2 text-xs text-amber-700">{analysis.note}</p>
+        <p className="mt-2 text-xs text-amber">{analysis.note}</p>
       )}
 
       {/* b) Profilo altimetrico SVG */}
       <div className="mt-4">
         <ElevationProfile terrain={terrain} />
-        <p className="mt-1 text-xs text-muted-foreground">
-          Bande rosse = salite rilevate. Profilo dalla polyline del GPX.
+        <p className="mt-1 text-xs text-muted">
+          Bande ambra = salite rilevate. Profilo dalla polyline del GPX.
         </p>
       </div>
 
@@ -197,7 +197,7 @@ export function EventAnalysis({
         <div className="mt-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+              <tr className="border-b text-left text-[11px] uppercase tracking-[0.06em] text-muted">
                 <th className="py-2">Pos. km</th>
                 <th className="py-2 text-right">Lungh.</th>
                 <th className="py-2 text-right">D+</th>
@@ -223,7 +223,7 @@ export function EventAnalysis({
                       {climb.avg_gradient_pct}%
                       {climb.max_gradient_pct >= 8 && (
                         <span
-                          className="cursor-help text-amber-600"
+                          className="cursor-help text-amber"
                           title={`Pitch ripido: max ~${climb.max_gradient_pct}% (scala attenuata)`}
                         >
                           {" "}
@@ -240,7 +240,7 @@ export function EventAnalysis({
                     <td className="py-2 text-right">
                       {demand ? FATIGUE_LABELS[demand.fatigue_level] : "—"}
                       {demand?.est_kjkg != null && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted">
                           {" "}
                           (~{demand.est_kjkg} kJ/kg)
                         </span>
@@ -256,12 +256,12 @@ export function EventAnalysis({
 
       {/* d) Card limitatori */}
       <div className="mt-6">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold uppercase text-muted-foreground">
+        <h3 className="panel-title flex items-center gap-1.5">
           Limitatori per questa gara
           <InfoTooltip term="limitatore" />
         </h3>
         {analysis.limiters.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted">
             Nessun limitatore rilevato (o dati insufficienti per il confronto).
           </p>
         ) : (
@@ -273,7 +273,7 @@ export function EventAnalysis({
         )}
       </div>
 
-      <p className="mt-4 text-xs italic text-muted-foreground">
+      <p className="mt-4 text-xs italic text-muted">
         Durate e fatica sono stime deterministiche dai tuoi dati (CP, RPP, peso,
         CTL) — non misure. Soglie di categoria e pendenza come Section 11.
         {generatedAt &&
@@ -296,18 +296,18 @@ function LimiterCard({ limiter }: { limiter: Limiter }) {
       : `salita al km ${refs[0]}`;
 
   return (
-    <li className="rounded-md border p-4">
+    <li className="rounded-[11px] border border-border bg-surface-2 p-4">
       <div className="flex items-baseline justify-between gap-2">
         <p className="flex items-center gap-1.5 font-medium">
           {limiter.name}
           {isDurability && <InfoTooltip term="durabilita" />}
         </p>
-        <span className="shrink-0 text-xs">
-          {badge.icon} severità {badge.label}
+        <span className={`shrink-0 text-xs ${badge.classes}`}>
+          severità {badge.label}
         </span>
       </div>
 
-      <p className="mt-1 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+      <p className="mt-1 flex flex-wrap items-center gap-1 text-sm text-secondary">
         {limiter.evidence}
         {limiter.required_wkg != null && <InfoTooltip term="wkg_richiesto" />}
         <span className="text-xs">· {kmLabel}</span>
@@ -317,7 +317,7 @@ function LimiterCard({ limiter }: { limiter: Limiter }) {
         <span className="font-medium">Lavora su:</span> {lever}
         <InfoTooltip term="leva" />
         {limiter.workout_library_refs.length > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted">
             ({limiter.workout_library_refs.join(" · ")})
           </span>
         )}

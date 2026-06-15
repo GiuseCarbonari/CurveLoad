@@ -145,15 +145,15 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
       </Button>
 
       {open && (
-        <div className="w-full max-w-md rounded-lg border bg-card p-4 text-left shadow-sm">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-4 text-left">
           {/* Tab */}
-          <div className="mb-3 flex gap-1 rounded-md bg-muted p-1 text-sm">
+          <div className="mb-3 flex gap-1 rounded-[11px] bg-base p-1 text-sm">
             <button
               type="button"
               onClick={() => setTab("intervals")}
               className={cn(
-                "flex-1 rounded px-2 py-1 transition-colors",
-                tab === "intervals" ? "bg-background font-medium shadow-sm" : "text-muted-foreground"
+                "min-h-10 flex-1 rounded-[9px] px-2 py-1 transition-colors",
+                tab === "intervals" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
               )}
             >
               Da Intervals
@@ -162,8 +162,8 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
               type="button"
               onClick={() => setTab("upload")}
               className={cn(
-                "flex-1 rounded px-2 py-1 transition-colors",
-                tab === "upload" ? "bg-background font-medium shadow-sm" : "text-muted-foreground"
+                "min-h-10 flex-1 rounded-[9px] px-2 py-1 transition-colors",
+                tab === "upload" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
               )}
             >
               Carica GPX
@@ -173,14 +173,14 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
           {tab === "intervals" ? (
             <div className="flex flex-col gap-3">
               {loadingEvents ? (
-                <p className="text-sm text-muted-foreground">Carico le gare…</p>
+                <p className="text-sm text-muted">Carico le gare…</p>
               ) : events && events.length > 0 ? (
                 <>
                   <label className="text-sm font-medium">Gara da analizzare</label>
                   <select
                     value={selectedId}
                     onChange={(e) => setSelectedId(e.target.value)}
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    className="form-control"
                   >
                     {events.map((e) => (
                       <option key={String(e.id)} value={String(e.id)}>
@@ -199,7 +199,7 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted">
                   {eventsError ??
                     "Nessuna gara RACE_A con GPX trovata su Intervals. Usa il caricamento file."}
                 </p>
@@ -219,14 +219,14 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
                   acceptFile(e.dataTransfer.files?.[0]);
                 }}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-md border-2 border-dashed p-6 text-center text-sm transition-colors",
-                  dragOver ? "border-primary bg-primary/5" : "border-input"
+                  "flex flex-col items-center gap-2 rounded-[11px] border border-dashed p-6 text-center text-sm transition-colors",
+                  dragOver ? "border-amber bg-amber-dim" : "border-border"
                 )}
               >
-                <p className="text-muted-foreground">
+                <p className="text-muted">
                   Trascina qui un file <span className="font-medium">.gpx</span>
                 </p>
-                <label className="cursor-pointer text-xs text-primary underline">
+                <label className="cursor-pointer text-xs text-amber underline">
                   oppure scegli un file
                   <input
                     type="file"

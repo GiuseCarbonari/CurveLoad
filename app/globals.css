@@ -51,17 +51,17 @@
     --primary: var(--amber);
     --primary-foreground: var(--amber-on);
     --secondary: var(--text-secondary);
-    --secondary-foreground: var(--amber-on);
+    --secondary-foreground: var(--text-primary);
     --muted: var(--text-muted);
     --muted-foreground: var(--text-muted);
     --accent: var(--bg-surface-2);
     --accent-foreground: var(--text-primary);
     --destructive: var(--ready-skip);
-    --destructive-foreground: var(--amber-on);
+    --destructive-foreground: var(--text-primary);
     --border: var(--bg-border);
     --input: var(--bg-border);
     --ring: var(--amber);
-    --radius: 0.5rem;
+    --radius: 9px;
   }
 }
 
@@ -69,7 +69,50 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-base text-foreground;
+    @apply bg-base text-sm leading-[1.6] text-foreground;
+  }
+  ::selection {
+    background: var(--amber-dim);
+    color: var(--text-primary);
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--amber) 65%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .app-container {
+    @apply mx-auto w-full max-w-[960px] px-4;
+  }
+  .page-stack {
+    @apply flex flex-col gap-6 py-8;
+  }
+  .panel {
+    @apply rounded-2xl border border-border bg-surface p-6;
+  }
+  .panel-title {
+    @apply text-[11px] font-medium uppercase tracking-[0.06em] text-muted;
+  }
+  .metric-card {
+    @apply rounded-[11px] bg-surface-2 p-[0.9rem];
+  }
+  .form-control {
+    @apply min-h-10 rounded-[9px] border-[0.5px] border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

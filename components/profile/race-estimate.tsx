@@ -23,11 +23,11 @@ function formatHm(seconds: number): string {
 /** Categorie "principali" mostrate negli split (esclude Cat 4 e null). */
 const MAIN_CATEGORIES = new Set(["HC", "Cat 1", "Cat 2", "Cat 3"]);
 
-/** Colore della velocità per segmento: rosso <6, arancio <12, verde ≥12 km/h. */
+/** Scala neutra/ambra: la semaforica resta riservata agli stati funzionali. */
 function speedColor(kmh: number): string {
-  if (kmh < 6) return "#dc2626"; // red-600
-  if (kmh < 12) return "#ea580c"; // orange-600
-  return "#16a34a"; // green-600
+  if (kmh < 6) return "var(--text-muted)";
+  if (kmh < 12) return "var(--text-secondary)";
+  return "var(--amber)";
 }
 
 const COURSE_LABEL: Record<CourseCharacter, string> = {
@@ -50,7 +50,7 @@ function PacingChart({
   const segments = estimate.scenarios.realistic.segments;
   if (poly.length < 2 || segments.length < 2) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         Grafico pacing non disponibile (traccia troppo corta).
       </p>
     );
@@ -82,7 +82,7 @@ function PacingChart({
       aria-label="Profilo altimetrico con la velocità stimata per lo scenario realistico"
     >
       {/* Altimetria di sfondo (contesto) */}
-      <path d={eleArea} fill="hsl(var(--primary))" opacity={0.08} />
+      <path d={eleArea} fill="var(--amber)" opacity={0.08} />
       {/* Velocità realistica: segmenti colorati per fascia di velocità */}
       {segments.slice(0, -1).map((s, i) => {
         const next = segments[i + 1];
@@ -120,24 +120,22 @@ export function RaceEstimateView({
   );
 
   return (
-    <section className="rounded-lg border p-6">
-      <h2 className="text-lg font-semibold">Stima tempi gara</h2>
+    <section className="panel">
+      <h2 className="panel-title">Stima tempi gara</h2>
 
       {/* a) Tre scenari */}
-      <p className="mt-3 text-sm text-muted-foreground">
-        👉 Punta all'«Obiettivo realistico». Gli altri due sono il caso migliore
+      <p className="mt-3 text-sm text-secondary">
+        Punta all'«Obiettivo realistico». Gli altri due sono il caso migliore
         possibile e quello con imprevisti.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <ScenarioCard
-          icon="🟢"
           label="Giornata perfetta"
           subtitle="se tutto va al meglio e non cali mai"
           time={formatHm(optimistic.total_seconds)}
           tooltip="giornata_perfetta"
         />
         <ScenarioCard
-          icon="🎯"
           label="Obiettivo realistico"
           subtitle="il tempo su cui puntare, gestendo bene"
           time={formatHm(realistic.total_seconds)}
@@ -145,21 +143,20 @@ export function RaceEstimateView({
           highlight
         />
         <ScenarioCard
-          icon="🔴"
           label="Con imprevisti"
           subtitle="se la giornata è dura o ci sono soste"
           time={formatHm(conservative.total_seconds)}
           tooltip="con_imprevisti"
         />
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className="mt-3 text-xs text-muted">
         Questi tempi si basano sulla tua forma attuale. Migliorando
         l'allenamento, l'obiettivo realistico scende. Si aggiorna
         automaticamente quando il tuo profilo cresce.
       </p>
 
       {estimate.pacing.warning && (
-        <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="mt-3 rounded-[11px] border border-border bg-amber-dim p-3 text-sm text-secondary">
           {estimate.pacing.warning}
         </p>
       )}
@@ -167,13 +164,13 @@ export function RaceEstimateView({
       {/* b) Split sulle salite principali */}
       {mainSplits.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+          <h3 className="panel-title">
             Arrivo in cima alle salite principali (realistico)
           </h3>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                <tr className="border-b text-left text-[11px] uppercase tracking-[0.06em] text-muted">
                   <th className="py-2">Salita</th>
                   <th className="py-2 text-right">Km cima</th>
                   <th className="py-2 text-right">D+ · pend.</th>
@@ -201,20 +198,20 @@ export function RaceEstimateView({
 
       {/* c) Grafico pacing */}
       <div className="mt-6">
-        <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+        <h3 className="panel-title">
           Velocità stimata sul percorso
         </h3>
         <div className="mt-2">
           <PacingChart terrain={terrain} estimate={estimate} />
-          <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+          <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted">
             <span>
-              <span className="text-green-600">●</span> veloce
+              <span className="text-amber">●</span> veloce
             </span>
             <span>
-              <span className="text-orange-600">●</span> lento
+              <span className="text-secondary">●</span> lento
             </span>
             <span>
-              <span className="text-red-600">●</span> &lt; 6 km/h (salita ripida)
+              <span className="text-muted">●</span> &lt; 6 km/h (salita ripida)
             </span>
           </p>
         </div>
@@ -222,20 +219,20 @@ export function RaceEstimateView({
 
       {/* d) Come gestire il pacing */}
       <div className="mt-6">
-        <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+        <h3 className="panel-title">
           Come gestire il pacing
         </h3>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {estimate.pacing.pacing_advice.map((a, i) => (
-            <div key={i} className="rounded-md border p-3 text-sm">
+            <div key={i} className="metric-card text-sm">
               <p className="font-medium capitalize">{a.label}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted">
                 km {a.from_km}–{a.to_km}
               </p>
               <p className="mt-2">
                 {a.target_wkg != null ? `~${a.target_wkg} W/kg` : "—"}
                 {a.avg_speed_kmh != null && (
-                  <span className="text-muted-foreground">
+                  <span className="text-secondary">
                     {" "}
                     (~{a.avg_speed_kmh} km/h)
                   </span>
@@ -244,7 +241,7 @@ export function RaceEstimateView({
             </div>
           ))}
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-secondary">
           Indicazione di lettura: nei primi km tieni il W/kg target del tratto
           «inizio»; sulle salite la velocità scende — è normale, stai spendendo
           al ritmo giusto e mantieni riserve per il finale.
@@ -252,7 +249,7 @@ export function RaceEstimateView({
       </div>
 
       {/* e) Note metodologiche */}
-      <p className="mt-5 flex flex-wrap items-center gap-1 text-xs italic text-muted-foreground">
+      <p className="mt-5 flex flex-wrap items-center gap-1 text-xs italic text-muted">
         Stima basata sulla tua CP attuale ({Math.round(estimate.cp_w)} W
         <InfoTooltip term="cp_usato" />) e su un modello fisico per MTB
         (rolling resistance
@@ -268,14 +265,12 @@ export function RaceEstimateView({
 }
 
 function ScenarioCard({
-  icon,
   label,
   subtitle,
   time,
   tooltip,
   highlight,
 }: {
-  icon: string;
   label: string;
   subtitle: string;
   time: string;
@@ -284,16 +279,18 @@ function ScenarioCard({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 text-center ${
-        highlight ? "border-primary/40 bg-primary/5" : ""
+      className={`rounded-[11px] border border-border bg-surface-2 p-4 text-center ${
+        highlight ? "border-amber" : ""
       }`}
     >
       <p className="flex items-center justify-center gap-1 text-sm font-medium">
-        {icon} {label}
+        {label}
         {tooltip && <InfoTooltip term={tooltip} />}
       </p>
-      <p className="my-1 text-2xl font-bold">{time}</p>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
+      <p className={`my-1 text-2xl font-semibold ${highlight ? "text-amber" : ""}`}>
+        {time}
+      </p>
+      <p className="text-xs text-muted">{subtitle}</p>
     </div>
   );
 }

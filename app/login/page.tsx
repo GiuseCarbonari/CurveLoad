@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
  * Pagina /login — autenticazione Supabase (email + password).
  *
  * Solo la UI è cambiata rispetto alla versione MVP: tab Accedi/Registrati,
- * card centrata, stile Coach IA chiaro. La logica di auth resta invariata —
+ * card centrata, stile Coach IA dark premium. La logica di auth resta invariata —
  * signInWithPassword / signUp, poi redirect a /dashboard dove il middleware
  * decide se mandare l'utente a /connect (Intervals non ancora collegato).
  */
@@ -95,40 +95,45 @@ export default function LoginPage() {
 
   const isSignin = mode === "signin";
 
+  const tabClass = (active: boolean) =>
+    `rounded-[9px] py-1.5 text-[13px] font-medium transition-colors ${
+      active
+        ? "bg-surface-2 text-foreground"
+        : "text-muted hover:text-foreground"
+    }`;
+
+  const inputClass =
+    "h-10 rounded-[9px] border-[0.5px] border-border bg-base px-3 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:ring-2 focus:ring-amber";
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#F7F7F6] px-4 py-10">
-      <div className="w-full max-w-[420px] rounded-lg border-[0.5px] border-border bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-10">
+      <div className="w-full max-w-[420px] rounded-2xl border-[0.5px] border-border bg-surface p-8">
         {/* 1. Logo / nome */}
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-[9px] bg-amber text-[18px] font-bold text-amber-on">
+            C
+          </span>
           <p className="text-[20px] font-medium tracking-tight text-foreground">
             Coach IA
           </p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted">
             Il tuo coach endurance basato su dati reali
           </p>
         </div>
 
         {/* 2. Tab toggle Accedi / Registrati */}
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-md bg-[#F7F7F6] p-1">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-[11px] bg-base p-1">
           <button
             type="button"
             onClick={() => switchMode("signin")}
-            className={`rounded-[6px] py-1.5 text-[13px] font-medium transition-colors ${
-              isSignin
-                ? "border-[0.5px] border-border bg-secondary text-foreground"
-                : "border-[0.5px] border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={tabClass(isSignin)}
           >
             Accedi
           </button>
           <button
             type="button"
             onClick={() => switchMode("signup")}
-            className={`rounded-[6px] py-1.5 text-[13px] font-medium transition-colors ${
-              !isSignin
-                ? "border-[0.5px] border-border bg-secondary text-foreground"
-                : "border-[0.5px] border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={tabClass(!isSignin)}
           >
             Registrati
           </button>
@@ -143,10 +148,7 @@ export default function LoginPage() {
           }}
         >
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="email"
-              className="text-[13px] text-muted-foreground"
-            >
+            <label htmlFor="email" className="text-[13px] text-muted">
               Email
             </label>
             <input
@@ -156,15 +158,12 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-10 rounded-md border-[0.5px] border-border bg-white px-3 text-sm outline-none transition-colors focus:border-foreground/30 focus:ring-1 focus:ring-foreground/10"
+              className={inputClass}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="password"
-              className="text-[13px] text-muted-foreground"
-            >
+            <label htmlFor="password" className="text-[13px] text-muted">
               Password
             </label>
             <input
@@ -175,29 +174,29 @@ export default function LoginPage() {
               autoComplete={isSignin ? "current-password" : "new-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-10 rounded-md border-[0.5px] border-border bg-white px-3 text-sm outline-none transition-colors focus:border-foreground/30 focus:ring-1 focus:ring-foreground/10"
+              className={inputClass}
             />
           </div>
 
-          {/* 6. Box errore */}
+          {/* 6. Box errore — stato semaforico rosso */}
           {error && (
-            <div className="rounded-md border-[0.5px] border-red-300 bg-red-50 px-3 py-2 text-[13px] text-red-700">
+            <div className="rounded-[9px] border-[0.5px] border-ready-skip-border bg-surface px-3 py-2 text-[13px] text-ready-skip">
               {error}
             </div>
           )}
 
           {/* Avviso non-bloccante (es. conferma email su registrazione) */}
           {notice && (
-            <div className="rounded-md border-[0.5px] border-border bg-[#F7F7F6] px-3 py-2 text-[13px] text-muted-foreground">
+            <div className="rounded-[9px] border-[0.5px] border-border bg-surface-2 px-3 py-2 text-[13px] text-secondary">
               {notice}
             </div>
           )}
 
-          {/* 4. Bottone primario "success" */}
+          {/* 4. Bottone primario ambra */}
           <button
             type="submit"
             disabled={loading}
-            className="h-10 w-full rounded-md border-[0.5px] border-green-600 bg-white text-sm font-medium text-green-700 transition-opacity hover:opacity-85 disabled:pointer-events-none disabled:opacity-50"
+            className="h-10 w-full rounded-[9px] bg-amber text-sm font-medium text-amber-on transition-colors hover:bg-amber-hover disabled:pointer-events-none disabled:opacity-50"
           >
             {loading
               ? "Attendere…"
@@ -213,7 +212,7 @@ export default function LoginPage() {
             <div className="text-center">
               <button
                 type="button"
-                className="text-[12px] text-muted-foreground/70 hover:text-muted-foreground"
+                className="text-[12px] text-muted hover:text-secondary"
               >
                 Password dimenticata?
               </button>

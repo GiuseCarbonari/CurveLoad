@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AppShell } from "@/components/layout/app-shell";
 import { GenerateWeekButton } from "@/components/plan/generate-week-button";
 import { PushButton } from "@/components/plan/push-button";
 import { RedistributeSection } from "@/components/plan/redistribute-section";
@@ -21,11 +22,11 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const PHASE_BADGE: Record<Phase, { label: string; classes: string }> = {
-  base: { label: "Base", classes: "border-sky-500 bg-sky-50 text-sky-900" },
-  build: { label: "Build", classes: "border-orange-500 bg-orange-50 text-orange-900" },
-  peak: { label: "Peak", classes: "border-red-500 bg-red-50 text-red-900" },
-  taper: { label: "Taper", classes: "border-purple-500 bg-purple-50 text-purple-900" },
-  recovery: { label: "Recovery", classes: "border-green-600 bg-green-50 text-green-900" },
+  base: { label: "Base", classes: "border-border bg-surface-2 text-secondary" },
+  build: { label: "Build", classes: "border-border bg-amber-dim text-amber" },
+  peak: { label: "Peak", classes: "border-border bg-amber-dim text-amber" },
+  taper: { label: "Taper", classes: "border-border bg-surface-2 text-secondary" },
+  recovery: { label: "Recovery", classes: "border-border bg-surface-2 text-secondary" },
 };
 
 const JS_DAY_TO_KEY: DayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -96,36 +97,31 @@ export default async function PlanPage() {
   const daysToEvent = meta?.days_to_event ?? null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-10">
+    <AppShell>
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <a href="/dashboard" className="text-sm text-muted-foreground underline">
-              ← dashboard
-            </a>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {plan ? `Settimana del ${formatDate(plan.week_start)}` : "Piano settimanale"}
           </h1>
           {plan && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-secondary">
               <span
                 className={`rounded-full border px-3 py-0.5 font-medium ${PHASE_BADGE[plan.phase].classes}`}
               >
                 Fase: {PHASE_BADGE[plan.phase].label}
               </span>
               {daysToEvent != null && (
-                <span className="text-muted-foreground">· {daysToEvent} giorni all'evento</span>
+                <span>· {daysToEvent} giorni all&apos;evento</span>
               )}
               {meta?.hard_sessions != null && (
-                <span className="text-muted-foreground">
+                <span>
                   · {meta.hard_sessions} sedute dure
-                  {meta.hard_spacing_ok === false ? " ⚠ spacing" : ""}
+                  {meta.hard_spacing_ok === false ? " · spacing da rivedere" : ""}
                 </span>
               )}
               {meta?.volume_hours_estimate != null && (
-                <span className="text-muted-foreground">· ~{meta.volume_hours_estimate}h stimate</span>
+                <span>· ~{meta.volume_hours_estimate}h stimate</span>
               )}
             </div>
           )}
@@ -142,7 +138,7 @@ export default async function PlanPage() {
       </div>
 
       {!plan && (
-        <div className="rounded-lg border p-6 text-center text-muted-foreground">
+        <div className="panel text-center text-muted">
           Nessun piano ancora. Premi «Genera settimana» per costruire la tua
           settimana di allenamento dai tuoi dati (fase, readiness, dossier,
           analisi evento).
@@ -152,7 +148,7 @@ export default async function PlanPage() {
       {plan && (
         <>
           {meta?.phase_reason && (
-            <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+            <p className="rounded-[11px] border border-border bg-surface p-4 text-sm text-secondary">
               {meta.phase_reason}
             </p>
           )}
@@ -167,21 +163,21 @@ export default async function PlanPage() {
           />
 
           {plan.narrative && (
-            <section className="rounded-lg border bg-card p-5">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <section className="panel">
+              <h2 className="panel-title mb-2">
                 Il commento del coach
               </h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed">{plan.narrative}</p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">{plan.narrative}</p>
             </section>
           )}
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted">
             Piano deterministico (Section 11 B). I target sono zone, non watt
             fissi. Le sedute riferiscono la Workout Library; l'eventuale commento
             è solo una spiegazione, non cambia le scelte.
           </p>
         </>
       )}
-    </main>
+    </AppShell>
   );
 }
