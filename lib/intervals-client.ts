@@ -1,0 +1,238 @@
+/**
+ * Client API Intervals.icu — Milestone 2.
+ *
+ * Chiama SOLO gli endpoint verificati in docs/INTERVALS_API_NOTES.md
+ * (regola ferma n. 6). Athlete ID "0" = atleta del token corrente.
+ *
+ * Regola sicurezza: in caso di errore si propaga solo lo status HTTP e il
+ * path — mai il token, mai gli header, mai il body della risposta.
+ */
+
+import type { PowerCurvesResponse } from "@/lib/profile/power-profile";
+import type { IntervalsWorkoutEvent } from "@/lib/planner/intervals-workout-format";
+import type { ActivityStream } from "@/lib/terrain/velocity-signature";
+
+const INTERVALS_API_BASE = "https://intervals.icu/api/v1";
+
+// Campi richiesti agli endpoint, come da verifica congiunta.
+// Nota: si chiedono sia `hrv` che `hrv_rmssd` perché il nome del campo HRV
+// varia; la normalizzazione fa il fallback (vedi normalizeWellnessDay).
+const WELLNESS_FIELDS =
+  "id,ctl,atl,rampRate,weight,restingHR,hrv,hrv_rmssd,sleepSecs,soreness,fatigue,mood";
+const ACTIVITY_FIELDS =
+  "id,name,type,start_date_local,moving_time,distance,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type";
+
+/** Errore API con il solo status: il chiamante decide come gestirlo (401 → riconnessione). */
+export class IntervalsApiError extends Error {
+  constructor(
+    public readonly status: number,
+    path: string
+  ) {
+    super(`Intervals API ${path}: HTTP ${status}`);
+    this.name = "IntervalsApiError";
+  }
+}
+
+/** Profilo atleta: tipato loose perché usiamo solo un sottoinsieme di campi. */
+export type IntervalsProfileRaw = Record<string, unknown>;
+
+/** Riga wellness come restituita dall'API (id = data YYYY-MM-DD). */
+export interface IntervalsWellnessRaw {
+  id: string;
+  ctl?: number | null;
+  atl?: number | null;
+  rampRate?: number | null;
+  weight?: number | null;
+  restingHR?: number | null;
+  hrv?: number | null;
+  hrv_rmssd?: number | null;
+  sleepSecs?: number | null;
+  soreness?: number | null;
+  fatigue?: number | null;
+  mood?: number | null;
+}
+
+/** Riga wellness normalizzata: HRV unificato, null espliciti. */
+export interface WellnessDay {
+  date: string;
+  ctl: number | null;
+  atl: number | null;
+  rampRate: number | null;
+  weight: number | null;
+  restingHR: number | null;
+  hrv: number | null;
+  sleepSecs: number | null;
+  soreness: number | null;
+  fatigue: number | null;
+  mood: number | null;
+}
+
+/** Allegato di un evento: il GPX si scarica dal campo `url` (GCS pubblico). */
+export interface IntervalsEventAttachment {
+  id: string;
+  filename: string | null;
+  mimetype: string | null;
+  url: string | null;
+}
+
+/** Evento calendario (gara). Tipato loose: usiamo solo un sottoinsieme. */
+export interface IntervalsEvent {
+  id: number | string;
+  name: string | null;
+  start_date_local: string | null;
+  category: string | null;
+  type: string | null;
+  distance: number | null;
+  attachments?: IntervalsEventAttachment[] | null;
+}
+
+export interface IntervalsActivity {
+  id: string | number;
+  name: string | null;
+  type: string | null;
+  sport_type?: string | null;
+  start_date_local: string;
+  moving_time: number | null;
+  distance: number | null;
+  icu_training_load: number | null;
+  icu_weighted_avg_watts: number | null;
+  average_heartrate: number | null;
+  perceived_exertion: number | null;
+}
+
+/**
+ * Unifica il campo HRV (`hrv` oppure `hrv_rmssd`) e rende espliciti i null.
+ * Perché: il resto del sistema deve poter contare su UNA forma sola del
+ * dato; le ambiguità della fonte si risolvono qui, al confine.
+ */
+export function normalizeWellnessDay(raw: IntervalsWellnessRaw): WellnessDay {
+  return {
+    date: raw.id,
+    ctl: raw.ctl ?? null,
+    atl: raw.atl ?? null,
+    rampRate: raw.rampRate ?? null,
+    weight: raw.weight ?? null,
+    restingHR: raw.restingHR ?? null,
+    hrv: raw.hrv ?? raw.hrv_rmssd ?? null,
+    sleepSecs: raw.sleepSecs ?? null,
+    soreness: raw.soreness ?? null,
+    fatigue: raw.fatigue ?? null,
+    mood: raw.mood ?? null,
+  };
+}
+
+export class IntervalsFetcher {
+  // Il token resta privato all'istanza e non viene mai serializzato/loggato.
+  constructor(private readonly accessToken: string) {}
+
+  private async get<T>(
+    path: string,
+    params?: Record<string, string>
+  ): Promise<T> {
+    const url = new URL(INTERVALS_API_BASE + path);
+    for (const [key, value] of Object.entries(params ?? {})) {
+      url.searchParams.set(key, value);
+    }
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+      // I dati di allenamento cambiano di continuo: mai servire cache.
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      // Solo status e path nell'errore: niente token, niente body.
+      throw new IntervalsApiError(response.status, path);
+    }
+    return response.json() as Promise<T>;
+  }
+
+  private async post(path: string, body: unknown): Promise<void> {
+    const response = await fetch(INTERVALS_API_BASE + path, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new IntervalsApiError(response.status, path);
+    }
+  }
+
+  /** GET /api/v1/athlete/0 — profilo (weight, resting_hr, zones, ftp). */
+  getProfile(): Promise<IntervalsProfileRaw> {
+    return this.get<IntervalsProfileRaw>("/athlete/0");
+  }
+
+  /** GET /api/v1/athlete/0/wellness — ctl/atl pre-calcolati da Intervals. */
+  async getWellness(oldest: string, newest: string): Promise<WellnessDay[]> {
+    const rows = await this.get<IntervalsWellnessRaw[]>(
+      "/athlete/0/wellness",
+      { oldest, newest, fields: WELLNESS_FIELDS }
+    );
+    return rows.map(normalizeWellnessDay);
+  }
+
+  /** GET /api/v1/athlete/0/activities — attività dal giorno `oldest`. */
+  getActivities(oldest: string): Promise<IntervalsActivity[]> {
+    return this.get<IntervalsActivity[]>("/athlete/0/activities", {
+      oldest,
+      fields: ACTIVITY_FIELDS,
+    });
+  }
+
+  /**
+   * GET /api/v1/activity/{id}/streams.json — stream a 1 Hz dell'attività.
+   * PATH SINGOLARE senza athlete/0 (il plurale /athlete/0/activities/{id}/streams
+   * dà 404 — verificato M7, docs/INTERVALS_API_NOTES.md). Risposta = array di
+   * { type, name, data[], data2? }. Per la calibrazione si chiedono solo
+   * altitude+velocity_smooth (no watts: non universale).
+   */
+  getActivityStreams(
+    id: string,
+    types = "altitude,velocity_smooth"
+  ): Promise<ActivityStream[]> {
+    return this.get<ActivityStream[]>(`/activity/${id}/streams.json`, { types });
+  }
+
+  /**
+   * GET /api/v1/athlete/0/events — eventi calendario (gare). Verificato M5:
+   * risposta = array; gli allegati GPX stanno in `attachments[].url` (GCS
+   * pubblico, scaricabile senza auth). Vedi docs/INTERVALS_API_NOTES.md.
+   */
+  getEvents(
+    oldest: string,
+    newest: string,
+    category?: string
+  ): Promise<IntervalsEvent[]> {
+    const params: Record<string, string> = { oldest, newest };
+    if (category) params.category = category;
+    return this.get<IntervalsEvent[]>("/athlete/0/events", params);
+  }
+
+  /**
+   * POST bulk workout calendario, verificato nel Milestone 8.
+   * `upsert=true` usa external_id e prevale su upsertOnUid, che resta come
+   * identificatore compatibile. updatePlanApplied aggiorna il piano applicato.
+   */
+  pushWorkoutEvents(
+    events: IntervalsWorkoutEvent[]
+  ): Promise<void> {
+    return this.post(
+      "/athlete/0/events/bulk?upsert=true&upsertOnUid=true&updatePlanApplied=true",
+      events
+    );
+  }
+
+  /**
+   * GET /api/v1/athlete/0/power-curves.json — MMP e powerModels (CP/W′)
+   * per finestra (42d/90d/1y). Struttura verificata in Milestone 3 passo 1.
+   */
+  getPowerCurves(): Promise<PowerCurvesResponse> {
+    return this.get<PowerCurvesResponse>("/athlete/0/power-curves.json", {
+      type: "Ride",
+      curves: "42d,90d,1y,all",
+    });
+  }
+}

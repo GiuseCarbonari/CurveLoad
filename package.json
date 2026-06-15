@@ -1,0 +1,40 @@
+{
+  "name": "coach-ia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Coach IA Endurance — implementazione web multi-utente del protocollo Section 11, con Intervals.icu come fonte dati.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "node --import tsx --test tests/readiness.test.ts tests/power-profile.test.ts tests/race-estimator.test.ts tests/planner.test.ts tests/velocity-signature.test.ts tests/intervals-workout-format.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "fast-xml-parser": "^5.8.0",
+    "lucide-react": "^0.453.0",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.11",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.15",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.22.4",
+    "typescript": "^5.6.3"
+  }
+}
