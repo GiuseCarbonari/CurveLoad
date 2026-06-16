@@ -3,38 +3,43 @@
 @tailwind utilities;
 
 /*
-  Coach IA — Design System (Aurora / Sport Performance).
-  Fonte unica: docs/COACH_IA_DESIGN_SYSTEM.md.
+  Coach IA — Design System "Limina" (handoff design/project/design_handoff_limina_app).
+  Fonte unica: design/project/design_handoff_limina_app/README.md (sezione Design Tokens).
 */
 @layer base {
   :root {
     /* --- Sfondi --- */
-    --bg-base: #0a0c10;
-    --bg-surface: rgba(255, 255, 255, 0.055);
-    --bg-surface-2: rgba(255, 255, 255, 0.09);
-    --bg-border: rgba(255, 255, 255, 0.1);
+    --bg-base: #06080d;
+    --bg-surface: #11151e;
+    --bg-surface-2: #161b26;
+    --bg-border: rgba(255, 255, 255, 0.08);
 
     /* --- Testo --- */
-    --text-primary: #ffffff;
-    --text-secondary: #aeb9c2;
-    --text-muted: #7e8b96;
-    --text-faint: #5e6b76;
+    --text-primary: #eaeef6;
+    --text-secondary: #aab3c2;
+    --text-muted: #707a8a;
+    --text-faint: #5c6470;
 
-    /* --- Identita Aurora --- */
-    --brand: #a78bfa;
-    --brand-hover: #c4b5fd;
-    --brand-dim: rgba(167, 139, 250, 0.16);
-    --brand-on: #0b0e13;
+    /* --- Identita Limina (accento blu) --- */
+    --brand: #5b8def;
+    --brand-hover: #7da4f2;
+    --brand-dim: rgba(91, 141, 239, 0.16);
+    --brand-on: #ffffff;
 
-    /* --- Accenti telemetria --- */
-    --amber: #a78bfa;
-    --amber-hover: #c4b5fd;
-    --amber-dim: rgba(167, 139, 250, 0.16);
-    --amber-on: #0b0e13;
-    --accent-blue: #4fa3e0;
-    --accent-blue-dim: rgba(79, 163, 224, 0.16);
-    --accent-gold: #ffc24d;
-    --accent-gold-dim: rgba(255, 194, 77, 0.16);
+    /* --- Accento secondario (teal) --- */
+    --accent-2: #7fc8c0;
+    --accent-2-hover: #9fded6;
+    --accent-2-dim: rgba(127, 200, 192, 0.16);
+
+    /* --- Alias legacy mantenuti per i componenti non ancora ridisegnati --- */
+    --amber: var(--brand);
+    --amber-hover: var(--brand-hover);
+    --amber-dim: var(--brand-dim);
+    --amber-on: var(--brand-on);
+    --accent-blue: var(--brand);
+    --accent-blue-dim: var(--brand-dim);
+    --accent-gold: #e0a83e;
+    --accent-gold-dim: rgba(224, 168, 62, 0.16);
     --zone-z1: #8c99a5;
     --zone-z2: #4fa3e0;
     --zone-z3: #36c77e;
@@ -42,12 +47,12 @@
     --zone-z5: #f2553d;
 
     /* --- Semaforico readiness (solo per stato) --- */
-    --ready-go: #5be89a;
-    --ready-go-border: rgba(91, 232, 154, 0.32);
-    --ready-modify: #ffc24d;
-    --ready-modify-border: rgba(255, 194, 77, 0.34);
-    --ready-skip: #ff6855;
-    --ready-skip-border: rgba(255, 104, 85, 0.34);
+    --ready-go: #46b88a;
+    --ready-go-border: rgba(70, 184, 138, 0.32);
+    --ready-modify: #e0a83e;
+    --ready-modify-border: rgba(224, 168, 62, 0.34);
+    --ready-skip: #d9665b;
+    --ready-skip-border: rgba(217, 102, 91, 0.34);
 
     /*
       Mapping dei token semantici shadcn/ui sulla palette del design system.
@@ -56,7 +61,7 @@
     --foreground: var(--text-primary);
     --card: var(--bg-surface);
     --card-foreground: var(--text-primary);
-    --popover: #121a22;
+    --popover: var(--bg-surface-2);
     --popover-foreground: var(--text-primary);
     --primary: var(--brand);
     --primary-foreground: var(--brand-on);
@@ -71,7 +76,7 @@
     --border: var(--bg-border);
     --input: var(--bg-border);
     --ring: var(--brand);
-    --radius: 9px;
+    --radius: 14px;
   }
 }
 
@@ -84,11 +89,12 @@
   }
   body {
     @apply bg-base text-sm leading-[1.6] text-foreground;
-    font-family: "Archivo", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background-image:
-      radial-gradient(80% 60% at 80% 0%, rgba(22, 27, 34, 0.95) 0%, rgba(10, 12, 16, 0) 60%),
-      radial-gradient(44% 38% at 8% 42%, rgba(30, 111, 176, 0.18) 0%, rgba(10, 12, 16, 0) 72%),
-      radial-gradient(38% 34% at 88% 82%, rgba(167, 139, 250, 0.16) 0%, rgba(10, 12, 16, 0) 72%);
+    font-family: "Syne", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-image: radial-gradient(
+      900px 600px at 50% -5%,
+      rgba(91, 141, 239, 0.1),
+      transparent 60%
+    );
     background-attachment: fixed;
   }
   ::selection {
@@ -125,14 +131,60 @@
     box-shadow: 0 18px 60px -36px rgba(0, 0, 0, 0.85);
   }
   .font-data {
-    font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-family: "Newsreader", Georgia, serif;
+    font-variant-numeric: tabular-nums;
   }
   .font-display {
-    font-family: "Archivo", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Newsreader", Georgia, serif;
   }
   .font-body {
-    font-family: "Archivo", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Syne", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.skel {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.1) 37%,
+    rgba(255, 255, 255, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @keyframes aurora-spin {

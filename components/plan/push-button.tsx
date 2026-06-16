@@ -106,47 +106,45 @@ export function PushButton({
 
   if (!canWriteCalendar) {
     return (
-      <div className="flex max-w-sm flex-col items-end gap-2 text-right">
-        <p className="text-xs text-amber">
-          Devi riautorizzare l&apos;app per abilitare la scrittura sul calendario
-        </p>
-        <Button asChild variant="outline" size="sm">
-          <a href="/api/auth/intervals/login">Riconnetti Intervals.icu</a>
-        </Button>
+      <div className="flex flex-1 flex-col gap-1">
+        <a
+          href="/api/auth/intervals/login"
+          className="flex w-full flex-col items-center justify-center rounded-[14px] border border-accent2/30 bg-accent2-dim px-3 py-2 text-center text-[11px] font-semibold text-accent2"
+        >
+          ↗ Invia a Intervals
+          <span className="text-[9.5px] font-normal text-accent2/70">riconnetti prima</span>
+        </a>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex max-w-sm flex-col items-end gap-1">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="flex flex-1 flex-col gap-1">
+        <button
+          type="button"
           onClick={() => void openPreview()}
           disabled={loadingPreview || committing}
+          className="flex w-full flex-col items-center justify-center rounded-[14px] border border-accent2/55 bg-gradient-to-r from-accent2/[0.22] to-accent2/[0.08] px-3 py-2.5 text-[13.5px] font-bold text-[#bfeee8] transition-opacity disabled:opacity-70"
         >
-          {loadingPreview
-            ? "Preparo l'anteprima..."
-            : pushedAt
-              ? "Aggiorna su Intervals.icu"
-              : "Invia a Intervals.icu"}
-        </Button>
+          {loadingPreview ? "…" : "↗ Invia a Intervals"}
+          <span className="text-[9.5px] font-normal text-accent2/80">richiede conferma</span>
+        </button>
         {success && (
-          <span className="text-right text-xs text-ready-go">
-            ✓ Settimana inviata a Intervals.icu ·{" "}
+          <span className="text-center text-[11px] text-ready-go">
+            ✓ Inviata ·{" "}
             <a
               className="underline"
               href="https://intervals.icu/calendar"
               target="_blank"
               rel="noreferrer"
             >
-              Apri il calendario
+              Apri calendario
             </a>
           </span>
         )}
         {!modalOpen && error && (
-          <span className="text-right text-xs text-destructive">{error}</span>
+          <span className="text-center text-[11px] text-ready-skip">{error}</span>
         )}
       </div>
 

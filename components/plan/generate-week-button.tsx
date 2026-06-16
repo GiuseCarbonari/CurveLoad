@@ -2,14 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RefreshCw } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-/**
- * Bottone "Genera settimana" (M6): POST /api/planner/generate, poi refresh dei
- * Server Component per mostrare il nuovo piano. La generazione è deterministica
- * lato server; qui si gestiscono solo stato di caricamento ed errori.
- */
 export function GenerateWeekButton({ hasPlan }: { hasPlan: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -39,12 +35,26 @@ export function GenerateWeekButton({ hasPlan }: { hasPlan: boolean }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <Button onClick={() => void handleGenerate()} disabled={loading}>
-        {loading ? "Genero la settimana…" : hasPlan ? "Rigenera settimana" : "Genera settimana"}
-      </Button>
-      {error && <span className="text-xs text-destructive">{error}</span>}
-      {warning && <span className="text-xs text-amber-600">{warning}</span>}
+    <div className="flex flex-1 flex-col gap-1">
+      <button
+        type="button"
+        onClick={() => void handleGenerate()}
+        disabled={loading}
+        className={cn(
+          "flex w-full items-center justify-center gap-2 rounded-[14px] border px-3 py-3 text-[13.5px] font-bold transition-colors",
+          "border-brand/50 bg-brand-dim text-brand-hover",
+          loading && "cursor-default opacity-70"
+        )}
+      >
+        <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
+        {loading ? "Genero…" : hasPlan ? "Rigenera" : "Genera settimana"}
+      </button>
+      {error && (
+        <span className="text-[11px] text-ready-skip">{error}</span>
+      )}
+      {warning && (
+        <span className="text-[11px] text-ready-modify">{warning}</span>
+      )}
     </div>
   );
 }

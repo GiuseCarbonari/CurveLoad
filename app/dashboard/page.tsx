@@ -1,241 +1,43 @@
 import { redirect } from "next/navigation";
 
 import { ConditionTrendChart } from "@/components/dashboard/condition-trend-chart";
-import { ReadinessHero } from "@/components/dashboard/readiness-hero";
-import { HrvMetric } from "@/components/dashboard/hrv-metric";
-import { SyncButton } from "@/components/dashboard/sync-button";
-import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { MetricStat } from "@/components/ui/metric-stat";
-import { MetricStrip } from "@/components/ui/metric-strip";
-import { SectionHeader } from "@/components/ui/section-header";
-import {
-  latestHrvMeasurement,
-  normalizeHrvProtocol,
-} from "@/lib/hrv";
-import type { WellnessDay } from "@/lib/intervals-client";
+import { MetricsGrid } from "@/components/dashboard/metrics-grid";
+import { ReadinessRing } from "@/components/dashboard/readiness-ring";
+import { RefreshControl } from "@/components/dashboard/refresh-control";
+import { TodaySessionCard } from "@/components/dashboard/today-session-card";
+import { LiminaShell } from "@/components/layout/limina-shell";
+import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
+import type { BuiltSession } from "@/lib/planner/build-week";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
-/**
- * Dashboard readiness (Milestone 2, punto 4).
- *
- * Server Component: legge l'ULTIMO snapshot da athlete_metrics_snapshots
- * (via RLS, solo righe proprie) e mostra readiness, wellness e attività.
- * Ogni numero mostrato proviene dal mirror salvato — la pagina non chiama
- * mai Intervals direttamente e non calcola nulla: presenta.
- */
+const JS_DAY_TO_KEY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+const DAY_IT = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+const MONTH_IT = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
 
-/** "—" con tooltip quando il dato manca (possibile fonte Strava, PRD §11). */
-function MetricValue({
-  value,
-  decimals = 1,
-  showSign = false,
-}: {
-  value: number | null | undefined;
-  decimals?: number;
-  showSign?: boolean;
-}) {
-  if (value == null) {
-    return (
-      <span
-        title="Dato non disponibile (possibile fonte Strava)"
-        className="cursor-help text-muted"
-      >
-        —
-      </span>
-    );
-  }
-  const formatted = value.toFixed(decimals);
-  return <span>{showSign && value > 0 ? `+${formatted}` : formatted}</span>;
+function formatTodayIT(): string {
+  const d = new Date();
+  return `${DAY_IT[d.getDay()]} ${d.getDate()} ${MONTH_IT[d.getMonth()]}`;
 }
 
-const METRIC_COPY = {
-  ctl: {
-    label: "Forma fisica",
-    acronym: "CTL",
-    tooltip:
-      "Quanto allenamento hai accumulato nelle ultime settimane. Più è alta, più sei 'in forma' di fondo. Cresce lentamente con l'allenamento costante.",
-  },
-  atl: {
-    label: "Fatica recente",
-    acronym: "ATL",
-    tooltip:
-      "Quanto sei stanco per gli allenamenti degli ultimi giorni. Sale dopo sessioni dure, scende col riposo.",
-  },
-  tsb: {
-    label: "Freschezza",
-    acronym: "TSB",
-    tooltip:
-      "Quanto sei riposato rispetto al tuo carico. Positivo = fresco e scattante. Leggermente negativo è NORMALE quando ti alleni sodo: significa che stai costruendo forma.",
-  },
-  acwr: {
-    label: "Equilibrio del carico",
-    acronym: "ACWR",
-    tooltip:
-      "Confronta quanto ti alleni adesso rispetto alle ultime settimane. Tra 0.8 e 1.3 è la zona sicura. Troppo alto = rischio di strafare.",
-  },
-  rhr: {
-    label: "Battito a riposo",
-    acronym: "RHR",
-    tooltip:
-      "I tuoi battiti al minuto da fermo. Se sale di colpo, spesso è segno di stanchezza o di un malanno in arrivo. Si misura al mattino.",
-  },
-} as const;
-
-function ctlState(current: number | null, previous: number | null) {
-  if (current == null || previous == null) return null;
-  if (current > previous) {
-    return { status: "in crescita", direction: "up" as const };
-  }
-  if (current < previous) {
-    return { status: "in calo", direction: "down" as const };
-  }
-  return { status: "stabile" };
+function fmt(v: number | null, dec = 0, sign = false): string {
+  if (v == null) return "—";
+  const s = v.toFixed(dec);
+  return sign && v > 0 ? `+${s}` : s;
 }
 
-function atlState(atl: number | null, ctl: number | null) {
-  if (atl == null || ctl == null || ctl === 0) return null;
-  const ratio = atl / ctl;
-  if (ratio < 0.8) return "bassa";
-  if (ratio <= 1.3) return "moderata";
-  return "alta";
+function fmtDelta(v: number | null): string | null {
+  if (v == null) return null;
+  const r = Math.round(v);
+  if (Math.abs(r) < 0.5) return "stabile";
+  return r > 0 ? `↑ ${r}` : `↓ ${Math.abs(r)}`;
 }
 
-function tsbState(value: number | null) {
-  if (value == null) return null;
-  if (value > 5) {
-    return { status: "fresco", tone: "positive" as const };
-  }
-  if (value >= -10) {
-    return { status: "equilibrato", tone: "neutral" as const };
-  }
-  if (value >= -30) {
-    return {
-      status: "sotto carico (normale in costruzione)",
-      tone: "neutral" as const,
-    };
-  }
-  return { status: "molto affaticato", tone: "warning" as const };
-}
-
-function acwrState(value: number | null) {
-  if (value == null) return null;
-  if (value < 0.8) {
-    return { status: "carico leggero", tone: "neutral" as const };
-  }
-  if (value <= 1.3) {
-    return { status: "equilibrato", tone: "positive" as const };
-  }
-  if (value <= 1.5) {
-    return { status: "carico alto", tone: "warning" as const };
-  }
-  return { status: "rischio sovraccarico", tone: "danger" as const };
-}
-
-const DATA_QUALITY_COPY = {
-  4: {
-    label: "Dati completi",
-    className: "text-ready-go",
-  },
-  2: {
-    label: "Dati base — il coach è più prudente",
-    className: "text-ready-modify",
-  },
-  1: {
-    label: "Dati minimi — collega più sensori per consigli precisi",
-    className: "text-ready-modify",
-  },
-} as const;
-
-interface WellnessMeasurement {
-  value: number;
-  date: string;
-}
-
-function dataQualityCopy({
-  level,
-  currentDate,
-  hrv,
-  rhr,
-}: {
-  level: number | null | undefined;
-  currentDate: string | null;
-  hrv: WellnessMeasurement | null;
-  rhr: WellnessMeasurement | null;
-}) {
-  if (level === 1 || level === 2 || level === 4) {
-    return DATA_QUALITY_COPY[level];
-  }
-
-  if (level !== 3) return null;
-
-  const hrvToday = hrv != null && hrv.date === currentDate;
-  const rhrToday = rhr != null && rhr.date === currentDate;
-
-  if (!hrvToday && !rhrToday) {
-    return {
-      label: "Dati buoni — recupero mattutino non aggiornato oggi (HRV/battito)",
-      className: "text-secondary",
-    };
-  }
-  if (!hrvToday) {
-    return {
-      label: "Dati buoni — HRV non aggiornata oggi",
-      className: "text-secondary",
-    };
-  }
-  if (!rhrToday) {
-    return {
-      label: "Dati buoni — battito a riposo non aggiornato oggi",
-      className: "text-secondary",
-    };
-  }
-
-  return {
-    label: "Dati buoni — storico o RPE non ancora completi per qualità massima",
-    className: "text-secondary",
-  };
-}
-
-function latestMeasurement(
-  days: WellnessDay[],
-  field: "restingHR"
-): WellnessMeasurement | null {
-  for (let index = days.length - 1; index >= 0; index -= 1) {
-    const day = days[index];
-    const value = day[field];
-    if (value != null) return { value, date: day.date };
-  }
-  return null;
-}
-
-function formatWellnessDate(date: string): string {
-  return new Date(`${date}T12:00:00`).toLocaleDateString("it-IT", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-function measurementRecency(date: string, currentDate: string | null): string {
-  return date === currentDate ? "oggi" : `ultima misura ${formatWellnessDate(date)}`;
-}
-
-/** Secondi → "1h 23m" per la lista attività. */
-function formatDuration(seconds: number | null): string {
-  if (seconds == null) return "—";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.round((seconds % 3600) / 60);
-  return h > 0 ? `${h}h ${m.toString().padStart(2, "0")}m` : `${m}m`;
-}
-
-/** Data attività compatta, localizzata in italiano. */
-function formatActivityDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("it-IT", {
-    day: "numeric",
-    month: "short",
-  });
+function deltaClass(v: number | null, invert = false): string {
+  if (v == null || Math.abs(v) < 0.5) return "text-secondary";
+  const pos = invert ? v < 0 : v > 0;
+  return pos ? "text-ready-go" : "text-ready-modify";
 }
 
 export default async function DashboardPage() {
@@ -243,11 +45,14 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login"); // difesa in profondità oltre il middleware
-  }
+  if (!user) redirect("/login");
 
-  const [{ data: userRow }, { data: preferenceRow }] = await Promise.all([
+  const [
+    { data: userRow },
+    { data: preferenceRow },
+    { data: snapshot },
+    { data: planRow },
+  ] = await Promise.all([
     supabase
       .from("users")
       .select("intervals_athlete_name")
@@ -258,24 +63,30 @@ export default async function DashboardPage() {
       .select("nome, preferences")
       .eq("user_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("athlete_metrics_snapshots")
+      .select("mirror_data, data_quality_level, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("weekly_plans")
+      .select("sessions")
+      .eq("user_id", user.id)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
-  const dossierName =
-    typeof preferenceRow?.nome === "string" && preferenceRow.nome.trim().length > 0
-      ? preferenceRow.nome.trim()
-      : null;
-  const name = dossierName ?? userRow?.intervals_athlete_name ?? "atleta";
 
-  // Ultimo snapshot: la dashboard mostra sempre il sync più recente.
-  const { data: snapshot } = await supabase
-    .from("athlete_metrics_snapshots")
-    .select("id, snapshot_date, mirror_data, data_quality_level, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const name =
+    (typeof preferenceRow?.nome === "string" && preferenceRow.nome.trim()) ||
+    userRow?.intervals_athlete_name ||
+    "atleta";
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
+
   const preferences =
     preferenceRow?.preferences != null &&
     typeof preferenceRow.preferences === "object" &&
@@ -286,7 +97,6 @@ export default async function DashboardPage() {
     preferences.hrv_protocol ?? mirror?.hrv_protocol
   );
 
-  // Wellness di oggi = ultima riga della finestra 30g (ordinata per data).
   const wellnessToday = mirror?.wellness_30d.at(-1) ?? null;
   const wellnessPrevious = mirror?.wellness_30d.at(-2) ?? null;
   const latestRmssd = mirror
@@ -295,77 +105,151 @@ export default async function DashboardPage() {
   const latestSdnn = mirror
     ? latestHrvMeasurement(mirror.wellness_30d, "sdnn")
     : null;
-  const latestRhr = mirror
-    ? latestMeasurement(mirror.wellness_30d, "restingHR")
-    : null;
+
+  let latestRhr: { value: number; date: string } | null = null;
+  if (mirror) {
+    for (let i = mirror.wellness_30d.length - 1; i >= 0; i--) {
+      const day = mirror.wellness_30d[i];
+      if (day.restingHR != null) {
+        latestRhr = { value: day.restingHR, date: day.date };
+        break;
+      }
+    }
+  }
+
   const ctl = wellnessToday?.ctl ?? null;
   const atl = wellnessToday?.atl ?? null;
-  // TSB/ACWR: stesse semplici operazioni della readiness (lettura, non derivazione).
   const tsb = ctl != null && atl != null ? ctl - atl : null;
-  const previousCtl = wellnessPrevious?.ctl ?? null;
-  const previousAtl = wellnessPrevious?.atl ?? null;
+  const acwr = ctl != null && atl != null && ctl !== 0 ? atl / ctl : null;
+  const ctlDelta = ctl != null && wellnessPrevious?.ctl != null ? ctl - wellnessPrevious.ctl : null;
+  const atlDelta = atl != null && wellnessPrevious?.atl != null ? atl - wellnessPrevious.atl : null;
   const previousTsb =
-    previousCtl != null && previousAtl != null ? previousCtl - previousAtl : null;
-  const ctlDelta = ctl != null && previousCtl != null ? ctl - previousCtl : null;
-  const atlDelta = atl != null && previousAtl != null ? atl - previousAtl : null;
+    wellnessPrevious?.ctl != null && wellnessPrevious?.atl != null
+      ? wellnessPrevious.ctl - wellnessPrevious.atl
+      : null;
   const tsbDelta = tsb != null && previousTsb != null ? tsb - previousTsb : null;
-  const acwr = ctl != null && atl != null ? (ctl === 0 ? 0 : atl / ctl) : null;
-  const ctlStatus = ctlState(ctl, wellnessPrevious?.ctl ?? null);
-  const atlStatus = atlState(atl, ctl);
-  const tsbStatus = tsbState(tsb);
-  const acwrStatus = acwrState(acwr);
-  const selectedHrv = hrvProtocol === "sdnn" ? latestSdnn : latestRmssd;
-  const dataQuality = dataQualityCopy({
-    level: snapshot?.data_quality_level,
-    currentDate: wellnessToday?.date ?? null,
-    hrv: selectedHrv,
-    rhr: latestRhr,
-  });
 
-  const recentActivities = mirror
-    ? [...mirror.activities_90d]
-        .sort((a, b) => b.start_date_local.localeCompare(a.start_date_local))
-        .slice(0, 3)
-    : [];
+  const lastFetchedAt = mirror?.fetched_at ?? null;
+  const initialStatus: "fresh" | "stale" =
+    !lastFetchedAt ||
+    Date.now() - new Date(lastFetchedAt).getTime() > STALE_THRESHOLD_MS
+      ? "stale"
+      : "fresh";
+
+  // Today's session from latest plan
+  const todayKey = JS_DAY_TO_KEY[new Date().getDay()];
+  const sessions = (planRow?.sessions ?? []) as BuiltSession[];
+  const todaySession = sessions.find((s) => s.day === todayKey) ?? null;
+
+  const metrics = [
+    {
+      key: "ctl",
+      label: "Forma fisica",
+      acronym: "CTL",
+      value: fmt(ctl),
+      delta: fmtDelta(ctlDelta),
+      deltaClassName: deltaClass(ctlDelta),
+      tooltip:
+        "Carico di allenamento a lungo termine: quanto sei allenato. Sale lentamente con la costanza. (Chronic Training Load)",
+    },
+    {
+      key: "atl",
+      label: "Fatica recente",
+      acronym: "ATL",
+      value: fmt(atl),
+      delta: fmtDelta(atlDelta),
+      deltaClassName: deltaClass(atlDelta, true),
+      tooltip:
+        "Fatica accumulata negli ultimi ~7 giorni. Cresce in fretta dopo i blocchi intensi. (Acute Training Load)",
+    },
+    {
+      key: "tsb",
+      label: "Freschezza",
+      acronym: "TSB",
+      value: fmt(tsb, 0, true),
+      delta: fmtDelta(tsbDelta),
+      deltaClassName: deltaClass(tsbDelta),
+      tooltip:
+        "Forma meno fatica. Positivo = fresco e pronto. Tra −10 e −30 è normale, non un allarme. (Training Stress Balance)",
+    },
+    {
+      key: "acwr",
+      label: "Equilibrio carico",
+      acronym: "ACWR",
+      value: fmt(acwr, 2),
+      delta: acwr != null ? (acwr <= 1.3 ? "ok" : "alto") : null,
+      deltaClassName:
+        acwr != null && acwr <= 1.3 ? "text-ready-go" : "text-ready-modify",
+      tooltip:
+        "Rapporto carico acuto / cronico. Sotto 1.3 è sostenibile; oltre 1.5 = rischio sovraccarico. (Acute:Chronic Workload Ratio)",
+    },
+    {
+      key: "rhr",
+      label: "FC a riposo",
+      acronym: "RHR",
+      value: latestRhr ? fmt(latestRhr.value, 0) : "—",
+      delta: latestRhr ? undefined : "collega un sensore",
+      deltaClassName: "text-muted",
+      tooltip:
+        "Battiti a riposo. In rialzo di ≥5 bpm può segnalare stress o affaticamento. (Resting Heart Rate)",
+    },
+  ];
 
   return (
-    <AppShell className="gap-10 py-10 sm:py-12">
-      <PageHeader
-        eyebrow="Il tuo stato"
-        title={`Ciao ${name}`}
-        description={
-          <>
-            {dataQuality && (
-              <>
-                <span className={`font-medium ${dataQuality.className}`}>
-                  {dataQuality.label}
-                </span>
-                .{" "}
-              </>
-            )}
-            <a
-              href="/settings/profile"
-              className="text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
-            >
-              Modifica profilo
-            </a>
-          </>
-        }
-        action={<SyncButton lastFetchedAt={mirror?.fetched_at ?? null} />}
-      />
-
-      {mirror?.data_quality_warning === "strava_source_detected" && (
-        <div className="rounded-2xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-5 py-4 text-sm text-secondary">
-          I tuoi dati arrivano via Strava: alcuni valori potrebbero essere
-          incompleti. Collega il device direttamente a Intervals.icu per dati
-          completi.
+    <LiminaShell>
+      {/* Header: wordmark + date + name */}
+      <div className="flex items-start justify-between pt-2">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 58 58" fill="none" aria-hidden>
+              <circle
+                cx="29" cy="29" r="22"
+                stroke="url(#dashLmk)"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray="104 34"
+                transform="rotate(-90 29 29)"
+              />
+              <defs>
+                <linearGradient id="dashLmk" x1="0" y1="0" x2="58" y2="58">
+                  <stop offset="0%" stopColor="#5b8def" />
+                  <stop offset="100%" stopColor="#7fc8c0" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className="font-serif text-[13px] tracking-[0.05em] text-secondary">
+              Limina
+            </span>
+          </div>
+          <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-muted">
+            {formatTodayIT()}
+          </div>
+          <h1 className="mt-1.5 font-serif text-[30px] font-medium leading-none text-foreground">
+            Ciao, {name}
+          </h1>
         </div>
-      )}
+        {/* Quick profile link */}
+        <a
+          href="/settings/profile"
+          className="mt-1 text-[11px] text-faint hover:text-secondary transition-colors"
+        >
+          profilo ↗
+        </a>
+      </div>
 
+      {/* Refresh action — sempre in cima */}
+      <div className="mt-4">
+        <RefreshControl
+          lastFetchedAt={lastFetchedAt}
+          initialStatus={initialStatus}
+        />
+      </div>
+
+      {/* No data state */}
       {!mirror && (
-        <div className="rounded-2xl border border-border bg-surface px-6 py-10 text-center">
-          <p className="text-base font-medium text-foreground">
-            Il tuo spazio dati è ancora vuoto.
+        <div className="mt-6 rounded-[18px] border border-border bg-surface px-6 py-10 text-center">
+          <p className="font-serif text-lg text-foreground">
+            Nessun dato ancora.
           </p>
           <p className="mt-2 text-sm text-muted">
             Premi «Aggiorna dati» per avviare la prima sincronizzazione.
@@ -373,141 +257,63 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {readiness && (
-        <ReadinessHero
-          readiness={readiness}
-          conditionMetrics={{
-            ctl,
-            atl,
-            tsb,
-            ctlDelta,
-            atlDelta,
-            tsbDelta,
-          }}
+      {/* Strava warning */}
+      {mirror?.data_quality_warning === "strava_source_detected" && (
+        <div className="rounded-xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-sm text-secondary">
+          I dati arrivano via Strava: alcuni valori potrebbero essere incompleti.
+        </div>
+      )}
+
+      {/* Readiness ring */}
+      {readiness && <ReadinessRing readiness={readiness} />}
+
+      {/* Seduta di oggi */}
+      {todaySession && (
+        <TodaySessionCard
+          title={todaySession.title}
+          isHard={todaySession.is_hard}
+          rest={todaySession.rest}
+          durationMin={todaySession.estimated_duration_min ?? null}
+          zone={todaySession.power_target_zone ?? null}
+          structure={todaySession.interval_structure ?? null}
         />
       )}
 
+      {/* Metrics grid */}
       {mirror && (
-        <section className="space-y-4">
-          <SectionHeader
-            label="Carico e recupero"
-            title="Metriche di oggi"
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-muted">
+              Le tue metriche
+            </span>
+            <span className="text-[11px] text-faint">tocca ⓘ per spiegazione</span>
+          </div>
+          <MetricsGrid
+            metrics={metrics}
+            hrv={{
+              initialProtocol: hrvProtocol,
+              currentDate: wellnessToday?.date ?? null,
+              rmssd: latestRmssd,
+              sdnn: latestSdnn,
+            }}
           />
-          <MetricStrip>
-            <MetricStat
-              {...METRIC_COPY.ctl}
-              value={<MetricValue value={ctl} />}
-              status={ctlStatus?.status}
-              direction={ctlStatus?.direction}
-              tone="neutral"
-            />
-            <MetricStat
-              {...METRIC_COPY.atl}
-              value={<MetricValue value={atl} />}
-              status={atlStatus ?? undefined}
-              tone="neutral"
-            />
-            <MetricStat
-              {...METRIC_COPY.tsb}
-              value={<MetricValue value={tsb} showSign />}
-              status={tsbStatus?.status}
-              tone={tsbStatus?.tone}
-            />
-            <MetricStat
-              {...METRIC_COPY.acwr}
-              value={<MetricValue value={acwr} decimals={2} />}
-              status={acwrStatus?.status}
-              tone={acwrStatus?.tone}
-            />
-            <HrvMetric
-              initialProtocol={hrvProtocol}
-              currentDate={wellnessToday?.date ?? null}
-              rmssd={latestRmssd}
-              sdnn={latestSdnn}
-            />
-            <MetricStat
-              {...METRIC_COPY.rhr}
-              value={<MetricValue value={latestRhr?.value} decimals={0} />}
-              status={
-                latestRhr == null
-                  ? "Collega una misurazione mattutina per attivarla"
-                  : measurementRecency(
-                      latestRhr.date,
-                      wellnessToday?.date ?? null
-                    )
-              }
-            />
-          </MetricStrip>
         </section>
       )}
 
+      {/* Trend chart */}
       {mirror && <ConditionTrendChart days={mirror.wellness_30d} />}
 
-      {mirror && (
-        <section className="space-y-4">
-          <SectionHeader
-            label="Storico recente"
-            title="Ultime attività"
-            description="Le tre sessioni più recenti sincronizzate da Intervals.icu."
-          />
-          {recentActivities.length === 0 ? (
-            <p className="border-t border-border py-6 text-sm text-muted">
-              Nessuna attività negli ultimi 90 giorni.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border border-y border-border">
-              {recentActivities.map((activity) => (
-                <li
-                  key={activity.id}
-                  className="flex min-h-[72px] items-center justify-between gap-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-medium text-foreground">
-                      {activity.name ?? "Attività"}
-                    </p>
-                    <p className="mt-1 text-xs text-muted">
-                      {activity.sport_type ?? activity.type ?? "—"} ·{" "}
-                      {formatActivityDate(activity.start_date_local)}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-[15px] font-medium text-foreground">
-                      {formatDuration(activity.moving_time)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted">
-                      TSS{" "}
-                      {activity.icu_training_load != null
-                        ? Math.round(activity.icu_training_load)
-                        : "—"}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      <footer className="border-t border-border pt-5">
-        <p className="text-xs leading-5 text-faint">
-          Questa operazione rimuove solo l&apos;accesso ai dati Intervals.icu.
-          Il tuo account Coach IA resta attivo.
-        </p>
-        <form
-          action="/api/auth/intervals/disconnect"
-          method="post"
-          className="mt-1"
-        >
-          <Button
+      {/* Footer: disconnect */}
+      <div className="border-t border-border pt-4">
+        <form action="/api/auth/intervals/disconnect" method="post">
+          <button
             type="submit"
-            variant="ghost"
-            size="sm"
-            className="px-0 text-xs text-muted hover:bg-transparent hover:text-ready-skip"
+            className="text-xs text-faint transition-colors hover:text-ready-skip"
           >
             Scollega Intervals.icu
-          </Button>
+          </button>
         </form>
-      </footer>
-    </AppShell>
+      </div>
+    </LiminaShell>
   );
 }

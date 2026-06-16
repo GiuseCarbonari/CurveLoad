@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;family=Syne:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #090c13; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+</style>
+</helmet>
+
+<div style="background: radial-gradient(1200px 700px at 18% -10%, rgba(91,141,239,0.16), transparent 60%), radial-gradient(900px 600px at 100% 0%, rgba(127,200,192,0.10), transparent 55%), #090c13; min-height: 100vh; color: #eaeef6; font-family: 'Syne', sans-serif; padding: 0 0 96px;">
+
+  <div style="max-width: 1120px; margin: 0 auto; padding: 0 24px;">
+
+    <!-- ===== HEADER ===== -->
+    <header style="padding: 64px 0 40px;">
+      <div style="display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px; border: 1px solid rgba(255,255,255,0.10); border-radius: 999px; background: rgba(255,255,255,0.03); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #aab3c2;">
+        <span style="width: 7px; height: 7px; border-radius: 999px; background: linear-gradient(135deg,#5b8def,#7fc8c0); box-shadow: 0 0 12px rgba(91,141,239,0.8);"></span>
+        Direzione visiva · v1
+      </div>
+      <h1 style="font-family: 'Newsreader', serif; font-weight: 500; font-size: 60px; line-height: 1.02; letter-spacing: -0.02em; margin: 26px 0 0; max-width: 16ch;">Coach IA Endurance</h1>
+      <p style="font-size: 17px; line-height: 1.6; color: #aab3c2; max-width: 56ch; margin: 18px 0 0; font-weight: 400;">Un coach personale serio, non un gadget da palestra. Dark mode clinica, numeri in serif, schede vetro/gradient e indicatori circolari alla Oura. Ogni dato dichiara <em style="color:#eaeef6; font-style: normal;">quando</em> è stato aggiornato; l'azione di refresh è sempre la prima cosa che l'occhio incontra.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px;">
+        <span style="font-size: 12.5px; color: #c7cedb; padding: 8px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.025);">Base dark navy</span>
+        <span style="font-size: 12.5px; color: #c7cedb; padding: 8px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.025);">Serif + Sans</span>
+        <span style="font-size: 12.5px; color: #c7cedb; padding: 8px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.025);">Glass / gradient</span>
+        <span style="font-size: 12.5px; color: #c7cedb; padding: 8px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.025);">Anelli &amp; semaforo</span>
+        <span style="font-size: 12.5px; color: #c7cedb; padding: 8px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.025);">Refresh manuale</span>
+      </div>
+    </header>
+
+    <!-- ===== PRINCIPI ===== -->
+    <section style="margin-top: 28px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 16px;">
+
+        <div style="position: relative; border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(160deg, rgba(34,43,61,0.55), rgba(14,18,27,0.45)); overflow: hidden;">
+          <div style="font-family:'Newsreader',serif; font-size: 30px; color:#5b8def; line-height:1; opacity:.9;">01</div>
+          <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size: 17px; margin: 14px 0 8px;">Un numero domina</h3>
+          <p style="font-size: 14px; line-height: 1.55; color:#aab3c2; margin:0;">Una sola metrica hero per schermata, in serif e di grande scala. Tutto il resto è di supporto.</p>
+        </div>
+
+        <div style="position: relative; border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(160deg, rgba(34,43,61,0.55), rgba(14,18,27,0.45)); overflow: hidden;">
+          <div style="font-family:'Newsreader',serif; font-size: 30px; color:#7fc8c0; line-height:1; opacity:.9;">02</div>
+          <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size: 17px; margin: 14px 0 8px;">Refresh sempre in alto</h3>
+          <p style="font-size: 14px; line-height: 1.55; color:#aab3c2; margin:0;">Nessuna sync automatica: il bottone di aggiornamento e il timestamp sono il primo elemento, mai in un menu.</p>
+        </div>
+
+        <div style="position: relative; border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(160deg, rgba(34,43,61,0.55), rgba(14,18,27,0.45)); overflow: hidden;">
+          <div style="font-family:'Newsreader',serif; font-size: 30px; color:#e0a83e; line-height:1; opacity:.9;">03</div>
+          <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size: 17px; margin: 14px 0 8px;">Posizioni memorizzabili</h3>
+          <p style="font-size: 14px; line-height: 1.55; color:#aab3c2; margin:0;">Stesso tipo di informazione, stesso angolo, su tutte le schermate. Lo sguardo impara dove guardare.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== PALETTE ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Palette</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Base dark · accenti · semaforo</span>
+      </div>
+
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; margin: 0 0 12px;">Superfici</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom: 28px;">
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#090c13;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">bg</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#090C13</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#11151e;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">surface</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#11151E</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#161b26;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">surface-2</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#161B26</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:linear-gradient(160deg, rgba(34,43,61,0.9), rgba(14,18,27,0.9));"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">card-grad</div><div style="font-size:12px; color:#707a8a;">glass fill</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#11151e; position:relative;"><div style="position:absolute; inset:0; border-top:1px solid rgba(255,255,255,0.10);"></div></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">hairline</div><div style="font-size:12px; color:#707a8a;">white / 8%</div></div>
+        </div>
+      </div>
+
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; margin: 0 0 12px;">Accenti</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom: 28px;">
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#5b8def;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">accent / blue</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#5B8DEF</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#7fc8c0;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">accent / teal</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#7FC8C0</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:linear-gradient(120deg,#5b8def,#7fc8c0);"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">ring grad</div><div style="font-size:12px; color:#707a8a;">blue → teal</div></div>
+        </div>
+      </div>
+
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; margin: 0 0 12px;">Semaforo readiness &amp; stato</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom: 28px;">
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#46b88a;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">go</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#46B88A</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#e0a83e;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">modify / stale</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#E0A83E</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#d9665b;"></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">skip / error</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#D9665B</div></div>
+        </div>
+      </div>
+
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; margin: 0 0 12px;">Testo</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px;">
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#11151e; display:flex; align-items:center; justify-content:center;"><span style="color:#eaeef6; font-family:'Newsreader',serif; font-size:30px;">Aa</span></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">text</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#EAEEF6</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#11151e; display:flex; align-items:center; justify-content:center;"><span style="color:#aab3c2; font-family:'Newsreader',serif; font-size:30px;">Aa</span></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">text-2</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#AAB3C2</div></div>
+        </div>
+        <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+          <div style="height:78px; background:#11151e; display:flex; align-items:center; justify-content:center;"><span style="color:#707a8a; font-family:'Newsreader',serif; font-size:30px;">Aa</span></div>
+          <div style="padding:11px 13px; background:rgba(255,255,255,0.02);"><div style="font-size:13px; font-weight:600;">text-3 / muted</div><div style="font-size:12px; color:#707a8a; font-variant-numeric:tabular-nums;">#707A8A</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TIPOGRAFIA ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Tipografia</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Newsreader serif · Syne sans</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap:16px;">
+
+        <div style="border-radius:20px; padding:28px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <span style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0;">Newsreader</span>
+            <span style="font-size:12px; color:#707a8a;">Titoli &amp; numeri hero</span>
+          </div>
+          <div style="font-family:'Newsreader',serif; font-weight:500; font-size:84px; line-height:0.9; letter-spacing:-0.02em; font-variant-numeric:tabular-nums;">87<span style="font-size:30px; color:#707a8a; font-weight:400;"> CTL</span></div>
+          <div style="font-family:'Newsreader',serif; font-weight:400; font-size:34px; margin-top:18px; letter-spacing:-0.01em;">Forma fisica oggi</div>
+          <div style="border-top:1px solid rgba(255,255,255,0.07); margin-top:22px; padding-top:18px; display:flex; flex-direction:column; gap:9px; font-family:'Newsreader',serif;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:42px; line-height:1;">Display 42</span><span style="font-size:12px; color:#707a8a; font-family:'Syne',sans-serif;">500</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:30px; line-height:1;">Heading 30</span><span style="font-size:12px; color:#707a8a; font-family:'Syne',sans-serif;">500</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:22px; line-height:1;">Subhead 22</span><span style="font-size:12px; color:#707a8a; font-family:'Syne',sans-serif;">400</span></div>
+          </div>
+        </div>
+
+        <div style="border-radius:20px; padding:28px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <span style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#5b8def;">Syne</span>
+            <span style="font-size:12px; color:#707a8a;">Corpo · etichette · UI</span>
+          </div>
+          <div style="font-family: 'Syne',sans-serif; font-weight: 700; font-size: 22px; line-height: 1.2; letter-spacing: -0.01em">Aggiorna dati · Genera settimana</div>
+          <p style="font-family:'Syne',sans-serif; font-weight:400; font-size:15px; line-height:1.65; color:#aab3c2; margin:16px 0 0;">Il testo di supporto resta in sans-serif per leggibilità: spiegazioni del coach, note di seduta, descrizioni delle metriche. Pensato per sessioni brevi da mobile.</p>
+          <div style="border-top:1px solid rgba(255,255,255,0.07); margin-top:22px; padding-top:18px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:17px; font-weight:600;">Body L · 17 / 600</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:15px; font-weight:400; color:#c7cedb;">Body · 15 / 400</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:13px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#aab3c2;">Label · 13 / 600 · 0.12em</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#707a8a;">Caption · 12 / 400</span></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== ANELLI & SEMAFORO ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Anelli &amp; indicatori</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Readiness ring · semaforo qualitativo</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:16px;">
+
+        <!-- Readiness ring -->
+        <div style="border-radius:20px; padding:28px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); display:flex; flex-direction:column; align-items:center; text-align:center;">
+          <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; align-self:flex-start;">Readiness ring</div>
+          <div style="position:relative; width:200px; height:200px; margin:18px 0 6px;">
+            <svg viewBox="0 0 200 200" width="200" height="200" style="transform:rotate(-90deg);">
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#5b8def"></stop>
+                  <stop offset="100%" stop-color="#7fc8c0"></stop>
+                </linearGradient>
+              </defs>
+              <circle cx="100" cy="100" r="84" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="14"></circle>
+              <circle cx="100" cy="100" r="84" fill="none" stroke="url(#ringGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="412 528" style="filter: drop-shadow(0 0 8px rgba(91,141,239,0.45));"></circle>
+            </svg>
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+              <div style="font-family:'Newsreader',serif; font-weight:500; font-size:62px; line-height:0.9; font-variant-numeric:tabular-nums;">78</div>
+              <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-top:4px;">Pronto</div>
+            </div>
+          </div>
+          <p style="font-size:13px; color:#707a8a; margin:8px 0 0;">Anello quasi pieno, stroke gradient blue→teal, numero serif al centro.</p>
+        </div>
+
+        <!-- Semaforo -->
+        <div style="border-radius:20px; padding:28px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); display:flex; flex-direction:column;">
+          <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Semaforo qualitativo</div>
+          <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px; border:1px solid rgba(70,184,138,0.35); background:linear-gradient(120deg, rgba(70,184,138,0.16), rgba(70,184,138,0.04));">
+              <span style="width:14px; height:14px; border-radius:999px; background:#46b88a; box-shadow:0 0 14px rgba(70,184,138,0.8);"></span>
+              <div style="flex:1;"><div style="font-family:'Newsreader',serif; font-size:24px; line-height:1; color:#7fe0b3;">GO</div><div style="font-size:12.5px; color:#aab3c2; margin-top:3px;">Allenati come da piano</div></div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px; border:1px solid rgba(224,168,62,0.35); background:linear-gradient(120deg, rgba(224,168,62,0.16), rgba(224,168,62,0.04));">
+              <span style="width:14px; height:14px; border-radius:999px; background:#e0a83e; box-shadow:0 0 14px rgba(224,168,62,0.7);"></span>
+              <div style="flex:1;"><div style="font-family:'Newsreader',serif; font-size:24px; line-height:1; color:#f0c878;">MODIFY</div><div style="font-size:12.5px; color:#aab3c2; margin-top:3px;">Riduci volume o intensità</div></div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px; border:1px solid rgba(217,102,91,0.35); background:linear-gradient(120deg, rgba(217,102,91,0.16), rgba(217,102,91,0.04));">
+              <span style="width:14px; height:14px; border-radius:999px; background:#d9665b; box-shadow:0 0 14px rgba(217,102,91,0.6);"></span>
+              <div style="flex:1;"><div style="font-family:'Newsreader',serif; font-size:24px; line-height:1; color:#ed8a82;">SKIP</div><div style="font-size:12.5px; color:#aab3c2; margin-top:3px;">Recupero o riposo completo</div></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== STILE CARD / ANATOMIA ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Anatomia della card</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Posizioni costanti su ogni schermata</span>
+      </div>
+
+      <div style="border-radius:24px; padding:30px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+        <div style="position:relative; border-radius:18px; border:1px dashed rgba(127,200,192,0.4); background:rgba(127,200,192,0.04); padding:22px; min-height:170px;">
+          <!-- corner: badge stato -->
+          <div style="position:absolute; top:14px; left:14px; display:flex; align-items:center; gap:7px; padding:6px 11px; border-radius:999px; background:rgba(70,184,138,0.15); border:1px solid rgba(70,184,138,0.4); font-size:11.5px; color:#7fe0b3;"><span style="width:7px;height:7px;border-radius:999px;background:#46b88a;"></span> Calibrato</div>
+          <!-- corner: ultimo aggiornamento -->
+          <div style="position:absolute; top:14px; right:14px; font-size:11.5px; color:#707a8a;">Aggiornato · 14:32</div>
+          <!-- hero -->
+          <div style="margin-top:40px;"><div style="font-family:'Newsreader',serif; font-size:50px; line-height:1; font-variant-numeric:tabular-nums;">312<span style="font-size:18px; color:#707a8a;"> W</span></div><div style="font-size:13px; color:#aab3c2; margin-top:6px;">Critical Power · CP</div></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:14px; margin-top:22px;">
+          <div style="display:flex; gap:10px;"><span style="font-family:'Newsreader',serif; color:#7fc8c0; font-size:20px;">↖</span><div><div style="font-size:13px; font-weight:600;">Badge stato</div><div style="font-size:12.5px; color:#707a8a;">Sempre in alto a sinistra</div></div></div>
+          <div style="display:flex; gap:10px;"><span style="font-family:'Newsreader',serif; color:#7fc8c0; font-size:20px;">↗</span><div><div style="font-size:13px; font-weight:600;">Ultimo aggiornamento</div><div style="font-size:12.5px; color:#707a8a;">Sempre in alto a destra</div></div></div>
+          <div style="display:flex; gap:10px;"><span style="font-family:'Newsreader',serif; color:#7fc8c0; font-size:20px;">●</span><div><div style="font-size:13px; font-weight:600;">Numero hero serif</div><div style="font-size:12.5px; color:#707a8a;">Dominante + sottotitolo</div></div></div>
+          <div style="display:flex; gap:10px;"><span style="font-family:'Newsreader',serif; color:#7fc8c0; font-size:20px;">▢</span><div><div style="font-size:13px; font-weight:600;">Fill glass/gradient</div><div style="font-size:12.5px; color:#707a8a;">Bordo hairline + blur</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COMPONENTI CHIAVE ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Componenti chiave</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Riutilizzabili su tutte le schermate</span>
+      </div>
+
+      <!-- Metric card with tooltip -->
+      <div style="font-size:13px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#aab3c2; margin: 0 0 14px;">Card metrica + tooltip</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px; margin-bottom:40px;">
+
+        <div style="position:relative; border-radius:18px; padding:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div><div style="font-size:13px; color:#aab3c2;">Forma fisica</div><div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a; margin-top:2px;">CTL</div></div>
+            <span style="width:18px; height:18px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); color:#aab3c2; font-size:11px; display:flex; align-items:center; justify-content:center; font-family:'Newsreader',serif;">i</span>
+          </div>
+          <div style="font-family:'Newsreader',serif; font-size:44px; line-height:1; margin-top:14px; font-variant-numeric:tabular-nums;">87</div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12.5px; color:#7fe0b3;"><span>↑ 4</span><span style="color:#707a8a;">vs 7gg</span></div>
+        </div>
+
+        <div style="position:relative; border-radius:18px; padding:18px; border:1px solid rgba(127,200,192,0.35); background:linear-gradient(160deg, rgba(34,43,61,0.6), rgba(14,18,27,0.5));">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div><div style="font-size:13px; color:#aab3c2;">Freschezza</div><div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a; margin-top:2px;">TSB</div></div>
+            <span style="width:18px; height:18px; border-radius:999px; border:1px solid #7fc8c0; color:#7fc8c0; font-size:11px; display:flex; align-items:center; justify-content:center; font-family:'Newsreader',serif;">i</span>
+          </div>
+          <div style="font-family:'Newsreader',serif; font-size:44px; line-height:1; margin-top:14px; font-variant-numeric:tabular-nums;">+6</div>
+          <!-- tooltip aperto (demo) -->
+          <div style="margin-top:12px; padding:12px 13px; border-radius:12px; background:rgba(9,12,19,0.92); border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.5);">
+            <div style="font-size:12px; font-weight:600; color:#eaeef6;">Training Stress Balance</div>
+            <div style="font-size:12px; line-height:1.5; color:#aab3c2; margin-top:5px;">Differenza forma − fatica. Positivo = fresco e pronto; molto negativo = affaticato.</div>
+          </div>
+        </div>
+
+        <div style="position:relative; border-radius:18px; padding:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div><div style="font-size:13px; color:#aab3c2;">FC a riposo</div><div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a; margin-top:2px;">RHR</div></div>
+          </div>
+          <!-- empty state -->
+          <div style="margin-top:14px; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px; padding:14px 0;">
+            <div style="font-family:'Newsreader',serif; font-size:40px; line-height:1; color:#3a4252;">—</div>
+            <div style="display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border-radius:999px; background:rgba(91,141,239,0.12); border:1px solid rgba(91,141,239,0.3); font-size:11.5px; color:#9fbcf5;">Dato assente · fonte Strava</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Refresh button states -->
+      <div style="font-size:13px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#aab3c2; margin: 0 0 14px;">Bottone refresh + timestamp · stati</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:14px; margin-bottom:40px;">
+
+        <!-- fresh -->
+        <div style="border-radius:18px; padding:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+          <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a; margin-bottom:12px;">Fresco</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button style="border:none; cursor:pointer; display:inline-flex; align-items:center; gap:9px; padding:12px 18px; border-radius:13px; background:linear-gradient(120deg,#5b8def,#6f9ff0); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; box-shadow:0 8px 22px rgba(91,141,239,0.35);">
+              <span style="font-size:15px;">⟳</span> Aggiorna dati
+            </button>
+            <div style="line-height:1.3;"><div style="font-size:13px; color:#c7cedb;">Aggiornato</div><div style="font-size:12px; color:#707a8a;">3 min fa · 14:32</div></div>
+          </div>
+        </div>
+
+        <!-- stale -->
+        <div style="border-radius:18px; padding:18px; border:1px solid rgba(224,168,62,0.35); background:linear-gradient(160deg, rgba(50,42,24,0.5), rgba(20,17,12,0.45));">
+          <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#e0a83e; margin-bottom:12px;">Dati stantii (&gt;24h)</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button style="border:none; cursor:pointer; display:inline-flex; align-items:center; gap:9px; padding:12px 18px; border-radius:13px; background:linear-gradient(120deg,#e0a83e,#ecb957); color:#1a1206; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; box-shadow:0 8px 22px rgba(224,168,62,0.3);">
+              <span style="font-size:15px;">⟳</span> Aggiorna dati
+            </button>
+            <div style="line-height:1.3;"><div style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:#f0c878;"><span style="width:7px;height:7px;border-radius:999px;background:#e0a83e;"></span> Da aggiornare</div><div style="font-size:12px; color:#9a8a63;">1 g fa · ieri 09:10</div></div>
+          </div>
+        </div>
+
+        <!-- syncing -->
+        <div style="border-radius:18px; padding:18px; border:1px solid rgba(91,141,239,0.3); background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4));">
+          <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9fbcf5; margin-bottom:12px;">In sincronizzazione</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button style="border:none; cursor:default; display:inline-flex; align-items:center; gap:9px; padding:12px 18px; border-radius:13px; background:rgba(91,141,239,0.18); border:1px solid rgba(91,141,239,0.4); color:#9fbcf5; font-family:'Syne',sans-serif; font-weight:700; font-size:14px;">
+              <span style="display:inline-block; width:15px; height:15px; border:2px solid rgba(159,188,245,0.35); border-top-color:#9fbcf5; border-radius:999px; animation:spin 0.7s linear infinite;"></span> Sincronizzo…
+            </button>
+            <div style="line-height:1.3;"><div style="font-size:13px; color:#c7cedb;">Intervals.icu</div><div style="font-size:12px; color:#707a8a;">attività · 2 di 4</div></div>
+          </div>
+        </div>
+
+        <!-- error -->
+        <div style="border-radius:18px; padding:18px; border:1px solid rgba(217,102,91,0.4); background:linear-gradient(160deg, rgba(46,24,22,0.5), rgba(20,13,12,0.45));">
+          <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#ed8a82; margin-bottom:12px;">Errore · token scaduto</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button style="border:none; cursor:pointer; display:inline-flex; align-items:center; gap:9px; padding:12px 18px; border-radius:13px; background:linear-gradient(120deg,#d9665b,#e07c72); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; box-shadow:0 8px 22px rgba(217,102,91,0.3);">
+              ↻ Riconnetti
+            </button>
+            <div style="line-height:1.3;"><div style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:#ed8a82;">⚠ Sync fallita</div><div style="font-size:12px; color:#9a6f6a;">Riautorizza Intervals.icu</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Status badges -->
+      <div style="font-size:13px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#aab3c2; margin: 0 0 14px;">Badge di stato</div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:40px;">
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(70,184,138,0.15); border:1px solid rgba(70,184,138,0.4); font-size:12.5px; color:#7fe0b3;"><span style="width:7px;height:7px;border-radius:999px;background:#46b88a;"></span> GO</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(224,168,62,0.15); border:1px solid rgba(224,168,62,0.4); font-size:12.5px; color:#f0c878;"><span style="width:7px;height:7px;border-radius:999px;background:#e0a83e;"></span> MODIFY</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(217,102,91,0.15); border:1px solid rgba(217,102,91,0.4); font-size:12.5px; color:#ed8a82;"><span style="width:7px;height:7px;border-radius:999px;background:#d9665b;"></span> SKIP</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(70,184,138,0.12); border:1px solid rgba(70,184,138,0.35); font-size:12.5px; color:#7fe0b3;">● Calibrato sui tuoi dati</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(224,168,62,0.12); border:1px solid rgba(224,168,62,0.35); font-size:12.5px; color:#f0c878;">◐ Valori medi</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(217,102,91,0.10); border:1px solid rgba(217,102,91,0.3); font-size:12.5px; color:#eda7a0;">○ Non calibrato</span>
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; background:rgba(224,168,62,0.12); border:1px solid rgba(224,168,62,0.35); font-size:12.5px; color:#f0c878;"><span style="width:7px;height:7px;border-radius:999px;background:#e0a83e; animation:pulseDot 1.6s ease-in-out infinite;"></span> Dati da aggiornare</span>
+      </div>
+
+      <!-- Plan day cards -->
+      <div style="font-size:13px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#aab3c2; margin: 0 0 14px;">Card giorno del piano · varianti</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px;">
+
+        <!-- HARD -->
+        <div style="position:relative; border-radius:16px; padding:16px; border:1px solid rgba(255,255,255,0.08); border-left:3px solid #d9665b; background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); min-height:124px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a;">Mar</span><span style="font-size:14px;">🔺</span></div>
+          <div style="font-family:'Newsreader',serif; font-size:19px; margin-top:14px; line-height:1.1;">VO₂max 5×4'</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:#eda7a0; padding:4px 9px; border-radius:999px; background:rgba(217,102,91,0.12);">Duro · Z5</div>
+        </div>
+
+        <!-- EASY -->
+        <div style="position:relative; border-radius:16px; padding:16px; border:1px solid rgba(255,255,255,0.08); border-left:3px solid #7fc8c0; background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); min-height:124px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a;">Mer</span><span style="font-size:14px;">〜</span></div>
+          <div style="font-family:'Newsreader',serif; font-size:19px; margin-top:14px; line-height:1.1;">Fondo lento</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:#9fded6; padding:4px 9px; border-radius:999px; background:rgba(127,200,192,0.12);">Facile · Z2</div>
+        </div>
+
+        <!-- REST -->
+        <div style="position:relative; border-radius:16px; padding:16px; border:1px dashed rgba(255,255,255,0.14); background:rgba(255,255,255,0.015); min-height:124px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a;">Gio</span><span style="font-size:14px; opacity:.5;">○</span></div>
+          <div style="font-family:'Newsreader',serif; font-size:19px; margin-top:14px; line-height:1.1; color:#8b94a3;">Riposo</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:#707a8a; padding:4px 9px; border-radius:999px; background:rgba(255,255,255,0.04);">Recupero</div>
+        </div>
+
+        <!-- TODAY -->
+        <div style="position:relative; border-radius:16px; padding:16px; border:1px solid rgba(91,141,239,0.55); background:linear-gradient(160deg, rgba(40,54,86,0.7), rgba(18,24,40,0.55)); box-shadow:0 0 0 1px rgba(91,141,239,0.25), 0 14px 34px rgba(91,141,239,0.18); min-height:124px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9fbcf5;">Oggi · Lun</span><span style="width:8px; height:8px; border-radius:999px; background:#5b8def; box-shadow:0 0 12px #5b8def;"></span></div>
+          <div style="font-family:'Newsreader',serif; font-size:19px; margin-top:14px; line-height:1.1;">Soglia 3×12'</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:#cdd9f7; padding:4px 9px; border-radius:999px; background:rgba(91,141,239,0.2);">Medio · Z4</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== DESIGN TOKENS ===== -->
+    <section style="margin-top: 64px;">
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom: 22px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size: 30px; letter-spacing:-0.01em; margin:0;">Design tokens</h2>
+        <span style="font-size: 12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Tailwind-ready</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:16px;">
+
+        <!-- Colors tokens -->
+        <div style="border-radius:18px; padding:22px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.45), rgba(14,18,27,0.4));">
+          <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#7fc8c0; margin-bottom:16px;">colors</div>
+          <div style="display:flex; flex-direction:column; gap:11px; font-size:13px;">
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#090c13;border:1px solid rgba(255,255,255,0.12);"></span><span style="color:#c7cedb; font-family:'Syne',sans-serif;">bg</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#090C13</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#11151e;border:1px solid rgba(255,255,255,0.12);"></span><span style="color:#c7cedb;">surface</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#11151E</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#161b26;border:1px solid rgba(255,255,255,0.12);"></span><span style="color:#c7cedb;">surface-2</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#161B26</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#5b8def;"></span><span style="color:#c7cedb;">accent</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#5B8DEF</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#7fc8c0;"></span><span style="color:#c7cedb;">accent-2</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#7FC8C0</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#46b88a;"></span><span style="color:#c7cedb;">go</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#46B88A</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#e0a83e;"></span><span style="color:#c7cedb;">modify</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#E0A83E</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:18px;height:18px;border-radius:6px;background:#d9665b;"></span><span style="color:#c7cedb;">skip</span><span style="margin-left:auto; color:#707a8a; font-variant-numeric:tabular-nums;">#D9665B</span></div>
+          </div>
+        </div>
+
+        <!-- Radii + spacing -->
+        <div style="border-radius:18px; padding:22px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.45), rgba(14,18,27,0.4));">
+          <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#7fc8c0; margin-bottom:16px;">borderRadius</div>
+          <div style="display:flex; flex-direction:column; gap:11px; font-size:13px;">
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:26px;height:18px;background:rgba(127,200,192,0.25);border:1px solid #7fc8c0;border-radius:6px;"></span><span style="color:#c7cedb;">md</span><span style="margin-left:auto; color:#707a8a;">14px</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:26px;height:18px;background:rgba(127,200,192,0.25);border:1px solid #7fc8c0;border-radius:9px;"></span><span style="color:#c7cedb;">lg</span><span style="margin-left:auto; color:#707a8a;">18px</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:26px;height:18px;background:rgba(127,200,192,0.25);border:1px solid #7fc8c0;border-radius:11px;"></span><span style="color:#c7cedb;">xl</span><span style="margin-left:auto; color:#707a8a;">20px</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:26px;height:18px;background:rgba(127,200,192,0.25);border:1px solid #7fc8c0;border-radius:12px;"></span><span style="color:#c7cedb;">2xl</span><span style="margin-left:auto; color:#707a8a;">24px</span></div>
+            <div style="display:flex; align-items:center; gap:11px;"><span style="width:26px;height:18px;background:rgba(127,200,192,0.25);border:1px solid #7fc8c0;border-radius:999px;"></span><span style="color:#c7cedb;">full</span><span style="margin-left:auto; color:#707a8a;">999px</span></div>
+          </div>
+          <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#7fc8c0; margin:22px 0 14px;">spacing (4px base)</div>
+          <div style="display:flex; align-items:flex-end; gap:8px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:8px;height:8px;background:#5b8def;border-radius:2px;"></span><span style="font-size:10.5px;color:#707a8a;">2</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:12px;height:12px;background:#5b8def;border-radius:2px;"></span><span style="font-size:10.5px;color:#707a8a;">3</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:16px;height:16px;background:#5b8def;border-radius:2px;"></span><span style="font-size:10.5px;color:#707a8a;">4</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:24px;height:24px;background:#5b8def;border-radius:3px;"></span><span style="font-size:10.5px;color:#707a8a;">6</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:32px;height:32px;background:#5b8def;border-radius:3px;"></span><span style="font-size:10.5px;color:#707a8a;">8</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span style="width:48px;height:48px;background:#5b8def;border-radius:4px;"></span><span style="font-size:10.5px;color:#707a8a;">12</span></div>
+          </div>
+        </div>
+
+        <!-- Typography tokens -->
+        <div style="border-radius:18px; padding:22px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.45), rgba(14,18,27,0.4));">
+          <div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#7fc8c0; margin-bottom:16px;">fontFamily &amp; scale</div>
+          <div style="display:flex; flex-direction:column; gap:11px; font-size:13px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">font-serif</span><span style="color:#707a8a; font-family:'Newsreader',serif;">Newsreader</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">font-sans</span><span style="color:#707a8a;">Syne</span></div>
+            <div style="border-top:1px solid rgba(255,255,255,0.07); margin-top:4px; padding-top:11px;"></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">hero</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">72–96 / serif</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">display</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">42 / serif</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">h2</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">30 / serif</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">body</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">15 / sans</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">label</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">13 / 0.12em up</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#c7cedb;">caption</span><span style="color:#707a8a; font-variant-numeric:tabular-nums;">12 / sans</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <p style="font-size:12.5px; color:#707a8a; margin-top:18px; line-height:1.6;">Tutti i token sono pensati per mappare 1:1 su <span style="color:#aab3c2;">tailwind.config</span> (<span style="color:#aab3c2;">theme.extend.colors / borderRadius / fontFamily</span>). Quando importi il codebase li traduco direttamente nella tua config.</p>
+    </section>
+
+    <!-- ===== NEXT STEPS ===== -->
+    <section style="margin-top: 60px; border-top:1px solid rgba(255,255,255,0.08); padding-top:30px;">
+      <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a; margin-bottom:14px;">Prossimi passi</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px;">
+        <div style="font-size:14px; line-height:1.55; color:#aab3c2;"><span style="color:#7fc8c0;">1 ·</span> Confermi direzione, palette e font qui sopra.</div>
+        <div style="font-size:14px; line-height:1.55; color:#aab3c2;"><span style="color:#7fc8c0;">2 ·</span> Importi codebase Next.js/Tailwind o screenshot Oura per ancorare le schermate.</div>
+        <div style="font-size:14px; line-height:1.55; color:#aab3c2;"><span style="color:#7fc8c0;">3 ·</span> Costruisco le 5 schermate mobile-first (Dashboard → Piano → Profilo → Onboarding → Impostazioni), stato fresco + da aggiornare.</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

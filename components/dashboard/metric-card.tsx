@@ -1,0 +1,63 @@
+export function MetricCard({
+  label,
+  acronym,
+  value,
+  delta,
+  deltaClassName = "text-secondary",
+  tooltip,
+  open,
+  onToggle,
+  footer,
+}: {
+  label: string;
+  acronym: string;
+  value: React.ReactNode;
+  delta?: React.ReactNode;
+  deltaClassName?: string;
+  tooltip: string;
+  open: boolean;
+  onToggle: () => void;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`relative rounded-metric border p-[14px] transition-colors ${
+        open ? "border-accent2/40" : "border-border"
+      } bg-gradient-to-br from-[#222b3d]/50 to-[#0e121b]/40`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[12px] leading-tight text-secondary">{label}</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted">
+            {acronym}
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label={`Cos'è ${label}`}
+          aria-expanded={open}
+          onClick={onToggle}
+          className="flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full border border-white/20 font-serif text-[11px] text-secondary transition-colors hover:border-accent2/60 hover:text-accent2-hover"
+        >
+          i
+        </button>
+      </div>
+
+      <div className="mt-2.5 flex items-baseline gap-1.5">
+        <span className="font-serif text-[28px] leading-none tabular-nums text-foreground">
+          {value}
+        </span>
+        {delta != null && (
+          <span className={`text-[11px] ${deltaClassName}`}>{delta}</span>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-2.5 rounded-xl border border-white/[0.12] bg-[#06080d]/95 p-[11px]">
+          <p className="text-[11.5px] leading-relaxed text-secondary">{tooltip}</p>
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}

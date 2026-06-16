@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #06080d; -webkit-font-smoothing: antialiased; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skel { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.04) 63%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; border-radius: 10px; }
+  .scrollarea::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background: radial-gradient(900px 600px at 50% -5%, rgba(91,141,239,0.10), transparent 60%), #06080d; display:flex; flex-direction:column; align-items:center; padding: 22px 16px 60px; font-family:'Syne',sans-serif;">
+
+  <!-- ===== DEMO NAV (fuori dal telefono) ===== -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:22px; width:100%; max-width:760px;">
+    <div style="display:flex; flex-wrap:wrap; gap:7px; justify-content:center;">
+      <button onClick="{{ goToday }}" style="cursor:pointer; border:1px solid {{ navTodayBorder }}; background:{{ navTodayBg }}; color:{{ navTodayFg }}; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px;">Oggi</button>
+      <button onClick="{{ goPlan }}" style="cursor:pointer; border:1px solid {{ navPlanBorder }}; background:{{ navPlanBg }}; color:{{ navPlanFg }}; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px;">Piano</button>
+      <button onClick="{{ goProfile }}" style="cursor:pointer; border:1px solid {{ navProfileBorder }}; background:{{ navProfileBg }}; color:{{ navProfileFg }}; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px;">Profilo</button>
+      <button onClick="{{ goOnboarding }}" style="cursor:pointer; border:1px solid {{ navObBorder }}; background:{{ navObBg }}; color:{{ navObFg }}; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px;">Onboarding</button>
+      <button onClick="{{ goSettings }}" style="cursor:pointer; border:1px solid {{ navSetBorder }}; background:{{ navSetBg }}; color:{{ navSetFg }}; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px;">Impostazioni</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#5c6470;">Stato dati</span>
+      <button onClick="{{ setFresh }}" style="cursor:pointer; border:1px solid rgba(70,184,138,0.4); background:rgba(70,184,138,0.12); color:#7fe0b3; font-size:11.5px; padding:6px 11px; border-radius:999px; font-family:'Syne',sans-serif; font-weight:600;">Fresco</button>
+      <button onClick="{{ setStale }}" style="cursor:pointer; border:1px solid rgba(224,168,62,0.4); background:rgba(224,168,62,0.12); color:#f0c878; font-size:11.5px; padding:6px 11px; border-radius:999px; font-family:'Syne',sans-serif; font-weight:600;">Stantio</button>
+      <button onClick="{{ setError }}" style="cursor:pointer; border:1px solid rgba(217,102,91,0.4); background:rgba(217,102,91,0.12); color:#ed8a82; font-size:11.5px; padding:6px 11px; border-radius:999px; font-family:'Syne',sans-serif; font-weight:600;">Errore</button>
+    </div>
+  </div>
+
+  <!-- ===== PHONE FRAME ===== -->
+  <div style="width:390px; max-width:100%; height:820px; border-radius:46px; padding:11px; background:linear-gradient(160deg,#23262e,#0c0e13); box-shadow:0 40px 90px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); position:relative;">
+    <div style="position:absolute; top:50%; left:-2px; transform:translateY(-50%); width:3px; height:58px; background:#2a2e37; border-radius:3px;"></div>
+    <div style="position:absolute; top:38%; right:-2px; transform:translateY(-50%); width:3px; height:78px; background:#2a2e37; border-radius:3px;"></div>
+
+    <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; background:#090c13; position:relative; display:flex; flex-direction:column;">
+
+      <!-- status bar -->
+      <div style="position:relative; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:14px 26px 6px; color:#eaeef6; font-size:13px; font-weight:600;">
+        <span style="font-variant-numeric:tabular-nums;">9:41</span>
+        <div style="position:absolute; left:50%; top:9px; transform:translateX(-50%); width:96px; height:26px; background:#000; border-radius:999px;"></div>
+        <span style="display:flex; align-items:center; gap:6px; font-size:12px;">5G <span style="display:inline-block; width:22px; height:11px; border:1px solid rgba(255,255,255,0.6); border-radius:3px; position:relative;"><span style="position:absolute; inset:1.5px; right:5px; background:#eaeef6; border-radius:1px;"></span></span></span>
+      </div>
+
+      <!-- scroll content -->
+      <div class="scrollarea" style="flex:1; overflow-y:auto; overflow-x:hidden;">
+
+        <!-- ====================== SCHERMATA: OGGI ====================== -->
+        <sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Oggi" style="padding:6px 18px 26px; color:#eaeef6;">
+
+          <!-- header: titolo + ultimo aggiornamento (alto dx) -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-top:10px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:7px;">
+                <svg width="16" height="16" viewBox="0 0 58 58" fill="none"><circle cx="29" cy="29" r="22" stroke="url(#liminaMarkSm)" stroke-width="5" stroke-linecap="round" stroke-dasharray="104 34" transform="rotate(-90 29 29)"></circle><defs><linearGradient id="liminaMarkSm" x1="0" y1="0" x2="58" y2="58"><stop offset="0%" stop-color="#5b8def"></stop><stop offset="100%" stop-color="#7fc8c0"></stop></linearGradient></defs></svg>
+                <span style="font-family:'Newsreader',serif; font-size:15px; letter-spacing:0.05em; color:#aab3c2;">Limina</span>
+              </div>
+              <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#707a8a; margin-top:9px;">Lunedì 16 giugno</div>
+              <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:32px; line-height:1; margin:6px 0 0;">Ciao, {{ athleteName }}</h1>
+            </div>
+            <div style="text-align:right; padding-top:4px;">
+              <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;">Aggiornato</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; margin-top:3px; font-size:11.5px; color:{{ syncFg }};">
+                <span style="width:7px; height:7px; border-radius:999px; background:{{ syncDot }};"></span>{{ lastSync }}
+              </div>
+            </div>
+          </div>
+
+          <!-- azione principale: refresh sempre in alto -->
+          <button onClick="{{ refresh }}" style="cursor:{{ refreshCursor }}; margin-top:16px; width:100%; border:1px solid {{ refreshBorder }}; background:{{ refreshBg }}; color:{{ refreshFg }}; font-family:'Syne',sans-serif; font-weight:700; font-size:14.5px; padding:14px; border-radius:15px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:{{ refreshShadow }};">
+            <span style="{{ spinnerStyle }}">{{ refreshIcon }}</span>{{ refreshLabel }}
+          </button>
+          <sc-if value="{{ isError }}">
+            <div style="margin-top:9px; display:flex; align-items:center; gap:8px; font-size:12px; color:#ed8a82;">⚠ Token Intervals.icu scaduto — riautorizza per sincronizzare.</div>
+          </sc-if>
+
+          <!-- HERO readiness (skeleton se sync) -->
+          <sc-if value="{{ isSyncing }}">
+            <div style="margin-top:18px; border-radius:24px; border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.02); padding:26px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+              <div class="skel" style="width:172px; height:172px; border-radius:999px;"></div>
+              <div class="skel" style="width:140px; height:16px;"></div>
+              <div class="skel" style="width:200px; height:12px;"></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ notSyncing }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:18px; border-radius:24px; border:1px solid rgba(70,184,138,0.28); background:linear-gradient(165deg, rgba(70,184,138,0.16), rgba(14,18,27,0.5)); padding:26px 22px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:16px; left:18px; display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border-radius:999px; background:rgba(70,184,138,0.16); border:1px solid rgba(70,184,138,0.4); font-size:11px; color:#7fe0b3;">Readiness</div>
+            <div style="display:flex; flex-direction:column; align-items:center; margin-top:26px;">
+              <div style="position:relative; width:186px; height:186px;">
+                <svg viewBox="0 0 200 200" width="186" height="186" style="transform:rotate(-90deg);">
+                  <defs><linearGradient id="ringGo" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#46b88a"></stop><stop offset="100%" stop-color="#7fc8c0"></stop></linearGradient></defs>
+                  <circle cx="100" cy="100" r="84" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="13"></circle>
+                  <circle cx="100" cy="100" r="84" fill="none" stroke="url(#ringGo)" stroke-width="13" stroke-linecap="round" stroke-dasharray="412 528" style="filter: drop-shadow(0 0 9px rgba(70,184,138,0.5));"></circle>
+                </svg>
+                <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <div style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; line-height:1; color:#7fe0b3; letter-spacing:0.02em;">GO</div>
+                  <div style="font-family:'Newsreader',serif; font-size:46px; line-height:0.9; margin-top:2px; font-variant-numeric:tabular-nums;">78</div>
+                  <div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#707a8a; margin-top:3px;">su 100</div>
+                </div>
+              </div>
+              <p style="text-align:center; font-size:14px; line-height:1.5; color:#c7cedb; margin:16px 4px 0; max-width:30ch;">Recupero buono e carico in equilibrio. <span style="color:#eaeef6;">Esegui la seduta prevista.</span></p>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- workout di oggi -->
+          <sc-if value="{{ notSyncing }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:14px; border-radius:18px; border:1px solid rgba(91,141,239,0.4); background:linear-gradient(160deg, rgba(40,54,86,0.6), rgba(18,24,40,0.45)); padding:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#9fbcf5;">Seduta di oggi</span>
+              <span style="font-size:11px; color:#9fbcf5; padding:3px 9px; border-radius:999px; background:rgba(91,141,239,0.18);">Medio · Z4</span>
+            </div>
+            <div style="font-family:'Newsreader',serif; font-size:24px; margin-top:10px; line-height:1.05;">Soglia 3×12′</div>
+            <div style="display:flex; gap:16px; margin-top:12px; font-size:12.5px; color:#aab3c2;">
+              <span>⏱ 1h 05′</span><span>◎ 250–265 W</span><span>♥ Z4</span>
+            </div>
+            <button style="cursor:pointer; margin-top:15px; width:100%; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-family:'Syne',sans-serif; font-weight:600; font-size:13px; padding:11px; border-radius:12px;">Vedi struttura completa</button>
+          </div>
+          </sc-if>
+
+          <!-- metriche secondarie -->
+          <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Le tue metriche</span>
+            <span style="font-size:11px; color:#5c6470;">tocca ⓘ per spiegazione</span>
+          </div>
+
+          <sc-if value="{{ isSyncing }}">
+            <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="skel" style="height:96px;"></div><div class="skel" style="height:96px;"></div>
+              <div class="skel" style="height:96px;"></div><div class="skel" style="height:96px;"></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ notSyncing }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="6">
+              <div style="position:relative; border-radius:16px; border:1px solid {{ m.border }}; background:linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4)); padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <div>
+                    <div style="font-size:12px; color:#aab3c2; line-height:1.2;">{{ m.label }}</div>
+                    <div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#5c6470; margin-top:1px;">{{ m.acr }}</div>
+                  </div>
+                  <button onClick="{{ m.toggle }}" style="cursor:pointer; flex-shrink:0; width:19px; height:19px; border-radius:999px; border:1px solid rgba(255,255,255,0.2); background:transparent; color:#aab3c2; font-size:11px; font-family:'Newsreader',serif; display:flex; align-items:center; justify-content:center; padding:0;">i</button>
+                </div>
+                <div style="display:flex; align-items:baseline; gap:7px; margin-top:10px;">
+                  <span style="font-family:'Newsreader',serif; font-size:30px; line-height:1; font-variant-numeric:tabular-nums;">{{ m.value }}</span>
+                  <span style="font-size:11px; color:{{ m.deltaCol }};">{{ m.delta }}</span>
+                </div>
+                <sc-if value="{{ m.open }}">
+                  <div style="margin-top:11px; padding:10px 11px; border-radius:11px; background:rgba(6,8,13,0.94); border:1px solid rgba(255,255,255,0.12);">
+                    <div style="font-size:11.5px; line-height:1.5; color:#c7cedb;">{{ m.tip }}</div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- trend chart -->
+          <sc-if value="{{ notSyncing }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:18px; border-radius:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.4), rgba(14,18,27,0.4)); padding:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Andamento · 30 giorni</span>
+              <div style="display:flex; gap:12px; font-size:11px;">
+                <span style="display:inline-flex; align-items:center; gap:5px; color:#9fbcf5;"><span style="width:9px; height:3px; border-radius:2px; background:#5b8def;"></span>CTL</span>
+                <span style="display:inline-flex; align-items:center; gap:5px; color:#9fded6;"><span style="width:9px; height:3px; border-radius:2px; background:#7fc8c0;"></span>ACWR</span>
+              </div>
+            </div>
+            <svg viewBox="0 0 320 120" width="100%" height="120" style="margin-top:14px; display:block;" preserveAspectRatio="none">
+              <defs><linearGradient id="ctlFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(91,141,239,0.35)"></stop><stop offset="100%" stop-color="rgba(91,141,239,0)"></stop></linearGradient></defs>
+              <path d="M0,82 C40,78 60,70 90,66 C130,60 150,54 190,46 C230,38 260,34 320,26 L320,120 L0,120 Z" fill="url(#ctlFill)"></path>
+              <path d="M0,82 C40,78 60,70 90,66 C130,60 150,54 190,46 C230,38 260,34 320,26" fill="none" stroke="#5b8def" stroke-width="2.5"></path>
+              <path d="M0,70 C50,72 80,60 120,64 C170,69 210,52 260,58 C290,61 305,56 320,57" fill="none" stroke="#7fc8c0" stroke-width="2" stroke-dasharray="4 4" opacity="0.85"></path>
+            </svg>
+          </div>
+          </sc-if>
+
+        </div>
+        </sc-if>
+
+        <!-- ====================== SCHERMATA: PIANO ====================== -->
+        <sc-if value="{{ isPlan }}">
+        <div data-screen-label="Piano" style="padding:6px 18px 26px; color:#eaeef6;">
+
+          <!-- header -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-top:10px;">
+            <div>
+              <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#707a8a;">16–22 giugno · sett. 24</div>
+              <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; line-height:1; margin:6px 0 0;">Piano settimana</h1>
+            </div>
+            <div style="text-align:right; padding-top:4px;">
+              <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;">Aggiornato</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; margin-top:3px; font-size:11.5px; color:{{ syncFg }};"><span style="width:7px; height:7px; border-radius:999px; background:{{ syncDot }};"></span>{{ lastSync }}</div>
+            </div>
+          </div>
+
+          <!-- azioni distinte per importanza -->
+          <div style="display:flex; gap:10px; margin-top:16px;">
+            <button onClick="{{ refresh }}" style="cursor:pointer; flex:1; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-family:'Syne',sans-serif; font-weight:700; font-size:13.5px; padding:13px; border-radius:14px; display:flex; align-items:center; justify-content:center; gap:8px;">⟳ Rigenera</button>
+            <button style="cursor:pointer; flex:1; border:1px solid rgba(127,200,192,0.55); background:linear-gradient(120deg, rgba(127,200,192,0.22), rgba(127,200,192,0.08)); color:#bfeee8; font-family:'Syne',sans-serif; font-weight:700; font-size:13.5px; padding:13px; border-radius:14px; display:flex; flex-direction:column; align-items:center; line-height:1.15;">↗ Invia a Intervals<span style="font-size:9.5px; font-weight:500; color:#7fc8c0; letter-spacing:0.04em;">richiede conferma</span></button>
+          </div>
+
+          <!-- totali -->
+          <div style="display:flex; gap:8px; margin-top:14px;">
+            <div style="flex:1; text-align:center; padding:11px 6px; border-radius:13px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.025);"><div style="font-family:'Newsreader',serif; font-size:21px; line-height:1;">9h25</div><div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-top:4px;">Ore</div></div>
+            <div style="flex:1; text-align:center; padding:11px 6px; border-radius:13px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.025);"><div style="font-family:'Newsreader',serif; font-size:21px; line-height:1;">540</div><div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-top:4px;">TSS</div></div>
+            <div style="flex:1; text-align:center; padding:11px 6px; border-radius:13px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.025);"><div style="font-family:'Newsreader',serif; font-size:21px; line-height:1;">2</div><div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-top:4px;">Intense</div></div>
+          </div>
+
+          <!-- narrativa -->
+          <div style="margin-top:14px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.4), rgba(14,18,27,0.4)); padding:16px;">
+            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-bottom:8px;">La logica della settimana</div>
+            <p style="font-size:13px; line-height:1.6; color:#c7cedb; margin:0;">Carico in leggera salita verso il picco. Due qualità (soglia + VO₂max) nei primi giorni con freschezza alta, poi un lungo collinare sabato che allena la <span style="color:#eaeef6;">durabilità</span> — il tuo limitatore per Esatrail. Giovedì riposo pieno per assorbire.</p>
+          </div>
+
+          <!-- griglia 7 giorni -->
+          <div style="margin-top:16px; display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ days }}" as="m" hint-placeholder-count="7">
+              <div style="border-radius:15px; border:1px solid {{ m.cardBorder }}; border-left:3px solid {{ m.accent }}; background:{{ m.cardBg }}; overflow:hidden; box-shadow:{{ m.todayGlow }};">
+                <div onClick="{{ m.select }}" style="cursor:pointer; display:flex; align-items:center; gap:13px; padding:14px 15px;">
+                  <div style="text-align:center; width:34px; flex-shrink:0;">
+                    <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a;">{{ m.d }}</div>
+                    <div style="font-family:'Newsreader',serif; font-size:20px; line-height:1; margin-top:1px;">{{ m.date }}</div>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:7px;">
+                      <span style="font-size:12px; color:{{ m.accent }};">{{ m.icon }}</span>
+                      <span style="font-family:'Newsreader',serif; font-size:16px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.title }}</span>
+                    </div>
+                    <div style="font-size:11.5px; color:#8b94a3; margin-top:3px;">{{ m.dur }}</div>
+                  </div>
+                  <span style="flex-shrink:0; font-size:10.5px; color:{{ m.kindFg }}; padding:4px 9px; border-radius:999px; background:{{ m.soft }};">{{ m.kindLabel }} · {{ m.zone }}</span>
+                </div>
+
+                <sc-if value="{{ m.open }}">
+                  <div style="padding:0 15px 15px; border-top:1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; flex-direction:column; gap:11px; margin-top:13px;">
+                      <div><div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#5c6470;">Obiettivo</div><div style="font-size:13px; color:#c7cedb; margin-top:3px;">{{ m.goal }}</div></div>
+                      <div><div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#5c6470;">Struttura</div><div style="font-size:13px; color:#c7cedb; margin-top:3px; line-height:1.5;">{{ m.struct }}</div></div>
+                      <sc-if value="{{ m.note }}"><div style="display:flex; gap:9px; padding:11px 12px; border-radius:11px; background:rgba(91,141,239,0.08); border:1px solid rgba(91,141,239,0.2);"><span style="color:#9fbcf5; font-size:13px;">✎</span><div style="font-size:12.5px; line-height:1.5; color:#c7cedb;">{{ m.note }}</div></div></sc-if>
+                    </div>
+                    <button onClick="{{ toggleRedistribute }}" style="cursor:pointer; margin-top:13px; width:100%; border:1px dashed rgba(224,168,62,0.5); background:rgba(224,168,62,0.06); color:#f0c878; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:11px; border-radius:12px;">Non posso allenarmi questo giorno</button>
+
+                    <sc-if value="{{ redistribute }}">
+                      <div style="margin-top:11px; border-radius:13px; border:1px solid rgba(224,168,62,0.35); background:linear-gradient(160deg, rgba(50,42,24,0.45), rgba(20,17,12,0.4)); padding:14px;">
+                        <div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#f0c878; margin-bottom:10px;">Anteprima ridistribuzione</div>
+                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px;">
+                          <div style="display:flex; align-items:center; gap:9px; color:#c7cedb;"><span style="color:#8b94a3; width:42px;">Mer</span><span style="color:#8b94a3;">→</span><span>Fondo lento <span style="color:#707a8a;">spostato qui</span></span></div>
+                          <div style="display:flex; align-items:center; gap:9px; color:#c7cedb;"><span style="color:#8b94a3; width:42px;">Ven</span><span style="color:#8b94a3;">→</span><span>VO₂max <span style="color:#707a8a;">+1 giorno di recupero prima</span></span></div>
+                          <div style="display:flex; align-items:center; gap:9px; color:#c7cedb;"><span style="color:#8b94a3; width:42px;">Carico</span><span style="color:#8b94a3;">→</span><span>TSS settimanale invariato <span style="color:#7fe0b3;">540</span></span></div>
+                        </div>
+                        <div style="display:flex; gap:9px; margin-top:13px;">
+                          <button onClick="{{ toggleRedistribute }}" style="cursor:pointer; flex:1; border:1px solid rgba(255,255,255,0.14); background:transparent; color:#aab3c2; font-family:'Syne',sans-serif; font-weight:600; font-size:12.5px; padding:10px; border-radius:11px;">Annulla</button>
+                          <button onClick="{{ toggleRedistribute }}" style="cursor:pointer; flex:1; border:none; background:linear-gradient(120deg,#e0a83e,#ecb957); color:#1a1206; font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; padding:10px; border-radius:11px;">Conferma</button>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+        </div>
+        </sc-if>
+
+        <!-- ====================== SCHERMATA: PROFILO ====================== -->
+        <sc-if value="{{ isProfile }}">
+        <div data-screen-label="Profilo" style="padding:6px 18px 26px; color:#eaeef6;">
+
+          <!-- header -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-top:10px;">
+            <div>
+              <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#707a8a;">Profilo atleta</div>
+              <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; line-height:1; margin:6px 0 0;">Il tuo motore</h1>
+            </div>
+            <div style="text-align:right; padding-top:4px;">
+              <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;">Aggiornato</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; margin-top:3px; font-size:11.5px; color:{{ syncFg }};"><span style="width:7px; height:7px; border-radius:999px; background:{{ syncDot }};"></span>{{ lastSync }}</div>
+            </div>
+          </div>
+
+          <!-- calibrazione -->
+          <div style="margin-top:16px; border-radius:16px; border:1px solid {{ calBd }}; background:{{ calBg }}; padding:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:{{ calFg }};"><span style="width:8px; height:8px; border-radius:999px; background:{{ calDot }};"></span>{{ calLabel }}</span>
+              <button style="cursor:pointer; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.05); color:#eaeef6; font-family:'Syne',sans-serif; font-weight:600; font-size:12px; padding:8px 13px; border-radius:11px;">Calibra dai tuoi dati</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:12px;">
+              <button onClick="{{ setCalibNone }}" style="cursor:pointer; flex:1; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#8b94a3; font-size:10.5px; font-family:'Syne',sans-serif; padding:6px; border-radius:9px;">Non calibr.</button>
+              <button onClick="{{ setCalibPartial }}" style="cursor:pointer; flex:1; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#8b94a3; font-size:10.5px; font-family:'Syne',sans-serif; padding:6px; border-radius:9px;">Valori medi</button>
+              <button onClick="{{ setCalibFull }}" style="cursor:pointer; flex:1; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#8b94a3; font-size:10.5px; font-family:'Syne',sans-serif; padding:6px; border-radius:9px;">Tuoi dati</button>
+            </div>
+          </div>
+
+          <!-- HERO potenza -->
+          <div style="margin-top:14px; border-radius:22px; border:1px solid rgba(127,200,192,0.28); background:linear-gradient(165deg, rgba(127,200,192,0.14), rgba(14,18,27,0.5)); padding:22px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <span style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0;">Critical Power · CP</span>
+              <button onClick="{{ toggleCp }}" style="cursor:pointer; width:19px; height:19px; border-radius:999px; border:1px solid rgba(255,255,255,0.2); background:transparent; color:#aab3c2; font-size:11px; font-family:'Newsreader',serif; display:flex; align-items:center; justify-content:center; padding:0;">i</button>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:8px;">
+              <span style="font-family:'Newsreader',serif; font-weight:500; font-size:62px; line-height:0.9; font-variant-numeric:tabular-nums;">298</span>
+              <span style="font-size:18px; color:#707a8a;">W</span>
+              <span style="font-size:14px; color:#9fded6; margin-left:4px;">4.05 W/kg</span>
+            </div>
+            <div style="font-family:'Newsreader',serif; font-style:italic; font-size:18px; color:#c7cedb; margin-top:6px;">Diesel con punta esplosiva</div>
+            <sc-if value="{{ openCp }}">
+              <div style="margin-top:12px; padding:11px 12px; border-radius:11px; background:rgba(6,8,13,0.94); border:1px solid rgba(255,255,255,0.12);"><div style="font-size:11.5px; line-height:1.5; color:#c7cedb;">Massima intensità sostenibile a stato stazionario. Una CP/kg alta riflette capillarizzazione e fibre lente — il marchio del passista-scalatore.</div></div>
+            </sc-if>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+              <div style="flex:1; border-radius:13px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.025); padding:13px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;">W′</span><button onClick="{{ toggleWp }}" style="cursor:pointer; width:16px; height:16px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:transparent; color:#8b94a3; font-size:9.5px; font-family:'Newsreader',serif; padding:0;">i</button></div>
+                <div style="font-family:'Newsreader',serif; font-size:26px; line-height:1; margin-top:7px;">18.2<span style="font-size:13px; color:#707a8a;"> kJ</span></div>
+                <sc-if value="{{ openWp }}"><div style="font-size:11px; line-height:1.45; color:#aab3c2; margin-top:8px;">Riserva di lavoro anaerobica finita. Indipendente dalla CP.</div></sc-if>
+              </div>
+              <div style="flex:1; border-radius:13px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.025); padding:13px;">
+                <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;">Potenza max</div>
+                <div style="font-family:'Newsreader',serif; font-size:26px; line-height:1; margin-top:7px;">1180<span style="font-size:13px; color:#707a8a;"> W</span></div>
+                <div style="font-size:11px; color:#9fded6; margin-top:8px;">APR ratio 3.96 · esplosivo</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RPP table -->
+          <div style="margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px;">
+              <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#707a8a;">Record di potenza · RPP</span>
+              <button onClick="{{ toggleDur }}" style="cursor:pointer; font-size:11px; color:#7fc8c0; background:none; border:none; font-family:'Syne',sans-serif;">cos'è? ⓘ</button>
+            </div>
+            <sc-if value="{{ openDur }}"><div style="margin-bottom:11px; padding:11px 12px; border-radius:11px; background:rgba(6,8,13,0.9); border:1px solid rgba(255,255,255,0.12);"><div style="font-size:11.5px; line-height:1.5; color:#c7cedb;">Mean Maximal Power: la potenza più alta che hai tenuto per ogni durata. Marcata <span style="color:#7fe0b3;">affidabile</span> solo se proviene da uno sforzo verosimilmente massimale.</div></div></sc-if>
+            <div style="border-radius:16px; border:1px solid rgba(255,255,255,0.08); overflow:hidden;">
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:10px 14px; background:rgba(255,255,255,0.03); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#5c6470;"><span>Durata</span><span style="text-align:right;">Watt</span><span style="text-align:right;">W/kg</span><span style="width:18px;"></span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.05); font-size:13.5px; align-items:center;"><span style="color:#c7cedb;">5 s</span><span style="text-align:right; font-family:'Newsreader',serif; font-size:16px;">1180</span><span style="text-align:right; color:#aab3c2;">16.0</span><span style="width:18px; text-align:center; color:#46b88a;">●</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.05); font-size:13.5px; align-items:center;"><span style="color:#c7cedb;">1 min</span><span style="text-align:right; font-family:'Newsreader',serif; font-size:16px;">640</span><span style="text-align:right; color:#aab3c2;">8.7</span><span style="width:18px; text-align:center; color:#46b88a;">●</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.05); font-size:13.5px; align-items:center;"><span style="color:#c7cedb;">5 min</span><span style="text-align:right; font-family:'Newsreader',serif; font-size:16px;">360</span><span style="text-align:right; color:#aab3c2;">4.9</span><span style="width:18px; text-align:center; color:#46b88a;">●</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.05); font-size:13.5px; align-items:center;"><span style="color:#c7cedb;">20 min</span><span style="text-align:right; font-family:'Newsreader',serif; font-size:16px;">312</span><span style="text-align:right; color:#aab3c2;">4.2</span><span style="width:18px; text-align:center; color:#46b88a;">●</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.05); font-size:13.5px; align-items:center;"><span style="color:#c7cedb;">60 min</span><span style="text-align:right; font-family:'Newsreader',serif; font-size:16px;">286</span><span style="text-align:right; color:#aab3c2;">3.9</span><span style="width:18px; text-align:center; color:#e0a83e;" title="non affidabile">◐</span></div>
+            </div>
+            <div style="display:flex; gap:14px; margin-top:9px; font-size:10.5px; color:#707a8a;"><span style="display:inline-flex; align-items:center; gap:5px;"><span style="color:#46b88a;">●</span> affidabile</span><span style="display:inline-flex; align-items:center; gap:5px;"><span style="color:#e0a83e;">◐</span> sforzo non massimale</span></div>
+          </div>
+
+          <!-- analisi evento -->
+          <div style="margin-top:18px; border-radius:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, rgba(34,43,61,0.45), rgba(14,18,27,0.4)); padding:18px; overflow:hidden;">
+            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0;">Analisi evento target</div>
+            <div style="font-family:'Newsreader',serif; font-size:22px; margin-top:6px; line-height:1.05;">{{ targetEvent }}</div>
+            <div style="display:flex; gap:14px; margin-top:6px; font-size:12px; color:#aab3c2;"><span>88 km</span><span>4 300 m D+</span><span>5 salite</span></div>
+
+            <!-- profilo altimetrico -->
+            <svg viewBox="0 0 320 110" width="100%" height="110" style="margin-top:14px; display:block;" preserveAspectRatio="none">
+              <defs><linearGradient id="elevFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(127,200,192,0.3)"></stop><stop offset="100%" stop-color="rgba(127,200,192,0)"></stop></linearGradient></defs>
+              <rect x="58" y="0" width="46" height="110" fill="rgba(217,102,91,0.14)"></rect>
+              <rect x="232" y="0" width="58" height="110" fill="rgba(217,102,91,0.18)"></rect>
+              <path d="M0,96 L30,90 L58,86 L104,40 L140,64 L180,58 L232,70 L290,18 L320,30 L320,110 L0,110 Z" fill="url(#elevFill)"></path>
+              <path d="M0,96 L30,90 L58,86 L104,40 L140,64 L180,58 L232,70 L290,18 L320,30" fill="none" stroke="#7fc8c0" stroke-width="2"></path>
+            </svg>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#5c6470; margin-top:2px;"><span>0 km</span><span style="color:#eda7a0;">Colle dei Faggi</span><span style="color:#eda7a0;">Muro finale</span></div>
+
+            <!-- tabella salite -->
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:7px;">
+              <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:11px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06);"><span style="font-size:11px; font-weight:700; color:#ed8a82; width:34px;">HC</span><span style="flex:1; font-size:12.5px; color:#c7cedb;">Colle dei Faggi</span><span style="font-size:11.5px; color:#8b94a3;">9.2 km · 7.1%</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:11px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06);"><span style="font-size:11px; font-weight:700; color:#f0c878; width:34px;">Cat1</span><span style="flex:1; font-size:12.5px; color:#c7cedb;">Muro finale</span><span style="font-size:11.5px; color:#8b94a3;">3.4 km · 11.8%</span></div>
+            </div>
+
+            <!-- limitatori -->
+            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5c6470; margin:16px 0 9px;">I tuoi limitatori</div>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <div style="border-radius:13px; border:1px solid rgba(217,102,91,0.3); border-left:3px solid #d9665b; background:rgba(217,102,91,0.06); padding:13px;"><div style="font-size:13.5px; font-weight:600; color:#eda7a0;">Salita lunga a fatica</div><div style="font-size:11.5px; color:#aab3c2; margin-top:5px; line-height:1.5;">Leva → lunghi con blocchi in salita Z3 nell'ultima ora. Già nel piano di sabato.</div></div>
+              <div style="border-radius:13px; border:1px solid rgba(224,168,62,0.3); border-left:3px solid #e0a83e; background:rgba(224,168,62,0.06); padding:13px;"><div style="font-size:13.5px; font-weight:600; color:#f0c878;">Strappi ripetuti sopra-soglia</div><div style="font-size:11.5px; color:#aab3c2; margin-top:5px; line-height:1.5;">Leva → VO₂max 5×4′ e over-under per tollerare i cambi di ritmo del muro finale.</div></div>
+            </div>
+          </div>
+
+        </div>
+        </sc-if>
+
+        <!-- ====================== SCHERMATA: ONBOARDING ====================== -->
+        <sc-if value="{{ isOnboarding }}">
+        <div data-screen-label="Onboarding" style="padding:10px 18px 26px; color:#eaeef6; display:flex; flex-direction:column; min-height:680px;">
+
+          <!-- progress -->
+          <div style="padding-top:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0;">{{ obStepNum }}</span>
+              <span style="font-size:11px; color:#707a8a;">~ 4 min</span>
+            </div>
+            <div style="margin-top:9px; height:5px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden;">
+              <div style="height:100%; width:{{ obPct }}; border-radius:999px; background:linear-gradient(90deg,#5b8def,#7fc8c0); transition:width 0.4s ease;"></div>
+            </div>
+            <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:28px; line-height:1.05; margin:18px 0 0;">{{ obTitle }}</h1>
+          </div>
+
+          <div style="flex:1; margin-top:18px;">
+
+            <!-- STEP 0: GDPR -->
+            <sc-if value="{{ obIs0 }}">
+              <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin:6px 0 22px;">
+                <svg width="58" height="58" viewBox="0 0 58 58" fill="none" style="filter: drop-shadow(0 0 14px rgba(127,200,192,0.35));">
+                  <circle cx="29" cy="29" r="22" stroke="url(#liminaMark)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="104 34" transform="rotate(-90 29 29)"></circle>
+                  <circle cx="29" cy="29" r="4" fill="#7fc8c0"></circle>
+                  <defs><linearGradient id="liminaMark" x1="0" y1="0" x2="58" y2="58"><stop offset="0%" stop-color="#5b8def"></stop><stop offset="100%" stop-color="#7fc8c0"></stop></linearGradient></defs>
+                </svg>
+                <div style="font-family:'Newsreader',serif; font-weight:500; font-size:34px; letter-spacing:0.04em; margin-top:14px; line-height:1;">Limina</div>
+                <div style="font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:#707a8a; margin-top:8px;">Coach endurance · soglie</div>
+              </div>
+              <p style="font-size:14px; line-height:1.6; color:#c7cedb; margin:0 0 16px;">Per costruire il tuo piano leggiamo i dati di allenamento da Intervals.icu. Restano tuoi: niente uso pubblicitario, esportabili e cancellabili in ogni momento.</p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <label style="display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:14px; border:1px solid rgba(127,200,192,0.35); background:rgba(127,200,192,0.06);"><span style="flex-shrink:0; width:22px; height:22px; border-radius:7px; background:#7fc8c0; color:#06080d; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;">✓</span><span style="font-size:13px; line-height:1.5; color:#eaeef6;">Acconsento al trattamento dei dati di allenamento (obbligatorio)</span></label>
+                <label style="display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.025);"><span style="flex-shrink:0; width:22px; height:22px; border-radius:7px; border:1px solid rgba(255,255,255,0.25);"></span><span style="font-size:13px; line-height:1.5; color:#aab3c2;">Email occasionali con consigli del coach (facoltativo)</span></label>
+              </div>
+            </sc-if>
+
+            <!-- STEP 1: dossier -->
+            <sc-if value="{{ obIs1 }}">
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <div><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Nome</div><div style="padding:13px 15px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); font-size:14px;">Giuseppe Carbonari</div></div>
+                <div style="display:flex; gap:11px;">
+                  <div style="flex:1;"><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Età</div><div style="padding:13px 15px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); font-size:14px;">34</div></div>
+                  <div style="flex:1;"><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Peso</div><div style="padding:13px 15px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); font-size:14px;">73.5 kg</div></div>
+                </div>
+                <div><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Disciplina</div>
+                  <div style="display:flex; gap:8px;"><span style="flex:1; text-align:center; padding:11px; border-radius:12px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:13px; font-weight:600;">MTB / Gravel</span><span style="flex:1; text-align:center; padding:11px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#8b94a3; font-size:13px;">Strada</span></div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- STEP 2: obiettivi -->
+            <sc-if value="{{ obIs2 }}">
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <div><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Gara target</div><div style="padding:14px 15px; border-radius:13px; border:1px solid rgba(127,200,192,0.4); background:rgba(127,200,192,0.06); display:flex; justify-content:space-between; align-items:center;"><span style="font-size:14px; color:#eaeef6;">{{ targetEvent }}</span><span style="font-size:12px; color:#7fc8c0;">12 set 2026</span></div></div>
+                <div><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:7px;">Obiettivo principale</div>
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <span style="padding:12px 14px; border-radius:12px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.14); color:#cdd9f7; font-size:13px;">◉ Finire forte sulle salite finali</span>
+                    <span style="padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#8b94a3; font-size:13px;">○ Migliorare il tempo sul giro</span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- STEP 3: disponibilità -->
+            <sc-if value="{{ obIs3 }}">
+              <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:9px;">Giorni allenabili</div>
+              <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">L</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">M</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">M</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#5c6470; font-size:12px;">G</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">V</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">S</span>
+                <span style="text-align:center; padding:11px 0; border-radius:10px; border:1px solid rgba(91,141,239,0.5); background:rgba(91,141,239,0.16); color:#cdd9f7; font-size:12px; font-weight:600;">D</span>
+              </div>
+              <div style="margin-top:16px;"><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:9px;">Ore settimanali massime</div><div style="padding:14px 15px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); display:flex; justify-content:space-between; align-items:center;"><span style="font-family:'Newsreader',serif; font-size:24px;">10–12 h</span><span style="font-size:12px; color:#707a8a;">trascina per regolare</span></div></div>
+              <div style="margin-top:16px;"><div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#707a8a; margin-bottom:9px;">Attrezzatura</div><div style="display:flex; gap:8px; flex-wrap:wrap;"><span style="padding:8px 13px; border-radius:999px; border:1px solid rgba(127,200,192,0.4); background:rgba(127,200,192,0.08); color:#9fded6; font-size:12px;">Misuratore di potenza</span><span style="padding:8px 13px; border-radius:999px; border:1px solid rgba(127,200,192,0.4); background:rgba(127,200,192,0.08); color:#9fded6; font-size:12px;">Rulli smart</span><span style="padding:8px 13px; border-radius:999px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#5c6470; font-size:12px;">+ Fascia HR</span></div></div>
+            </sc-if>
+
+            <!-- STEP 4: sync + build -->
+            <sc-if value="{{ obIs4 }}">
+              <p style="font-size:14px; line-height:1.6; color:#c7cedb; margin:0 0 18px;">Colleghiamo Intervals.icu e costruiamo il primo piano sui tuoi dati reali.</p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid rgba(70,184,138,0.35); background:rgba(70,184,138,0.07);"><span style="width:24px; height:24px; border-radius:999px; background:#46b88a; color:#06080d; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;">✓</span><div style="flex:1;"><div style="font-size:13.5px; color:#eaeef6;">Intervals.icu connesso</div><div style="font-size:11.5px; color:#7fe0b3;">128 attività importate</div></div></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid rgba(70,184,138,0.35); background:rgba(70,184,138,0.07);"><span style="width:24px; height:24px; border-radius:999px; background:#46b88a; color:#06080d; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;">✓</span><div style="flex:1;"><div style="font-size:13.5px; color:#eaeef6;">Profilo potenza calibrato</div><div style="font-size:11.5px; color:#7fe0b3;">CP 298 W · W′ 18.2 kJ</div></div></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid rgba(91,141,239,0.4); background:rgba(91,141,239,0.08);"><span style="width:24px; height:24px; border:2px solid rgba(159,188,245,0.3); border-top-color:#9fbcf5; border-radius:999px; animation:spin 0.8s linear infinite;"></span><div style="flex:1;"><div style="font-size:13.5px; color:#eaeef6;">Genero la prima settimana…</div><div style="font-size:11.5px; color:#9fbcf5;">protocollo Section 11</div></div></div>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <!-- footer nav -->
+          <div style="display:flex; gap:10px; margin-top:18px;">
+            <sc-if value="{{ obNotFirst }}"><button onClick="{{ obPrev }}" style="cursor:pointer; flex:0 0 auto; border:1px solid rgba(255,255,255,0.14); background:transparent; color:#aab3c2; font-family:'Syne',sans-serif; font-weight:600; font-size:14px; padding:14px 20px; border-radius:14px;">Indietro</button></sc-if>
+            <sc-if value="{{ obNotLast }}"><button onClick="{{ obNext }}" style="cursor:pointer; flex:1; border:none; background:linear-gradient(120deg,#5b8def,#6f9ff0); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; padding:14px; border-radius:14px; box-shadow:0 10px 26px rgba(91,141,239,0.3);">Continua</button></sc-if>
+            <sc-if value="{{ obIs4 }}"><button onClick="{{ goToday }}" style="cursor:pointer; flex:1; border:none; background:linear-gradient(120deg,#46b88a,#5fc89c); color:#06120c; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; padding:14px; border-radius:14px; box-shadow:0 10px 26px rgba(70,184,138,0.3);">Apri la dashboard</button></sc-if>
+          </div>
+
+        </div>
+        </sc-if>
+
+        <!-- ====================== SCHERMATA: IMPOSTAZIONI ====================== -->
+        <sc-if value="{{ isSettings }}">
+        <div data-screen-label="Impostazioni" style="padding:6px 18px 26px; color:#eaeef6;">
+
+          <div style="padding-top:10px;">
+            <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#707a8a;">Impostazioni</div>
+            <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; line-height:1; margin:6px 0 0;">Dossier atleta</h1>
+          </div>
+
+          <!-- connessione intervals -->
+          <div style="margin-top:16px; border-radius:16px; border:1px solid {{ calBd }}; background:{{ calBg }}; padding:15px; display:flex; align-items:center; gap:12px;">
+            <span style="width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:16px;">⇄</span>
+            <div style="flex:1;"><div style="font-size:13.5px; color:#eaeef6;">Intervals.icu</div><div style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:{{ syncFg }}; margin-top:2px;"><span style="width:7px; height:7px; border-radius:999px; background:{{ syncDot }};"></span>{{ lastSync }}</div></div>
+            <button onClick="{{ refresh }}" style="cursor:pointer; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.05); color:#eaeef6; font-family:'Syne',sans-serif; font-weight:600; font-size:12px; padding:9px 13px; border-radius:11px;">Riconnetti</button>
+          </div>
+
+          <!-- dossier editabile -->
+          <div style="margin-top:18px; display:flex; flex-direction:column; gap:18px;">
+
+            <div>
+              <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-bottom:11px;">Anagrafica</div>
+              <div style="display:flex; flex-direction:column; gap:1px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; background:rgba(255,255,255,0.025);"><span style="font-size:13px; color:#aab3c2;">Nome</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">Giuseppe Carbonari <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; background:rgba(255,255,255,0.025);"><span style="font-size:13px; color:#aab3c2;">Peso</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">73.5 kg <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; background:rgba(255,255,255,0.025);"><span style="font-size:13px; color:#aab3c2;">FC max</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">186 bpm <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-bottom:11px;">Gara e obiettivi</div>
+              <div style="display:flex; flex-direction:column; gap:1px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; background:rgba(255,255,255,0.025);"><span style="font-size:13px; color:#aab3c2;">Gara target</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">{{ targetEvent }} <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; background:rgba(255,255,255,0.025);"><span style="font-size:13px; color:#aab3c2;">Data</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">12 set 2026 <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-bottom:11px;">Disponibilità</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; border-radius:14px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08);"><span style="font-size:13px; color:#aab3c2;">Giorni · ore / sett.</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">6 gg · 10–12 h <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+            </div>
+
+            <div>
+              <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#7fc8c0; margin-bottom:11px;">Giorni vincolati</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; border-radius:14px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08);"><span style="font-size:13px; color:#aab3c2;">Mai allenamento</span><span style="display:flex; align-items:center; gap:9px; font-size:13.5px;">Giovedì <span style="color:#7fc8c0; font-size:13px;">✎</span></span></div>
+            </div>
+
+          </div>
+
+          <button style="cursor:pointer; margin-top:22px; width:100%; border:1px solid rgba(217,102,91,0.3); background:rgba(217,102,91,0.06); color:#eda7a0; font-family:'Syne',sans-serif; font-weight:600; font-size:13px; padding:13px; border-radius:13px;">Esporta o cancella i miei dati</button>
+
+        </div>
+        </sc-if>
+
+      </div>
+
+      <!-- bottom tab bar -->
+      <div style="position:relative; z-index:5; display:flex; justify-content:space-around; align-items:center; padding:12px 10px 22px; background:rgba(9,12,19,0.88); border-top:1px solid rgba(255,255,255,0.07);">
+        <button onClick="{{ goToday }}" style="cursor:pointer; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px; color:{{ tabTodayFg }}; font-family:'Syne',sans-serif;">
+          <span style="font-size:18px;">◎</span><span style="font-size:10px; font-weight:600;">Oggi</span>
+        </button>
+        <button onClick="{{ goPlan }}" style="cursor:pointer; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px; color:{{ tabPlanFg }}; font-family:'Syne',sans-serif;">
+          <span style="font-size:18px;">▦</span><span style="font-size:10px; font-weight:600;">Piano</span>
+        </button>
+        <button onClick="{{ goProfile }}" style="cursor:pointer; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px; color:{{ tabProfileFg }}; font-family:'Syne',sans-serif;">
+          <span style="font-size:18px;">◭</span><span style="font-size:10px; font-weight:600;">Profilo</span>
+        </button>
+        <button onClick="{{ goSettings }}" style="cursor:pointer; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px; color:{{ tabSetFg }}; font-family:'Syne',sans-serif;">
+          <span style="font-size:18px;">⚙</span><span style="font-size:10px; font-weight:600;">Impostazioni</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 760, &quot;height&quot;: 980}, &quot;athleteName&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Giuseppe&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { screen: 'today', data: 'stale', open: null, openDay: 0, obStep: 0, redistribute: false, calib: 'partial', editGoal: false };
+
+  componentWillUnmount() { clearInterval(this._t); }
+
+  refresh() {
+    if (this.state.data === 'syncing') return;
+    this.setState({ data: 'syncing' });
+    clearInterval(this._t);
+    this._t = setTimeout(() => this.setState({ data: 'fresh' }), 1900);
+  }
+  setData(d) { clearInterval(this._t); this.setState({ data: d }); }
+  go(s) { this.setState({ screen: s, open: null }); }
+  toggleTip(k) { this.setState(s => ({ open: s.open === k ? null : k })); }
+  selDay(i) { this.setState(s => ({ openDay: s.openDay === i ? -1 : i, redistribute: false })); }
+  toggleRedistribute() { this.setState(s => ({ redistribute: !s.redistribute })); }
+  obNext() { this.setState(s => ({ obStep: Math.min(4, s.obStep + 1) })); }
+  obPrev() { this.setState(s => ({ obStep: Math.max(0, s.obStep - 1) })); }
+  obGo(n) { this.setState({ obStep: n }); }
+  setCalib(c) { this.setState({ calib: c }); }
+
+  renderVals() {
+    const d = this.state.data;
+    const sc = this.state.screen;
+    const accent = '#5b8def';
+
+    const lastSync = d === 'fresh' ? 'adesso' : d === 'stale' ? '1 g fa · ieri 09:10' : d === 'error' ? 'sync fallita' : 'in corso…';
+    const syncFg = d === 'stale' ? '#f0c878' : d === 'error' ? '#ed8a82' : d === 'syncing' ? '#9fbcf5' : '#7fe0b3';
+    const syncDot = d === 'stale' ? '#e0a83e' : d === 'error' ? '#d9665b' : d === 'syncing' ? '#5b8def' : '#46b88a';
+
+    // refresh button look per state
+    let refreshBg, refreshFg, refreshBorder, refreshShadow, refreshLabel, refreshIcon, spinnerStyle = '', refreshCursor = 'pointer';
+    if (d === 'syncing') {
+      refreshBg = 'rgba(91,141,239,0.16)'; refreshFg = '#9fbcf5'; refreshBorder = 'rgba(91,141,239,0.45)'; refreshShadow = 'none';
+      refreshLabel = 'Sincronizzo…'; refreshIcon = ''; refreshCursor = 'default';
+      spinnerStyle = 'display:inline-block;width:16px;height:16px;border:2px solid rgba(159,188,245,0.3);border-top-color:#9fbcf5;border-radius:999px;animation:spin 0.7s linear infinite;';
+    } else if (d === 'error') {
+      refreshBg = 'linear-gradient(120deg,#d9665b,#e07c72)'; refreshFg = '#fff'; refreshBorder = 'transparent'; refreshShadow = '0 10px 26px rgba(217,102,91,0.32)';
+      refreshLabel = 'Riconnetti Intervals.icu'; refreshIcon = '↻';
+    } else if (d === 'stale') {
+      refreshBg = 'linear-gradient(120deg,#e0a83e,#ecb957)'; refreshFg = '#1a1206'; refreshBorder = 'transparent'; refreshShadow = '0 10px 26px rgba(224,168,62,0.3)';
+      refreshLabel = 'Aggiorna dati'; refreshIcon = '⟳';
+    } else {
+      refreshBg = 'linear-gradient(120deg,#5b8def,#6f9ff0)'; refreshFg = '#fff'; refreshBorder = 'transparent'; refreshShadow = '0 10px 26px rgba(91,141,239,0.3)';
+      refreshLabel = 'Aggiorna dati'; refreshIcon = '⟳';
+    }
+
+    const metricDefs = [
+      { key: 'ctl', label: 'Forma fisica', acr: 'CTL', value: '87', delta: '↑ 4', deltaCol: '#7fe0b3', tip: 'Carico di allenamento a lungo termine: quanto sei allenato. Sale lentamente con la costanza. (Chronic Training Load)' },
+      { key: 'atl', label: 'Fatica recente', acr: 'ATL', value: '81', delta: '↑ 12', deltaCol: '#f0c878', tip: 'Fatica accumulata negli ultimi ~7 giorni. Cresce in fretta dopo i blocchi intensi. (Acute Training Load)' },
+      { key: 'tsb', label: 'Freschezza', acr: 'TSB', value: '+6', delta: '↓ 8', deltaCol: '#9fded6', tip: 'Forma meno fatica. Positivo = fresco e pronto. Tra −10 e −30 è normale, non un allarme. (Training Stress Balance)' },
+      { key: 'acwr', label: 'Equilibrio carico', acr: 'ACWR', value: '1.12', delta: 'ok', deltaCol: '#7fe0b3', tip: 'Rapporto carico acuto / cronico. Sotto 1.3 è sostenibile; oltre 1.5 = rischio sovraccarico. (Acute:Chronic Workload Ratio)' },
+      { key: 'rhr', label: 'FC a riposo', acr: 'RHR', value: '48', delta: '↓ 1', deltaCol: '#7fe0b3', tip: 'Battiti a riposo. In rialzo di ≥5 bpm può segnalare stress o affaticamento. (Resting Heart Rate)' },
+      { key: 'hrv', label: 'Variabilità FC', acr: 'HRV', value: '74', delta: 'stabile', deltaCol: '#9fded6', tip: 'Variabilità del battito. Entro ±10% della baseline = recuperato; in calo marcato = fatica. (Heart Rate Variability)' },
+    ];
+    const metrics = metricDefs.map(m => ({
+      ...m,
+      open: this.state.open === m.key,
+      toggle: () => this.toggleTip(m.key),
+      border: this.state.open === m.key ? 'rgba(127,200,192,0.4)' : 'rgba(255,255,255,0.08)',
+    }));
+
+    // ---- PIANO: 7 giorni ----
+    const kindMap = {
+      hard:   { col: '#d9665b', soft: 'rgba(217,102,91,0.12)', fg: '#eda7a0', icon: '▲', label: 'Duro' },
+      medium: { col: '#5b8def', soft: 'rgba(91,141,239,0.14)', fg: '#9fbcf5', icon: '◆', label: 'Medio' },
+      easy:   { col: '#7fc8c0', soft: 'rgba(127,200,192,0.12)', fg: '#9fded6', icon: '〜', label: 'Facile' },
+      rest:   { col: 'rgba(255,255,255,0.18)', soft: 'rgba(255,255,255,0.05)', fg: '#8b94a3', icon: '○', label: 'Riposo' },
+    };
+    const dayDefs = [
+      { d: 'Lun', date: 16, title: 'Soglia 3×12′', kind: 'medium', zone: 'Z4', today: true, dur: '1h05', goal: 'Sviluppo della soglia funzionale', struct: '15′ riscaldamento · 3×12′ @ 250–265 W r4′ · 10′ defaticamento', note: 'Tieni cadenza 90+ rpm, resta dentro Z4 senza sforare in Z5.' },
+      { d: 'Mar', date: 17, title: 'VO₂max 5×4′', kind: 'hard', zone: 'Z5', dur: '1h10', goal: 'Capacità aerobica massima', struct: '20′ ris · 5×4′ @ ~300 W r4′ · defaticamento', note: 'Solo con readiness verde. Recuperi completi tra le ripetute.' },
+      { d: 'Mer', date: 18, title: 'Fondo lento', kind: 'easy', zone: 'Z2', dur: '1h30', goal: 'Base aerobica + recupero attivo', struct: '90′ costanti in Z2, potenza < 200 W', note: '' },
+      { d: 'Gio', date: 19, title: 'Riposo', kind: 'rest', zone: '—', dur: '—', goal: 'Recupero completo', struct: 'Mobilità opzionale 15′', note: 'Giorno chiave per assorbire il carico dei due lavori precedenti.' },
+      { d: 'Ven', date: 20, title: 'Sweet spot 2×20′', kind: 'medium', zone: 'Z3–4', dur: '1h15', goal: 'Resistenza sub-soglia', struct: '15′ ris · 2×20′ @ 235–245 W r5′', note: '' },
+      { d: 'Sab', date: 21, title: 'Lungo collinare', kind: 'hard', zone: 'Z2–3', dur: '3h30', goal: 'Durabilità sulle salite', struct: '210′ con 4×8′ in salita Z3 nell’ultima ora', note: 'Simula Esatrail: lavora la fatica nelle salite finali, è lì il tuo limitatore.' },
+      { d: 'Dom', date: 22, title: 'Recovery ride', kind: 'easy', zone: 'Z1–2', dur: '1h00', goal: 'Scarico', struct: '60′ molto facile', note: '' },
+    ];
+    const days = dayDefs.map((x, i) => {
+      const k = kindMap[x.kind];
+      return { ...x, accent: k.col, soft: k.soft, kindFg: k.fg, icon: k.icon, kindLabel: k.label,
+        open: this.state.openDay === i, select: () => this.selDay(i),
+        cardBorder: x.today ? 'rgba(91,141,239,0.55)' : (this.state.openDay === i ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.08)'),
+        cardBg: x.kind === 'rest' ? 'rgba(255,255,255,0.015)' : 'linear-gradient(160deg, rgba(34,43,61,0.5), rgba(14,18,27,0.4))',
+        todayGlow: x.today ? '0 0 0 1px rgba(91,141,239,0.2), 0 12px 30px rgba(91,141,239,0.14)' : 'none',
+      };
+    });
+
+    // ---- PROFILO: calibrazione ----
+    const calibMap = {
+      none:    { fg: '#eda7a0', bg: 'rgba(217,102,91,0.12)', bd: 'rgba(217,102,91,0.35)', dot: '#d9665b', label: 'Non calibrato' },
+      partial: { fg: '#f0c878', bg: 'rgba(224,168,62,0.12)', bd: 'rgba(224,168,62,0.35)', dot: '#e0a83e', label: 'Su valori medi' },
+      full:    { fg: '#7fe0b3', bg: 'rgba(70,184,138,0.12)', bd: 'rgba(70,184,138,0.35)', dot: '#46b88a', label: 'Calibrato sui tuoi dati' },
+    };
+    const cal = calibMap[this.state.calib];
+
+    // ---- ONBOARDING ----
+    const obStep = this.state.obStep;
+    const obTitles = ['Consenso e privacy', 'Dossier atleta', 'Obiettivi e gara', 'Disponibilità e attrezzatura', 'Sincronizza e costruisci'];
+    const obPct = ((obStep + 1) / 5) * 100;
+
+    const navStyle = (name) => ({
+      bg: sc === name ? 'rgba(91,141,239,0.16)' : 'rgba(255,255,255,0.03)',
+      fg: sc === name ? '#cdd9f7' : '#8b94a3',
+      border: sc === name ? 'rgba(91,141,239,0.45)' : 'rgba(255,255,255,0.09)',
+    });
+    const nt = navStyle('today'), np = navStyle('plan'), npr = navStyle('profile'), no = navStyle('onboarding'), ns = navStyle('settings');
+    const tabFg = (name) => sc === name ? '#9fbcf5' : '#6b7585';
+
+    return {
+      athleteName: this.props.athleteName ?? 'Giuseppe',
+      isToday: sc === 'today', isPlan: sc === 'plan', isProfile: sc === 'profile', isOnboarding: sc === 'onboarding', isSettings: sc === 'settings',
+      isFresh: d === 'fresh', isStale: d === 'stale', isSyncing: d === 'syncing', isError: d === 'error', notSyncing: d !== 'syncing',
+      lastSync, syncFg, syncDot,
+      refreshBg, refreshFg, refreshBorder, refreshShadow, refreshLabel, refreshIcon, spinnerStyle, refreshCursor,
+      refresh: () => this.refresh(), reconnect: () => this.refresh(),
+      setFresh: () => this.setData('fresh'), setStale: () => this.setData('stale'), setError: () => this.setData('error'),
+      goToday: () => this.go('today'), goPlan: () => this.go('plan'), goProfile: () => this.go('profile'), goOnboarding: () => this.go('onboarding'), goSettings: () => this.go('settings'),
+      metrics,
+      navTodayBg: nt.bg, navTodayFg: nt.fg, navTodayBorder: nt.border,
+      navPlanBg: np.bg, navPlanFg: np.fg, navPlanBorder: np.border,
+      navProfileBg: npr.bg, navProfileFg: npr.fg, navProfileBorder: npr.border,
+      navObBg: no.bg, navObFg: no.fg, navObBorder: no.border,
+      navSetBg: ns.bg, navSetFg: ns.fg, navSetBorder: ns.border,
+      tabTodayFg: tabFg('today'), tabPlanFg: tabFg('plan'), tabProfileFg: tabFg('profile'), tabSetFg: tabFg('settings'),
+      days,
+      redistribute: this.state.redistribute, toggleRedistribute: () => this.toggleRedistribute(),
+      calFg: cal.fg, calBg: cal.bg, calBd: cal.bd, calDot: cal.dot, calLabel: cal.label,
+      setCalibNone: () => this.setCalib('none'), setCalibPartial: () => this.setCalib('partial'), setCalibFull: () => this.setCalib('full'),
+      obStep, obTitle: obTitles[obStep], obPct: obPct + '%',
+      obIs0: obStep === 0, obIs1: obStep === 1, obIs2: obStep === 2, obIs3: obStep === 3, obIs4: obStep === 4,
+      obStepNum: 'Step ' + (obStep + 1) + ' di 5',
+      obNext: () => this.obNext(), obPrev: () => this.obPrev(), obNotFirst: obStep > 0, obNotLast: obStep < 4,
+      targetEvent: this.props.targetEvent ?? 'Esatrail Super Hero',
+      openCp: this.state.open === 'cp', toggleCp: () => this.toggleTip('cp'),
+      openWp: this.state.open === 'wp', toggleWp: () => this.toggleTip('wp'),
+      openDur: this.state.open === 'dur', toggleDur: () => this.toggleTip('dur'),
+    };
+  }
+}
+</script>
+</body>
+</html>
