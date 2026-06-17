@@ -122,14 +122,17 @@ export default async function PlanPage() {
   const weekStats = plan ? computeWeekStats(plan.sessions) : null;
   const meta = plan?.validation_metadata ?? null;
   const daysToEvent = meta?.days_to_event ?? null;
+  const completionByDate = plan
+    ? buildCompletionByDate(plan.sessions, mirror?.activities_90d ?? [])
+    : {};
 
   return (
     <LiminaShell>
       {/* Header */}
-      <div className="flex items-start justify-between pt-2">
-        <div>
+      <div className="flex min-w-0 items-start justify-between pt-2">
+        <div className="min-w-0">
           {plan && (
-            <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
+            <div className="break-words text-[11px] uppercase leading-relaxed tracking-[0.16em] text-muted">
               {formatWeekRange(plan.week_start)} · sett.{" "}
               {getWeekNumber(plan.week_start)}
               {daysToEvent != null && ` · ${daysToEvent}gg all'evento`}
@@ -142,17 +145,15 @@ export default async function PlanPage() {
       </div>
 
       {/* 01 — Rigenera */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-semibold tabular-nums text-faint">01</span>
-        <div className="flex-1">
-          <GenerateWeekButton hasPlan={plan != null} />
-        </div>
+      <div className="space-y-2">
+        <StepMarker number="1" title="Aggiorna" subtitle="Rigenera dai dati" />
+        <GenerateWeekButton hasPlan={plan != null} />
       </div>
 
       {/* 02 — Scheda settimanale */}
-      <div className="flex items-start gap-2">
-        <span className="mt-1 text-[10px] font-semibold tabular-nums text-faint">02</span>
-        <div className="flex-1 space-y-3">
+      <div className="space-y-2">
+        <StepMarker number="2" title="Controlla" subtitle="Leggi la scheda" />
+        <div className="min-w-0 space-y-3">
           {/* Nessun piano */}
           {!plan && (
             <div className="rounded-[18px] border border-border bg-surface px-6 py-10 text-center">
@@ -169,7 +170,7 @@ export default async function PlanPage() {
             <>
               {/* Stats strip: ore / TSS / intense */}
               {weekStats && (
-                <div className="flex gap-2">
+                <div className="grid min-w-0 grid-cols-3 gap-2">
                   <StatPill label="Ore" value={weekStats.hoursLabel} />
                   <StatPill label="TSS ~" value={weekStats.tssLabel} />
                   <StatPill label="Intense" value={String(weekStats.hardCount)} />
@@ -178,11 +179,11 @@ export default async function PlanPage() {
 
               {/* Narrativa — sopra la griglia */}
               {plan.narrative && (
-                <div className="rounded-[16px] border border-border bg-gradient-to-br from-[#222b3d]/40 to-[#0e121b]/40 p-4">
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-accent2">
+                <div className="min-w-0 rounded-[16px] border border-border bg-gradient-to-br from-[#222b3d]/40 to-[#0e121b]/40 p-4">
+                  <div className="mb-2 break-words text-[10px] uppercase tracking-[0.14em] text-accent2">
                     La logica della settimana
                   </div>
-                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-secondary">
+                  <p className="whitespace-pre-line break-words text-[13px] leading-relaxed text-secondary">
                     {plan.narrative}
                   </p>
                 </div>
@@ -190,7 +191,7 @@ export default async function PlanPage() {
 
               {/* Fase reason */}
               {meta?.phase_reason && !plan.narrative && (
-                <div className="rounded-[16px] border border-border bg-surface px-4 py-3 text-sm text-secondary">
+                <div className="min-w-0 break-words rounded-[16px] border border-border bg-surface px-4 py-3 text-sm text-secondary">
                   {meta.phase_reason}
                 </div>
               )}
@@ -203,9 +204,10 @@ export default async function PlanPage() {
                 todayReadiness={todayReadiness}
                 pushedAt={plan.pushed_at}
                 todayDate={todayDate}
+                completionByDate={completionByDate}
               />
 
-              <p className="text-[11px] text-faint">
+              <p className="break-words text-[11px] text-faint">
                 Piano deterministico (Section 11 B). I target sono zone, non watt
                 fissi.
               </p>
@@ -216,27 +218,100 @@ export default async function PlanPage() {
 
       {/* 03 — Invia a Intervals */}
       {plan && (
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold tabular-nums text-faint">03</span>
-          <div className="flex-1">
-            <PushButton
-              pushedAt={plan.pushed_at}
-              canWriteCalendar={canWriteCalendar}
-            />
-          </div>
+        <div className="space-y-2">
+          <StepMarker number="3" title="Carica" subtitle="Settimana su Intervals" />
+          <PushButton
+            pushedAt={plan.pushed_at}
+            canWriteCalendar={canWriteCalendar}
+          />
         </div>
       )}
     </LiminaShell>
   );
 }
 
+function buildCompletionByDate(
+  sessions: BuiltSession[],
+  activities: MirrorData["activities_90d"]
+): Record<string, { percent: number; label: string; source: "intervals" | "duration" }> {
+  const plannedByDate = new Map(
+    sessions
+      .filter((session) => !session.rest && session.estimated_duration_min != null)
+      .map((session) => [session.date, session])
+  );
+  const result: Record<string, { percent: number; label: string; source: "intervals" | "duration" }> = {};
+
+  for (const activity of activities) {
+    const date = activity.start_date_local.slice(0, 10);
+    const session = plannedByDate.get(date);
+    if (!session || activity.moving_time == null || activity.moving_time <= 0) {
+      continue;
+    }
+
+    const compliance = normalizeCompliance(activity.compliance ?? null);
+    const plannedSeconds = (session.estimated_duration_min ?? 0) * 60;
+    const percent =
+      compliance ??
+      (plannedSeconds > 0
+        ? Math.max(
+            1,
+            Math.min(100, Math.round((activity.moving_time / plannedSeconds) * 100))
+          )
+        : null);
+    if (percent == null) continue;
+
+    const previous = result[date];
+    if (!previous || percent > previous.percent) {
+      result[date] = {
+        percent,
+        label: `✓ ${percent}%`,
+        source: compliance != null ? "intervals" : "duration",
+      };
+    }
+  }
+
+  return result;
+}
+
+function normalizeCompliance(value: number | null): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const normalized = value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function StepMarker({
+  number,
+  title,
+  subtitle,
+}: {
+  number: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-brand/45 bg-brand-dim text-[10px] font-bold tabular-nums text-brand-hover">
+        {number}
+      </span>
+      <span className="flex min-w-0 items-baseline gap-1.5">
+        <span className="truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-secondary">
+          {title}
+        </span>
+        <span className="truncate text-[10px] text-faint">
+          {subtitle}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-1 flex-col items-center rounded-[13px] border border-border bg-white/[0.025] py-3">
-      <span className="font-serif text-[21px] leading-none text-foreground">
+    <div className="flex min-w-0 flex-col items-center rounded-[13px] border border-border bg-white/[0.025] px-1.5 py-3">
+      <span className="max-w-full break-words text-center font-serif text-[18px] leading-none text-foreground sm:text-[21px]">
         {value}
       </span>
-      <span className="mt-1 text-[10px] uppercase tracking-[0.1em] text-muted">
+      <span className="mt-1 max-w-full break-words text-center text-[10px] uppercase tracking-[0.1em] text-muted">
         {label}
       </span>
     </div>

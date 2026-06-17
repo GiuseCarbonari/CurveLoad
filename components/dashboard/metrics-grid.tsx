@@ -18,6 +18,8 @@ export interface SimpleMetric {
   value: React.ReactNode;
   delta?: React.ReactNode;
   deltaClassName?: string;
+  deltaDirection?: "up" | "down" | "flat";
+  deltaTone?: "positive" | "negative" | "neutral";
   tooltip: string;
 }
 
@@ -156,6 +158,8 @@ export function MetricsGrid({
           value={metric.value}
           delta={metric.delta}
           deltaClassName={metric.deltaClassName}
+          deltaDirection={metric.deltaDirection}
+          deltaTone={metric.deltaTone}
           tooltip={metric.tooltip}
           open={openKey === metric.key}
           onToggle={() => toggle(metric.key)}

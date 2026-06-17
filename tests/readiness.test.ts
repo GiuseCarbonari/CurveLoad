@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   computeReadiness,
+  computeReadinessScore,
   type ReadinessInputDay,
 } from "../lib/readiness";
 
@@ -130,4 +131,22 @@ test("Readiness usa SDNN quando è il protocollo selezionato", () => {
 
   assert.equal(hrvSignal?.status, "red");
   assert.match(hrvSignal?.detail ?? "", /HRV SDNN/);
+});
+
+test("Readiness score: GO, MODIFY e SKIP restano nelle bande operative", () => {
+  const go = computeReadiness(day(), history());
+  const modify = computeReadiness(day({ ctl: 60, atl: 80 }), history());
+  const skip = computeReadiness(day(), history(), { recoveryIndex: 0.55 });
+
+  assert.ok(computeReadinessScore(go) >= 70);
+  assert.ok(computeReadinessScore(modify) >= 40);
+  assert.ok(computeReadinessScore(modify) <= 69);
+  assert.ok(computeReadinessScore(skip) <= 39);
+});
+
+test("Readiness score: pochi dati abbassano un GO senza cambiare decisione", () => {
+  const result = computeReadiness(null, []);
+
+  assert.equal(result.decision, "GO");
+  assert.equal(computeReadinessScore(result), 70);
 });

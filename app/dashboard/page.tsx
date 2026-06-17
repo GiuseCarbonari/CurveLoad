@@ -40,6 +40,20 @@ function deltaClass(v: number | null, invert = false): string {
   return pos ? "text-ready-go" : "text-ready-modify";
 }
 
+function deltaDirection(v: number | null): "up" | "down" | "flat" {
+  if (v == null || Math.abs(v) < 0.5) return "flat";
+  return v > 0 ? "up" : "down";
+}
+
+function deltaTone(
+  v: number | null,
+  invert = false
+): "positive" | "negative" | "neutral" {
+  if (v == null || Math.abs(v) < 0.5) return "neutral";
+  const positive = invert ? v < 0 : v > 0;
+  return positive ? "positive" : "negative";
+}
+
 export default async function DashboardPage() {
   const supabase = createClient();
   const {
@@ -107,11 +121,19 @@ export default async function DashboardPage() {
     : null;
 
   let latestRhr: { value: number; date: string } | null = null;
+  let previousRhr: { value: number; date: string } | null = null;
   if (mirror) {
     for (let i = mirror.wellness_30d.length - 1; i >= 0; i--) {
       const day = mirror.wellness_30d[i];
       if (day.restingHR != null) {
         latestRhr = { value: day.restingHR, date: day.date };
+        for (let j = i - 1; j >= 0; j--) {
+          const previousDay = mirror.wellness_30d[j];
+          if (previousDay.restingHR != null) {
+            previousRhr = { value: previousDay.restingHR, date: previousDay.date };
+            break;
+          }
+        }
         break;
       }
     }
@@ -128,6 +150,10 @@ export default async function DashboardPage() {
       ? wellnessPrevious.ctl - wellnessPrevious.atl
       : null;
   const tsbDelta = tsb != null && previousTsb != null ? tsb - previousTsb : null;
+  const rhrDelta =
+    latestRhr != null && previousRhr != null
+      ? latestRhr.value - previousRhr.value
+      : null;
 
   const lastFetchedAt = mirror?.fetched_at ?? null;
   const initialStatus: "fresh" | "stale" =
@@ -149,6 +175,8 @@ export default async function DashboardPage() {
       value: fmt(ctl),
       delta: fmtDelta(ctlDelta),
       deltaClassName: deltaClass(ctlDelta),
+      deltaDirection: deltaDirection(ctlDelta),
+      deltaTone: deltaTone(ctlDelta),
       tooltip:
         "Carico di allenamento a lungo termine: quanto sei allenato. Sale lentamente con la costanza. (Chronic Training Load)",
     },
@@ -159,6 +187,8 @@ export default async function DashboardPage() {
       value: fmt(atl),
       delta: fmtDelta(atlDelta),
       deltaClassName: deltaClass(atlDelta, true),
+      deltaDirection: deltaDirection(atlDelta),
+      deltaTone: deltaTone(atlDelta, true),
       tooltip:
         "Fatica accumulata negli ultimi ~7 giorni. Cresce in fretta dopo i blocchi intensi. (Acute Training Load)",
     },
@@ -169,6 +199,8 @@ export default async function DashboardPage() {
       value: fmt(tsb, 0, true),
       delta: fmtDelta(tsbDelta),
       deltaClassName: deltaClass(tsbDelta),
+      deltaDirection: deltaDirection(tsbDelta),
+      deltaTone: deltaTone(tsbDelta),
       tooltip:
         "Forma meno fatica. Positivo = fresco e pronto. Tra −10 e −30 è normale, non un allarme. (Training Stress Balance)",
     },
@@ -180,6 +212,8 @@ export default async function DashboardPage() {
       delta: acwr != null ? (acwr <= 1.3 ? "ok" : "alto") : null,
       deltaClassName:
         acwr != null && acwr <= 1.3 ? "text-ready-go" : "text-ready-modify",
+      deltaDirection: "flat" as const,
+      deltaTone: acwr != null && acwr <= 1.3 ? "positive" as const : "negative" as const,
       tooltip:
         "Rapporto carico acuto / cronico. Sotto 1.3 è sostenibile; oltre 1.5 = rischio sovraccarico. (Acute:Chronic Workload Ratio)",
     },
@@ -188,8 +222,10 @@ export default async function DashboardPage() {
       label: "FC a riposo",
       acronym: "RHR",
       value: latestRhr ? fmt(latestRhr.value, 0) : "—",
-      delta: latestRhr ? undefined : "collega un sensore",
-      deltaClassName: "text-muted",
+      delta: latestRhr ? fmtDelta(rhrDelta) : "collega un sensore",
+      deltaClassName: latestRhr ? deltaClass(rhrDelta, true) : "text-muted",
+      deltaDirection: latestRhr ? deltaDirection(rhrDelta) : "flat" as const,
+      deltaTone: latestRhr ? deltaTone(rhrDelta, true) : "neutral" as const,
       tooltip:
         "Battiti a riposo. In rialzo di ≥5 bpm può segnalare stress o affaticamento. (Resting Heart Rate)",
     },

@@ -11,6 +11,14 @@ type Point = {
   tsb: number;
 };
 
+const CHART_COLORS = {
+  ctl: "#6EA2FF",
+  atl: "#F58A7C",
+  tsb: "#F2C14E",
+  grid: "rgba(234,238,246,.12)",
+  axis: "rgba(234,238,246,.18)",
+};
+
 function formatWeekLabel(date: string) {
   return new Date(`${date}T12:00:00`).toLocaleDateString("it-IT", {
     day: "numeric",
@@ -89,35 +97,32 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
   const selectedTsbY = tsbPoints[selected]?.y ?? tsbPoints.at(-1)!.y;
 
   return (
-    <section className="aurora-glass rounded-[28px] p-5">
+    <section className="aurora-glass rounded-[28px] border-white/[0.12] bg-[#101722] p-5">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <p className="font-data text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.14em] text-accent2">
             Andamento · 6 wk
           </p>
-          <h2 className="font-display mt-1 text-xl font-bold tracking-[-0.02em] text-foreground">
+          <h2 className="font-display mt-1 text-[21px] font-semibold leading-tight text-foreground">
             Forma, fatica e freschezza
           </h2>
         </div>
-        <span className="font-data hidden text-[10px] text-faint sm:inline">
+        <span className="font-body hidden text-[10px] text-faint sm:inline">
           passa o tocca per esplorare
         </span>
       </div>
 
       <div className="relative">
         <div
-          className="absolute top-0 z-10 -translate-x-1/2 rounded-[12px] border border-border bg-[#121a22]/95 px-3 py-2 shadow-xl backdrop-blur-xl"
+          className="absolute top-2 z-10 -translate-x-1/2 rounded-full border border-white/[0.14] bg-[#0b111a]/90 px-2.5 py-1 shadow-lg backdrop-blur-xl"
           style={{ left: `${(selectedX / 340) * 100}%` }}
         >
-          <p className="font-data text-[9px] uppercase tracking-[0.08em] text-muted">
-            {selectedPoint.label}
-          </p>
-          <div className="font-data mt-1 flex gap-3 text-xs font-semibold">
-            <span className="text-amber">F {Math.round(selectedPoint.ctl)}</span>
-            <span className="text-telemetry-blue">
-              A {Math.round(selectedPoint.atl)}
+          <div className="font-display flex items-center gap-2 text-[13px] font-semibold leading-none tabular-nums">
+            <span style={{ color: CHART_COLORS.ctl }}>{Math.round(selectedPoint.ctl)}</span>
+            <span style={{ color: CHART_COLORS.atl }}>
+              {Math.round(selectedPoint.atl)}
             </span>
-            <span className="text-telemetry-gold">
+            <span style={{ color: CHART_COLORS.tsb }}>
               {selectedPoint.tsb > 0 ? "+" : ""}
               {Math.round(selectedPoint.tsb)}
             </span>
@@ -127,11 +132,12 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
         <svg viewBox="0 0 340 150" className="mt-3 block w-full">
           <defs>
             <linearGradient id="auroraCtlArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.34" />
-              <stop offset="55%" stopColor="#A78BFA" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
+              <stop offset="0%" stopColor={CHART_COLORS.ctl} stopOpacity="0.26" />
+              <stop offset="55%" stopColor={CHART_COLORS.ctl} stopOpacity="0.08" />
+              <stop offset="100%" stopColor={CHART_COLORS.ctl} stopOpacity="0" />
             </linearGradient>
           </defs>
+          <line x1="20" y1="130" x2="320" y2="130" stroke={CHART_COLORS.axis} />
           {[40, 80, 120].map((y) => (
             <line
               key={y}
@@ -139,7 +145,7 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
               y1={y}
               x2="320"
               y2={y}
-              stroke="rgba(255,255,255,.06)"
+              stroke={CHART_COLORS.grid}
             />
           ))}
           <path
@@ -149,7 +155,7 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
           <path
             d={smoothPath(tsbPoints)}
             fill="none"
-            stroke="#FFC24D"
+            stroke={CHART_COLORS.tsb}
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2.2"
@@ -157,7 +163,7 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
           <path
             d={smoothPath(atlPoints)}
             fill="none"
-            stroke="#4FA3E0"
+            stroke={CHART_COLORS.atl}
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2.2"
@@ -165,7 +171,7 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
           <path
             d={smoothPath(ctlPoints)}
             fill="none"
-            stroke="#A78BFA"
+            stroke={CHART_COLORS.ctl}
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2.8"
@@ -175,12 +181,12 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
             y1="18"
             x2={selectedX}
             y2="130"
-            stroke="rgba(255,255,255,.28)"
+            stroke="rgba(234,238,246,.36)"
             strokeDasharray="3 3"
           />
-          <circle cx={selectedX} cy={selectedCtlY} r="4.2" fill="#A78BFA" stroke="#0B0E13" strokeWidth="2" />
-          <circle cx={selectedX} cy={selectedAtlY} r="4.2" fill="#4FA3E0" stroke="#0B0E13" strokeWidth="2" />
-          <circle cx={selectedX} cy={selectedTsbY} r="4.2" fill="#FFC24D" stroke="#0B0E13" strokeWidth="2" />
+          <circle cx={selectedX} cy={selectedCtlY} r="4.2" fill={CHART_COLORS.ctl} stroke="#0B0E13" strokeWidth="2" />
+          <circle cx={selectedX} cy={selectedAtlY} r="4.2" fill={CHART_COLORS.atl} stroke="#0B0E13" strokeWidth="2" />
+          <circle cx={selectedX} cy={selectedTsbY} r="4.2" fill={CHART_COLORS.tsb} stroke="#0B0E13" strokeWidth="2" />
           {points.map((point, index) => (
             <rect
               key={point.label}
@@ -197,22 +203,22 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
         </svg>
       </div>
 
-      <div className="font-data mt-2 flex justify-between px-3 text-[9.5px] text-faint">
+      <div className="font-body mt-2 flex justify-between px-3 text-[9.5px] font-medium text-muted">
         {points.map((point) => (
           <span key={point.label}>{point.label}</span>
         ))}
       </div>
-      <div className="font-data mt-4 flex flex-wrap gap-4 text-[11px] font-medium text-secondary">
+      <div className="font-body mt-4 flex flex-wrap gap-4 text-[11px] font-semibold text-secondary">
         <span className="inline-flex items-center gap-2">
-          <span className="h-1 w-4 rounded-full bg-amber" />
+          <span className="h-1 w-4 rounded-full" style={{ backgroundColor: CHART_COLORS.ctl }} />
           Forma
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-1 w-4 rounded-full bg-telemetry-blue" />
+          <span className="h-1 w-4 rounded-full" style={{ backgroundColor: CHART_COLORS.atl }} />
           Fatica
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-1 w-4 rounded-full bg-telemetry-gold" />
+          <span className="h-1 w-4 rounded-full" style={{ backgroundColor: CHART_COLORS.tsb }} />
           Freschezza
         </span>
       </div>

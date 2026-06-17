@@ -20,7 +20,7 @@ const INTERVALS_API_BASE = "https://intervals.icu/api/v1";
 const WELLNESS_FIELDS =
   "id,ctl,atl,rampRate,weight,restingHR,hrv,hrvSDNN,sleepSecs,soreness,fatigue,mood";
 const ACTIVITY_FIELDS =
-  "id,name,type,start_date_local,moving_time,distance,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type";
+  "id,name,type,start_date_local,moving_time,distance,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type,paired_event_id,compliance";
 
 /** Errore API con il solo status: il chiamante decide come gestirlo (401 → riconnessione). */
 export class IntervalsApiError extends Error {
@@ -103,6 +103,8 @@ export interface IntervalsActivity {
   icu_weighted_avg_watts: number | null;
   average_heartrate: number | null;
   perceived_exertion: number | null;
+  paired_event_id?: number | null;
+  compliance?: number | null;
 }
 
 /**

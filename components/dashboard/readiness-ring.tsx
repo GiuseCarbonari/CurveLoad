@@ -1,27 +1,27 @@
-import type { ReadinessResult } from "@/lib/readiness";
+import {
+  computeReadinessScore,
+  type ReadinessResult,
+} from "@/lib/readiness";
 
 const RING: Record<
   ReadinessResult["decision"],
-  { from: string; to: string; label: string; labelColor: string; glow: string }
+  { from: string; to: string; labelColor: string; glow: string }
 > = {
   GO: {
     from: "#46b88a",
     to: "#7fc8c0",
-    label: "Via libera",
     labelColor: "#7fe0b3",
     glow: "rgba(70,184,138,0.45)",
   },
   MODIFY: {
     from: "#e0a83e",
     to: "#f0c878",
-    label: "Adatta la seduta",
     labelColor: "#f0c878",
     glow: "rgba(224,168,62,0.45)",
   },
   SKIP: {
     from: "#d9665b",
     to: "#ed8a82",
-    label: "Riposo",
     labelColor: "#ed8a82",
     glow: "rgba(217,102,91,0.45)",
   },
@@ -64,7 +64,7 @@ const STATUS_DOT: Record<string, string> = {
   green: "bg-ready-go",
   amber: "bg-ready-modify",
   red: "bg-ready-skip",
-  unavailable: "bg-muted/60",
+  unavailable: "bg-white/[0.16]",
 };
 
 const CTA: Record<ReadinessResult["decision"], string> = {
@@ -83,21 +83,21 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const ring = RING[readiness.decision];
   const tone = TONE[readiness.decision];
   const gradientId = `ring-${readiness.decision}`;
+  const score = computeReadinessScore(readiness);
+  const radius = 84;
+  const circumference = 2 * Math.PI * radius;
+  const scoreOffset = circumference * (1 - score / 100);
 
   const visibleSignals = readiness.signals
     .filter((s) => s.status === "amber" || s.status === "red")
     .slice(0, 3);
   const allGreen = visibleSignals.length === 0;
-  const criticalSignal = readiness.signals.find(
-    (s) => s.status === "amber" || s.status === "red"
-  );
-  const leadText = criticalSignal?.detail ?? (
+  const leadText =
     readiness.decision === "GO"
       ? "Recupero buono e carico in equilibrio."
       : readiness.decision === "MODIFY"
-      ? "Alcuni segnali suggeriscono cautela."
-      : "Il corpo ha bisogno di recupero."
-  );
+        ? "Alcuni segnali suggeriscono cautela."
+        : "Il corpo ha bisogno di recupero.";
 
   return (
     <div
@@ -113,11 +113,13 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
       {/* Body: ring + right column */}
       <div className="mt-4 flex items-center gap-5">
         {/* Ring */}
-        <div className="relative h-[130px] w-[130px] shrink-0 sm:h-[144px] sm:w-[144px]">
+        <div
+          className="relative h-[130px] w-[130px] shrink-0 sm:h-[144px] sm:w-[144px]"
+          aria-label={`Readiness ${score} su 100, decisione ${readiness.decision}`}
+        >
           <svg
             viewBox="0 0 200 200"
             className="h-full w-full"
-            style={{ transform: "rotate(-90deg)" }}
           >
             <defs>
               <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -125,33 +127,47 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
                 <stop offset="100%" stopColor={ring.to} />
               </linearGradient>
             </defs>
-            {/* Track */}
-            <circle
-              cx="100" cy="100" r="84"
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="14"
-            />
-            {/* Active arc */}
-            <circle
-              cx="100" cy="100" r="84"
-              fill="none"
-              stroke={`url(#${gradientId})`}
-              strokeWidth="14"
-              strokeLinecap="round"
-              style={{ filter: `drop-shadow(0 0 10px ${ring.glow})` }}
-            />
+            <g transform="rotate(-90 100 100)">
+              {/* Track */}
+              <circle
+                cx="100" cy="100" r={radius}
+                fill="none"
+                stroke="rgba(255,255,255,0.06)"
+                strokeWidth="14"
+              />
+              {/* Active arc */}
+              <circle
+                cx="100" cy="100" r={radius}
+                fill="none"
+                stroke={`url(#${gradientId})`}
+                strokeWidth="14"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={scoreOffset}
+                style={{ filter: `drop-shadow(0 0 10px ${ring.glow})` }}
+              >
+                <animate
+                  attributeName="stroke-dashoffset"
+                  from={circumference}
+                  to={scoreOffset}
+                  dur="850ms"
+                  fill="freeze"
+                  calcMode="spline"
+                  keySplines="0.16 1 0.3 1"
+                />
+              </circle>
+            </g>
           </svg>
           {/* Center text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
             <span
-              className="font-serif text-[17px] font-medium leading-tight"
+              className="font-body text-[35px] font-semibold leading-[0.9] tabular-nums sm:text-[38px]"
               style={{ color: ring.labelColor }}
             >
-              {ring.label}
+              {score}
             </span>
-            <span className="mt-1 text-[9px] uppercase tracking-[0.12em] text-muted">
-              {readiness.decision}
+            <span className="mt-1 text-[8px] uppercase leading-none tracking-[0.14em] text-muted">
+              su 100
             </span>
           </div>
         </div>
@@ -201,7 +217,7 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
           <div key={s.name} className="flex flex-1 flex-col items-center gap-1.5">
             <span
               className={`h-1 w-full rounded-full ${STATUS_DOT[s.status] ?? "bg-muted/40"}`}
-              style={{ opacity: s.status === "unavailable" ? 0.3 : 0.85 }}
+              style={{ opacity: s.status === "unavailable" ? 1 : 0.85 }}
             />
             <span className="text-[9px] uppercase tracking-[0.08em] text-faint">
               {SIGNAL_LABEL[s.name] ?? s.name}

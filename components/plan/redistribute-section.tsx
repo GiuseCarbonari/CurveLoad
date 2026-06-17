@@ -74,6 +74,7 @@ export function RedistributeSection({
   todayReadiness,
   pushedAt,
   todayDate,
+  completionByDate,
 }: {
   sessions: BuiltSession[];
   weekStart: string;
@@ -81,6 +82,10 @@ export function RedistributeSection({
   todayReadiness: string | null;
   pushedAt: string | null;
   todayDate: string;
+  completionByDate?: Record<
+    string,
+    { percent: number; label: string; source: "intervals" | "duration" }
+  >;
 }) {
   const router = useRouter();
 
@@ -151,6 +156,7 @@ export function RedistributeSection({
         todayReadiness={todayReadiness}
         pushedAt={pushedAt}
         lockedBefore={todayDate}
+        completionByDate={completionByDate}
         onBlockDay={(date, day) => {
           if (loadingDate) return; // debounce
           void handleBlockDay(date, day);

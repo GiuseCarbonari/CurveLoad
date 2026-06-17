@@ -65,6 +65,76 @@ export interface ReadinessResult {
   confidence: "high" | "medium" | "low";
 }
 
+const SIGNAL_SCORE_WEIGHT: Record<ReadinessSignal["name"], number> = {
+  hrv: 1.15,
+  rhr: 1.15,
+  sleep: 1,
+  tsb: 1,
+  acwr: 1.2,
+  ri: 1.25,
+};
+
+const SIGNAL_HEALTH: Record<SignalStatus, number | null> = {
+  green: 1,
+  amber: 0.58,
+  red: 0.18,
+  unavailable: null,
+};
+
+const CONFIDENCE_SCORE_PENALTY: Record<ReadinessResult["confidence"], number> = {
+  high: 0,
+  medium: 4,
+  low: 9,
+};
+
+const SCORE_BANDS: Record<
+  ReadinessResult["decision"],
+  { min: number; max: number }
+> = {
+  GO: { min: 70, max: 100 },
+  MODIFY: { min: 40, max: 69 },
+  SKIP: { min: 0, max: 39 },
+};
+
+function clampScore(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Trasforma la decisione Section 11 in un indice 0-100 senza cambiarla.
+ * Le bande restano coerenti con la ladder: SKIP 0-39, MODIFY 40-69, GO 70-100.
+ */
+export function computeReadinessScore(readiness: ReadinessResult): number {
+  let weightedHealth = 0;
+  let totalWeight = 0;
+
+  for (const signal of readiness.signals) {
+    const health = SIGNAL_HEALTH[signal.status];
+    if (health == null) continue;
+
+    const weight = SIGNAL_SCORE_WEIGHT[signal.name];
+    weightedHealth += health * weight;
+    totalWeight += weight;
+  }
+
+  const baseHealth = totalWeight > 0 ? weightedHealth / totalWeight : 0.72;
+  const rawScore = Math.round(
+    baseHealth * 100 - CONFIDENCE_SCORE_PENALTY[readiness.confidence]
+  );
+
+  let { min, max } = SCORE_BANDS[readiness.decision];
+
+  if (readiness.decision === "SKIP") {
+    max = readiness.priority === 0 ? 24 : readiness.priority === 1 ? 34 : max;
+  }
+
+  if (readiness.decision === "MODIFY" && readiness.priority === 1) {
+    max = 62;
+  }
+
+  return clampScore(rawScore, min, max);
+}
+
 /** Media aritmetica dei valori non-null; null se non ce ne sono. */
 function meanOf(values: Array<number | null>): number | null {
   const present = values.filter((v): v is number => v != null);

@@ -1,9 +1,13 @@
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+
 export function MetricCard({
   label,
   acronym,
   value,
   delta,
-  deltaClassName = "text-secondary",
+  deltaClassName,
+  deltaDirection = "flat",
+  deltaTone = "neutral",
   tooltip,
   open,
   onToggle,
@@ -14,11 +18,26 @@ export function MetricCard({
   value: React.ReactNode;
   delta?: React.ReactNode;
   deltaClassName?: string;
+  deltaDirection?: "up" | "down" | "flat";
+  deltaTone?: "positive" | "negative" | "neutral";
   tooltip: string;
   open: boolean;
   onToggle: () => void;
   footer?: React.ReactNode;
 }) {
+  const DeltaIcon =
+    deltaDirection === "up"
+      ? ArrowUpRight
+      : deltaDirection === "down"
+        ? ArrowDownRight
+        : Minus;
+  const deltaToneClass =
+    deltaTone === "positive"
+      ? "border-ready-go-border bg-ready-go/[0.12] text-ready-go"
+      : deltaTone === "negative"
+        ? "border-ready-skip-border bg-ready-skip/[0.12] text-ready-skip"
+        : "border-white/[0.12] bg-white/[0.045] text-secondary";
+
   return (
     <div
       className={`relative rounded-metric border p-[14px] transition-colors ${
@@ -43,12 +62,17 @@ export function MetricCard({
         </button>
       </div>
 
-      <div className="mt-2.5 flex items-baseline gap-1.5">
+      <div className="mt-2.5 flex items-center gap-2">
         <span className="font-serif text-[28px] leading-none tabular-nums text-foreground">
           {value}
         </span>
         {delta != null && (
-          <span className={`text-[11px] ${deltaClassName}`}>{delta}</span>
+          <span
+            className={`inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10.5px] font-semibold leading-none ${deltaClassName ?? ""} ${deltaToneClass}`}
+          >
+            <DeltaIcon className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{delta}</span>
+          </span>
         )}
       </div>
 

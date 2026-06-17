@@ -76,12 +76,42 @@ const READINESS_BADGE: Record<string, { label: string; classes: string }> = {
   SKIP: { label: "SKIP", classes: "border-ready-skip-border text-ready-skip" },
 };
 
+const COMPLETION_STOPS = [
+  { percent: 0, color: [112, 122, 138] },
+  { percent: 25, color: [91, 141, 239] },
+  { percent: 50, color: [217, 102, 91] },
+  { percent: 75, color: [224, 168, 62] },
+  { percent: 100, color: [70, 184, 138] },
+] as const;
+
+function completionColor(percent: number): string {
+  const clamped = Math.max(0, Math.min(100, percent));
+  const nextIndex = COMPLETION_STOPS.findIndex((stop) => clamped <= stop.percent);
+  const upper =
+    nextIndex === -1
+      ? COMPLETION_STOPS[COMPLETION_STOPS.length - 1]
+      : COMPLETION_STOPS[nextIndex];
+  const lower =
+    nextIndex <= 0 ? COMPLETION_STOPS[0] : COMPLETION_STOPS[nextIndex - 1];
+  const span = upper.percent - lower.percent || 1;
+  const t = (clamped - lower.percent) / span;
+  const rgb = lower.color.map((channel, index) =>
+    Math.round(channel + (upper.color[index] - channel) * t)
+  );
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+function colorMix(rgb: string, alpha: number): string {
+  return rgb.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
+}
+
 export function WeekGrid({
   sessions,
   todayKey,
   todayReadiness,
   pushedAt,
   lockedBefore,
+  completionByDate = {},
   onBlockDay,
 }: {
   sessions: BuiltSession[];
@@ -89,6 +119,10 @@ export function WeekGrid({
   todayReadiness: string | null;
   pushedAt: string | null;
   lockedBefore?: string;
+  completionByDate?: Record<
+    string,
+    { percent: number; label: string; source: "intervals" | "duration" }
+  >;
   onBlockDay?: (date: string, day: DayKey) => void;
 }) {
   const [expanded, setExpanded] = useState<DayKey | null>(null);
@@ -97,10 +131,10 @@ export function WeekGrid({
   for (const s of sessions) byDay.set(s.day as DayKey, s);
 
   return (
-    <section className="space-y-2">
+    <section className="min-w-0 space-y-2">
       {pushedAt && (
-        <div className="flex justify-end">
-          <span className="rounded-[9px] border border-ready-go-border bg-surface px-3 py-1 text-xs font-medium text-ready-go">
+        <div className="flex min-w-0 justify-end">
+          <span className="max-w-full break-words rounded-[9px] border border-ready-go-border bg-surface px-3 py-1 text-right text-xs font-medium text-ready-go">
             Inviata il{" "}
             {new Date(pushedAt).toLocaleDateString("it-IT", {
               timeZone: "Europe/Rome",
@@ -114,7 +148,7 @@ export function WeekGrid({
         </div>
       )}
 
-      <div className="flex flex-col gap-[9px]">
+      <div className="flex min-w-0 flex-col gap-[9px]">
         {DAY_ORDER.map((day) => {
           const session = byDay.get(day);
           if (!session) return null;
@@ -123,8 +157,15 @@ export function WeekGrid({
           const isOpen = expanded === day;
           const tone = sessionTone(session);
           const cfg = TONE_CONFIG[tone];
+          const completion = completionByDate[session.date];
+          const isCompleted = completion != null;
+          const completionTone = completion
+            ? completionColor(completion.percent)
+            : null;
           const readinessBadge =
-            isToday && todayReadiness ? READINESS_BADGE[todayReadiness] : null;
+            isToday && todayReadiness && !isCompleted
+              ? READINESS_BADGE[todayReadiness]
+              : null;
           const isLocked =
             session.rest ||
             (lockedBefore != null && session.date < lockedBefore);
@@ -133,8 +174,12 @@ export function WeekGrid({
           return (
             <div
               key={day}
-              className={`overflow-hidden rounded-[15px] border border-l-[3px] ${cfg.accentBorder} ${cfg.cardBg} ${
-                isToday
+              className={`overflow-hidden rounded-[15px] border border-l-[3px] ${cfg.accentBorder} ${
+                isCompleted
+                  ? "bg-[#0b1018]/70 opacity-[0.72]"
+                  : cfg.cardBg
+              } ${
+                isToday && !isCompleted
                   ? "border-brand/55 shadow-[0_0_0_1px_rgba(91,141,239,0.2),0_12px_30px_rgba(91,141,239,0.14)]"
                   : isOpen
                     ? "border-white/[0.16]"
@@ -149,7 +194,7 @@ export function WeekGrid({
                 onClick={() =>
                   !session.rest && setExpanded(isOpen ? null : day)
                 }
-                className="flex w-full cursor-pointer items-center gap-3 px-[15px] py-[14px] text-left"
+                className="flex w-full min-w-0 cursor-pointer items-start gap-3 px-[15px] py-[14px] text-left"
                 aria-expanded={isOpen}
               >
                 {/* Date column */}
@@ -164,16 +209,18 @@ export function WeekGrid({
 
                 {/* Session info */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[12px]" style={{ color: tone === "rest" ? "#6b7585" : undefined }}>
+                  <div className="flex min-w-0 items-start gap-1.5">
+                    <span className="mt-0.5 shrink-0 text-[12px]" style={{ color: tone === "rest" ? "#6b7585" : undefined }}>
                       {cfg.icon}
                     </span>
-                    <span className="truncate font-serif text-[16px] leading-tight text-foreground">
+                    <span className={`min-w-0 break-words font-serif text-[15px] leading-snug sm:text-[16px] ${
+                      isCompleted ? "text-secondary" : "text-foreground"
+                    }`}>
                       {session.rest ? "Riposo" : session.title}
                     </span>
                   </div>
                   {!session.rest && (
-                    <div className="mt-0.5 text-[11.5px] text-muted">
+                    <div className="mt-0.5 break-words text-[11.5px] leading-snug text-muted">
                       {session.estimated_duration_min != null
                         ? `${Math.floor(session.estimated_duration_min / 60)}h ${String(session.estimated_duration_min % 60).padStart(2, "0")}′ · `
                         : ""}
@@ -183,16 +230,29 @@ export function WeekGrid({
                 </div>
 
                 {/* Right side: readiness badge or kind chip */}
-                {readinessBadge ? (
+                {isCompleted ? (
                   <span
-                    className={`shrink-0 rounded-full border bg-surface-2 px-2.5 py-1 text-[10px] font-bold ${readinessBadge.classes}`}
+                    className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold leading-none"
+                    style={{
+                      borderColor: completionTone ?? undefined,
+                      backgroundColor: completionTone
+                        ? colorMix(completionTone, 0.14)
+                        : undefined,
+                      color: completionTone ?? undefined,
+                    }}
+                  >
+                    {completion.label}
+                  </span>
+                ) : readinessBadge ? (
+                  <span
+                    className={`shrink-0 rounded-full border bg-surface-2 px-2.5 py-1 text-[10px] font-bold leading-none ${readinessBadge.classes}`}
                   >
                     {readinessBadge.label}
                   </span>
                 ) : (
                   !session.rest && (
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-medium ${cfg.chipBg} ${cfg.chipText}`}
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-medium leading-none ${cfg.chipBg} ${cfg.chipText}`}
                     >
                       {cfg.kindLabel}
                     </span>
@@ -204,12 +264,22 @@ export function WeekGrid({
               {isOpen && !session.rest && (
                 <div className="border-t border-white/[0.06] px-[15px] pb-[15px] pt-[13px]">
                   <div className="space-y-3">
+                    {isCompleted && (
+                      <DetailRow
+                        label="Stato Intervals"
+                        value={
+                          completion.source === "intervals"
+                            ? `Allenamento completato (${completion.percent}% da Intervals).`
+                            : `Allenamento completato (${completion.percent}% stimato dalla durata registrata).`
+                        }
+                      />
+                    )}
                     <DetailRow label="Obiettivo" value={session.session_objective} />
                     <DetailRow label="Struttura" value={session.interval_structure} />
                     {session.coach_notes && (
-                      <div className="flex gap-2 rounded-xl border border-brand/[0.2] bg-brand/[0.08] px-3 py-2.5">
+                      <div className="flex min-w-0 gap-2 rounded-xl border border-brand/[0.2] bg-brand/[0.08] px-3 py-2.5">
                         <span className="text-[13px] text-brand-hover">✎</span>
-                        <p className="text-[12.5px] leading-relaxed text-secondary">
+                        <p className="min-w-0 break-words text-[12.5px] leading-relaxed text-secondary">
                           {session.coach_notes}
                         </p>
                       </div>
@@ -245,7 +315,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-[0.12em] text-faint">{label}</div>
-      <div className="mt-0.5 text-[13px] leading-relaxed text-secondary">{value}</div>
+      <div className="mt-0.5 break-words text-[13px] leading-relaxed text-secondary">{value}</div>
     </div>
   );
 }

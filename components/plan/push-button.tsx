@@ -39,6 +39,26 @@ function typeLabel(type: IntervalsWorkoutEvent["type"]): string {
   return "Ciclismo";
 }
 
+function IntervalsMark({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e40046] shadow-[0_0_18px_rgba(228,0,70,0.28)] ${className}`}
+      aria-hidden
+    >
+      <svg viewBox="0 0 32 32" className="h-7 w-7">
+        <path
+          d="M3 17.5 L9.5 16.8 L12.4 8.8 L16 23.5 L20.2 5.5 L23.2 18 L29 17.3"
+          fill="none"
+          stroke="white"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="3.1"
+        />
+      </svg>
+    </span>
+  );
+}
+
 export function PushButton({
   pushedAt,
   canWriteCalendar,
@@ -109,10 +129,13 @@ export function PushButton({
       <div className="flex flex-1 flex-col gap-1">
         <a
           href="/api/auth/intervals/login"
-          className="flex w-full flex-col items-center justify-center rounded-[14px] border border-accent2/30 bg-accent2-dim px-3 py-2 text-center text-[11px] font-semibold text-accent2"
+          className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-[#e40046]/45 bg-[#e40046]/[0.10] px-3 py-2.5 text-left text-[12px] font-semibold text-[#ff8fb1]"
         >
-          ↗ Invia a Intervals
-          <span className="text-[9.5px] font-normal text-accent2/70">riconnetti prima</span>
+          <IntervalsMark className="h-7 w-7" />
+          <span className="flex min-w-0 flex-col">
+            <span>Carica su Intervals</span>
+            <span className="text-[9.5px] font-normal text-[#ffb8cc]">riconnetti prima</span>
+          </span>
         </a>
       </div>
     );
@@ -125,10 +148,13 @@ export function PushButton({
           type="button"
           onClick={() => void openPreview()}
           disabled={loadingPreview || committing}
-          className="flex w-full flex-col items-center justify-center rounded-[14px] border border-accent2/55 bg-gradient-to-r from-accent2/[0.22] to-accent2/[0.08] px-3 py-2.5 text-[13.5px] font-bold text-[#bfeee8] transition-opacity disabled:opacity-70"
+          className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-[#e40046]/55 bg-gradient-to-r from-[#e40046]/[0.24] to-[#7fc8c0]/[0.08] px-3 py-2.5 text-left text-[13.5px] font-bold text-[#ffd7e2] shadow-[0_14px_36px_-24px_rgba(228,0,70,0.72)] transition-opacity disabled:opacity-70"
         >
-          {loadingPreview ? "…" : "↗ Invia a Intervals"}
-          <span className="text-[9.5px] font-normal text-accent2/80">richiede conferma</span>
+          <IntervalsMark />
+          <span className="flex min-w-0 flex-col">
+            <span>{loadingPreview ? "Preparo anteprima..." : "Carica settimana su Intervals"}</span>
+            <span className="text-[9.5px] font-normal text-[#ffb8cc]">ultimo passo: richiede conferma</span>
+          </span>
         </button>
         {success && (
           <span className="text-center text-[11px] text-ready-go">
