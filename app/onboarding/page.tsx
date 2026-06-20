@@ -41,7 +41,7 @@ export default async function OnboardingPage() {
     .eq("id", user.id)
     .maybeSingle<{ gdpr_consent: boolean }>();
 
-  // Riparti dallo step salvato, mai prima del 3 (1-2 già fatti) né oltre il 7.
+  // Riparti dallo step salvato, mai prima del 3 (1-2 già fatti) né oltre LAST_STEP.
   const savedStep = profileRow?.onboarding_step ?? 0;
   const initialStep = Math.min(Math.max(savedStep, FIRST_STEP), LAST_STEP);
 

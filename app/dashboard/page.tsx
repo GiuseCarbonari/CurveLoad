@@ -254,7 +254,7 @@ export default async function DashboardPage() {
               </defs>
             </svg>
             <span className="font-serif text-[13px] tracking-[0.05em] text-secondary">
-              Limina
+              Spronova
             </span>
           </div>
           <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-muted">

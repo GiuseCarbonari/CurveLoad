@@ -71,20 +71,20 @@ export function OnboardingWizard({
     if (ok) setStep(nextStep);
   }
 
-  // --- Step 11: prima analisi (auto) -----------------------------------------
+  // --- Step 12: prima analisi (auto) -----------------------------------------
   const analysisStarted = useRef(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (step !== 11 || analysisStarted.current) return;
+    if (step !== 12 || analysisStarted.current) return;
     analysisStarted.current = true;
 
     (async () => {
       await fetch("/api/sync/intervals", { method: "POST" }).catch(() => null);
       await fetch("/api/profile/build", { method: "POST" }).catch(() => null);
 
-      const ok = await persist({ complete: true, step: 11 });
+      const ok = await persist({ complete: true, step: 12 });
       if (!ok) {
         setAnalysisError("Non sono riuscito a completare l'onboarding, riprova.");
         analysisStarted.current = false;
@@ -127,7 +127,7 @@ export function OnboardingWizard({
             </defs>
           </svg>
           <span className="font-serif text-[13px] tracking-[0.05em] text-secondary">
-            Limina
+            Spronova
           </span>
         </div>
         <div>
@@ -191,7 +191,7 @@ export function OnboardingWizard({
           <div className="rounded-[18px] border border-border bg-surface p-5 text-sm leading-relaxed text-secondary">
             <p className="mb-2 font-medium text-foreground">Nota su DFA a1</p>
             <p>
-              L&apos;analisi DFA a1 — usata da Limina per stimare la tua soglia
+              L&apos;analisi DFA a1 — usata da Spronova per stimare la tua soglia
               aerobica in modo non invasivo — non è una funzione nativa di nessun
               dispositivo. Su <strong>Garmin</strong> si attiva installando
               l&apos;app gratuita <strong>AlphaHRV</strong> (Connect IQ, di Marco
@@ -359,14 +359,96 @@ export function OnboardingWizard({
               disabled={saving}
               onClick={() => void advance({ profile: formToPatch(form) }, 11)}
             >
-              {saving ? "Salvo…" : "Inizia l'analisi"}
+              {saving ? "Salvo…" : "Avanti"}
             </Button>
           </div>
         </section>
       )}
 
-      {/* Step 11 — Prima analisi */}
+      {/* Step 11 — Inizia con Spronova */}
       {step === 11 && (
+        <section className="flex flex-col gap-6">
+          <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
+            Ecco come funziona Spronova
+          </h1>
+
+          {/* Blocco 1: il loop quotidiano */}
+          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+              Ogni giorno
+            </p>
+            <p className="text-sm leading-relaxed text-secondary">
+              Spronova legge i tuoi dati da Intervals.icu — readiness, HRV, sonno,
+              carico — e decide se l&apos;allenamento del giorno è confermato,
+              ridotto o rimandato. La dashboard ti mostra sempre cosa fare e perché.
+            </p>
+          </div>
+
+          {/* Blocco 2: il piano settimanale */}
+          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+              Ogni settimana
+            </p>
+            <p className="text-sm leading-relaxed text-secondary">
+              Genera il piano settimanale in un click: Spronova costruisce la
+              distribuzione dei carichi in base al tuo dossier e alla fase
+              corrente. Il piano si pubblica direttamente su Intervals.icu,
+              così lo ritrovi nel tuo calendario.
+            </p>
+          </div>
+
+          {/* Blocco 3: Intervals fondamentale */}
+          <div className="flex flex-col gap-3 rounded-[18px] border border-l-[3px] border-border border-l-brand bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+              Perché Intervals.icu è fondamentale
+            </p>
+            <p className="text-sm leading-relaxed text-secondary">
+              Intervals.icu è la fonte di tutti i tuoi dati: storico allenamenti,
+              readiness giornaliera, HRV, metriche di carico. Senza un account
+              Intervals attivo e collegato, Spronova non può leggere nulla e il
+              coach resta cieco.
+            </p>
+            <ul className="mt-1 flex flex-col gap-1.5 text-sm text-secondary">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand">→</span>
+                <span>
+                  Se non hai ancora un account, crealo su{" "}
+                  <strong>intervals.icu</strong> (gratuito) e collegalo
+                  al tuo dispositivo GPS o a Strava.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand">→</span>
+                <span>
+                  Più dati storici hai su Intervals, più il piano sarà
+                  preciso fin dal primo giorno.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand">→</span>
+                <span>
+                  La connessione l&apos;hai già configurata nel primo passo —
+                  se qualcosa non andava, torna nelle impostazioni prima di
+                  procedere.
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => goBack(10)}>Indietro</Button>
+            <Button
+              disabled={saving}
+              onClick={() => void advance({}, 12)}
+            >
+              {saving ? "Salvo…" : "Tutto chiaro, inizia l'analisi"}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {/* Step 12 — Prima analisi */}
+      {step === 12 && (
         <section className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
           {analysisError ? (
             <>

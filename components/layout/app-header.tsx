@@ -27,19 +27,19 @@ export function AppHeader() {
           </defs>
         </svg>
         <span className="font-serif text-[15px] tracking-[0.05em] text-secondary">
-          Limina
+          Spronova
         </span>
       </Link>
 
       <form action="/api/auth/logout" method="post">
         <button
           type="submit"
-          title="Esci da Limina"
+          title="Esci da Spronova"
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs text-muted hover:text-foreground hover:bg-surface-2 transition-colors"
         >
           <LogOut className="h-3.5 w-3.5" aria-hidden />
           <span className="hidden sm:inline">Esci</span>
-          <span className="sr-only sm:hidden">Esci da Limina</span>
+          <span className="sr-only sm:hidden">Esci da Spronova</span>
         </button>
       </form>
     </header>

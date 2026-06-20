@@ -151,7 +151,7 @@ export const GIORNI: Array<{ value: string; label: string }> = [
 
 /** Step coperti dal wizard (1-2 fatti prima: account + Intervals). */
 export const FIRST_STEP = 3;
-export const LAST_STEP = 11;
+export const LAST_STEP = 12;
 
 export const STEP_LABELS: Record<number, string> = {
   3: "Consenso privacy",
@@ -162,7 +162,8 @@ export const STEP_LABELS: Record<number, string> = {
   8: "Parametri fisiologici",
   9: "Attrezzatura",
   10: "Salute e note",
-  11: "Prima analisi",
+  11: "Inizia con Spronova",
+  12: "Prima analisi",
 };
 
 // --- Mappatura DB ⇄ form -----------------------------------------------------
