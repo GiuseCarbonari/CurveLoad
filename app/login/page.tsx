@@ -428,7 +428,7 @@ export default function LoginPage() {
                 onClick={() => switchMode("signin")}
                 className="text-[12px] text-muted hover:text-secondary"
               >
-                ← Torna all'accesso
+                ← Torna all&apos;accesso
               </button>
             </div>
           )}
