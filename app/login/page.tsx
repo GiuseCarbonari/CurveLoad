@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { setBrowserRememberAccess } from "@/lib/supabase/session-persistence";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -98,6 +99,7 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -114,6 +116,7 @@ export default function LoginPage() {
       setError(localizeError(error.message));
       return;
     }
+    setBrowserRememberAccess(rememberMe);
     router.push("/dashboard");
     router.refresh();
   }
@@ -139,6 +142,7 @@ export default function LoginPage() {
       );
       return;
     }
+    setBrowserRememberAccess(true);
     router.push("/dashboard");
     router.refresh();
   }
@@ -407,6 +411,19 @@ export default function LoginPage() {
                 <p className="text-[11px] text-[#4caf7d]">Password confermata</p>
               )}
             </div>
+          )}
+
+          {/* Ricordami (solo signin) */}
+          {isSignin && (
+            <label className="flex items-center gap-2.5 text-[13px] text-muted">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 accent-brand"
+              />
+              Ricordami su questo dispositivo
+            </label>
           )}
 
           {/* Errore */}
