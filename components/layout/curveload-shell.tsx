@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { AppTour } from "@/components/layout/app-tour";
 import { WhatsNew } from "@/components/layout/whats-new";
@@ -30,7 +31,9 @@ export function CurveLoadShell({
         {children}
       </main>
       <BottomTabBar />
-      <AppTour />
+      <Suspense>
+        <AppTour />
+      </Suspense>
       <WhatsNew />
     </div>
   );
