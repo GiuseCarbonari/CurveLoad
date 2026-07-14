@@ -25,7 +25,14 @@ export function BottomTabBar() {
   return (
     <nav
       aria-label="Navigazione principale"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-base/90 backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-40 border-t"
+      style={{
+        background: "color-mix(in srgb, var(--bg-base) 70%, transparent)",
+        borderColor: "var(--glass-border)",
+        backdropFilter: "blur(24px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+        boxShadow: "0 -1px 0 0 color-mix(in srgb, var(--foreground) 4%, transparent)",
+      }}
     >
       <div
         style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
@@ -42,9 +49,15 @@ export function BottomTabBar() {
               id={tab.tourId}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[10px] font-semibold transition-colors",
-                active ? "text-brand" : "text-muted hover:text-secondary"
+                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold transition-all duration-200",
+                active
+                  ? "text-brand"
+                  : "text-muted hover:text-secondary"
               )}
+              style={active ? {
+                background: "color-mix(in srgb, var(--brand) 12%, transparent)",
+                boxShadow: "0 0 12px -4px color-mix(in srgb, var(--brand) 40%, transparent)",
+              } : undefined}
             >
               <Icon className="h-[18px] w-[18px]" aria-hidden />
               {tab.label}
