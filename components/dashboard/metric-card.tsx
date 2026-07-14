@@ -40,9 +40,9 @@ export function MetricCard({
 
   return (
     <div
-      className={`relative rounded-metric border p-[14px] transition-colors ${
-        open ? "border-accent2/40" : "border-border"
-      } bg-surface`}
+      className={`metric-card relative ${
+        open ? "!border-accent2/40" : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -77,7 +77,7 @@ export function MetricCard({
       </div>
 
       {open && (
-        <div className="mt-2.5 rounded-xl border border-border bg-base p-[11px]">
+        <div className="mt-2.5 rounded-xl border border-border bg-base/60 backdrop-blur-sm p-[11px]">
           <p className="text-[11.5px] leading-relaxed text-secondary">{tooltip}</p>
           {footer}
         </div>

@@ -50,7 +50,18 @@ export function TodaySessionCard({
   const copy = KIND_COPY[kind];
 
   return (
-    <div id="tour-session" className={`rounded-[18px] border bg-gradient-to-br from-brand/[0.16] to-surface-2/60 p-[18px] ${copy.border}`}>
+    <div
+      id="tour-session"
+      className={`rounded-[20px] p-[18px] ${copy.border}`}
+      style={{
+        background: "var(--glass-bg)",
+        border: `1px solid`,
+        borderColor: kind === "hard" ? "var(--ready-skip-border)" : kind === "easy" ? "color-mix(in srgb, var(--accent-2) 35%, var(--glass-border))" : "var(--glass-border)",
+        boxShadow: `var(--glass-shadow)${kind === "hard" ? ", 0 0 24px -8px color-mix(in srgb, var(--ready-skip) 20%, transparent)" : kind === "easy" ? ", 0 0 24px -8px color-mix(in srgb, var(--accent-2) 18%, transparent)" : ""}`,
+        backdropFilter: "blur(20px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+      }}
+    >
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.14em] text-brand-hover">
           Seduta di oggi
@@ -75,7 +86,7 @@ export function TodaySessionCard({
       {!rest && (
         <Link
           href="/plan"
-          className="mt-4 block w-full rounded-xl border border-brand/50 bg-brand-dim px-4 py-2.5 text-center text-[13px] font-semibold text-brand-hover transition-colors hover:bg-brand-dim/80"
+          className="mt-4 block w-full rounded-xl border border-brand/40 bg-brand-dim/80 px-4 py-2.5 text-center text-[13px] font-semibold text-brand-hover transition-all duration-200 hover:bg-brand-dim hover:border-brand/60 hover:shadow-[0_0_16px_-4px_color-mix(in_srgb,var(--brand)_30%,transparent)]"
         >
           Vedi struttura completa
         </Link>

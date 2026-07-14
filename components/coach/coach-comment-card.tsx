@@ -3,6 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ExpandableText } from "@/components/ui/expandable-text";
 
 interface CoachCommentCardProps {
   section: "oggi" | "profilo" | "percorso";
@@ -121,9 +122,7 @@ export function CoachCommentCard({
   return (
     <div className="space-y-3">
       <div className="rounded-[16px] border border-border bg-surface px-4 py-4">
-        <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-          {comment}
-        </p>
+        <ExpandableText text={comment} />
       </div>
       <div className="flex items-center justify-between">
         <span className="text-xs text-faint">{formatAITimestamp(generatedAt)}</span>

@@ -102,7 +102,19 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   return (
     <div
       id="tour-readiness"
-      className={`relative overflow-hidden rounded-[24px] border bg-gradient-to-br px-5 py-5 ${tone.border} ${tone.bg}`}
+      className={`relative overflow-hidden rounded-[24px] px-5 py-5 ${tone.border}`}
+      style={{
+        background: "var(--glass-bg)",
+        border: "1px solid",
+        borderColor: readiness.decision === "GO"
+          ? "color-mix(in srgb, var(--ready-go) 30%, var(--glass-border))"
+          : readiness.decision === "MODIFY"
+          ? "color-mix(in srgb, var(--ready-modify) 30%, var(--glass-border))"
+          : "color-mix(in srgb, var(--ready-skip) 30%, var(--glass-border))",
+        boxShadow: `var(--glass-shadow), 0 0 32px -8px ${ring.glow}`,
+        backdropFilter: "blur(20px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+      }}
     >
       {/* Header pill */}
       <span
@@ -133,19 +145,19 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
               <circle
                 cx="100" cy="100" r={radius}
                 fill="none"
-                stroke="color-mix(in srgb, var(--foreground) 9%, transparent)"
-                strokeWidth="14"
+                stroke="color-mix(in srgb, var(--foreground) 7%, transparent)"
+                strokeWidth="16"
               />
               {/* Active arc */}
               <circle
                 cx="100" cy="100" r={radius}
                 fill="none"
                 stroke={`url(#${gradientId})`}
-                strokeWidth="14"
+                strokeWidth="16"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={scoreOffset}
-                style={{ filter: `drop-shadow(0 0 10px ${ring.glow})` }}
+                style={{ filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})` }}
               >
                 <animate
                   attributeName="stroke-dashoffset"

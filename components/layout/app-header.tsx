@@ -7,7 +7,16 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between px-5 py-3 bg-base/80 backdrop-blur-xl border-b border-border">
+    <header
+      className="sticky top-0 z-40 flex items-center justify-between px-5 py-3 border-b"
+      style={{
+        background: "color-mix(in srgb, var(--bg-base) 72%, transparent)",
+        borderColor: "var(--glass-border)",
+        backdropFilter: "blur(24px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+        boxShadow: "0 1px 0 0 color-mix(in srgb, var(--foreground) 4%, transparent)",
+      }}
+    >
       <Link
         href="/dashboard"
         className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
