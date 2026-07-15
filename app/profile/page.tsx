@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
+import { DurabilityCard } from "@/components/profile/durability-card";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { RunnerProfile } from "@/components/profile/runner-profile";
 import { isRunnerOnly } from "@/lib/onboarding/dossier";
@@ -50,6 +51,9 @@ export default async function ProfilePage() {
         row={row}
       />
 
+      <div className="pt-4">
+        <DurabilityCard durability={profile?.durability ?? null} />
+      </div>
     </CurveLoadShell>
   );
 }
