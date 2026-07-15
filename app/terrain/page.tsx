@@ -6,7 +6,6 @@ import { GapAnalysisButton } from "@/components/profile/gap-analysis-button";
 import { RaceEstimateView } from "@/components/profile/race-estimate";
 import { CalibrateButton } from "@/components/profile/calibrate-button";
 import { CalibrationHelp } from "@/components/profile/calibration-help";
-import { CoachCommentPercorso } from "@/components/terrain/coach-comment-percorso";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
 import type { RaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
@@ -23,7 +22,7 @@ export default async function TerrainPage() {
   const { data: row } = await supabase
     .from("athlete_profiles")
     .select(
-      "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level, ai_comment_percorso, ai_comment_percorso_at"
+      "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -159,18 +158,6 @@ export default async function TerrainPage() {
               </p>
             )}
           </section>
-        )}
-
-        {/* AI comment - percorso */}
-        {gapAnalysis && (
-          <CoachCommentPercorso
-            initialComment={
-              (row?.ai_comment_percorso ?? null) as string | null
-            }
-            initialGeneratedAt={
-              (row?.ai_comment_percorso_at ?? null) as string | null
-            }
-          />
         )}
       </div>
     </CurveLoadShell>

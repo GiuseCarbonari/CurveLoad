@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   const { data: row } = await supabase
     .from("athlete_profiles")
     .select(
-      "profile_data, runner_profile_data, sport_principali, updated_at, ai_comment, ai_comment_at, ai_comment_profilo, ai_comment_profilo_at"
+      "profile_data, runner_profile_data, sport_principali, updated_at"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -48,8 +48,6 @@ export default async function ProfilePage() {
         profile={profile}
         cpw={cpw}
         row={row}
-        aiCommentProfilo={row?.ai_comment_profilo ?? null}
-        aiCommentProfiloAt={row?.ai_comment_profilo_at ?? null}
       />
 
     </CurveLoadShell>

@@ -1,10 +1,7 @@
 "use client";
 
 import { BuildProfileButton } from "./build-button";
-import { ExplainButton } from "./explain-button";
 import { InfoTooltip } from "./info-tooltip";
-import { CoachCommentProfilo } from "./coach-comment-profilo";
-import { isAIConfigured } from "@/lib/ai/provider";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 
 const RPP_DISPLAY: Array<{ secs: number; label: string }> = [
@@ -34,15 +31,10 @@ interface ProfileTabsProps {
     model: "MORTON_3P" | "MS_2P" | "FFT_CURVES" | "ECP";
     source: string;
   } | null;
-  row: {
-    ai_comment?: string | null;
-    ai_comment_at?: string | null;
-  } | null;
-  aiCommentProfilo?: string | null;
-  aiCommentProfiloAt?: string | null;
+  row: unknown;
 }
 
-export function ProfileTabs({ profile, cpw, row, aiCommentProfilo, aiCommentProfiloAt }: ProfileTabsProps) {
+export function ProfileTabs({ profile, cpw, row }: ProfileTabsProps) {
   return (
     <>
       {/* Header */}
@@ -210,11 +202,6 @@ export function ProfileTabs({ profile, cpw, row, aiCommentProfilo, aiCommentProf
                 </div>
               )}
 
-              {/* AI comment - power profile */}
-              <CoachCommentProfilo
-                initialComment={aiCommentProfilo ?? null}
-                initialGeneratedAt={aiCommentProfiloAt ?? null}
-              />
             </div>
 
         </>

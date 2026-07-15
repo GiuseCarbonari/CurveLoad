@@ -5,8 +5,6 @@ import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { AutoUpdateOrchestrator } from "@/components/dashboard/auto-update-orchestrator";
 import { ReadinessRing } from "@/components/dashboard/readiness-ring";
 import { TodaySessionCard } from "@/components/dashboard/today-session-card";
-import { CoachCommentOggi } from "@/components/dashboard/coach-comment-oggi";
-import { CoachAskPanel } from "@/components/coach/coach-ask-panel";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
 import type { BuiltSession } from "@/lib/planner/build-week";
@@ -76,7 +74,7 @@ export default async function DashboardPage() {
       .maybeSingle(),
     supabase
       .from("athlete_profiles")
-      .select("nome, preferences, ai_comment_oggi, ai_comment_oggi_at")
+      .select("nome, preferences")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -303,21 +301,6 @@ export default async function DashboardPage() {
 
       {/* Readiness ring */}
       {readiness && <ReadinessRing readiness={readiness} />}
-
-      {/* Commento IA */}
-      {mirror && (
-        <CoachCommentOggi
-          initialComment={
-            preferenceRow?.ai_comment_oggi ?? null
-          }
-          initialGeneratedAt={
-            preferenceRow?.ai_comment_oggi_at ?? null
-          }
-        />
-      )}
-
-      {/* Coach AI: Q&A + report pre-allenamento */}
-      <CoachAskPanel />
 
       {/* Seduta di oggi */}
       {todaySession && (
