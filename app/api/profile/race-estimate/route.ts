@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
-import { computeRaceEstimate } from "@/lib/terrain/race-estimator";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
+import { computeRaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
+import { routeSettingsToOpts, sanitizeRouteSettings } from "@/lib/terrain/route-settings";
+import type { VelocitySignature } from "@/lib/terrain/velocity-signature";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -10,9 +12,11 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * POST /api/profile/race-estimate — stima tempi/pacing gara (PRD §33).
  *
- * Legge event_terrain + profile_data (e il CTL dall'ultimo snapshot) già in
- * athlete_profiles e calcola i tre scenari con computeRaceEstimate(). NON
- * chiama Intervals, NON chiama AI: solo modello fisico deterministico.
+ * Legge event_terrain + profile_data + velocity_signature (e il CTL
+ * dall'ultimo snapshot) già in athlete_profiles e calcola i tre scenari con
+ * computeRaceEstimateV2() (migrata da v1: v2 usa la firma di velocità
+ * personale/archetipo ed è coerente con gap-analysis/calibrate). NON chiama
+ * Intervals, NON chiama AI: solo modello fisico deterministico.
  */
 
 /** Numero minimo di punti polyline per una stima sensata. */
@@ -32,12 +36,13 @@ export async function POST() {
 
   const { data: row } = await supabase
     .from("athlete_profiles")
-    .select("profile_data, event_terrain")
+    .select("profile_data, event_terrain, velocity_signature")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const profile = (row?.profile_data ?? null) as AthleteProfileData | null;
   const terrain = (row?.event_terrain ?? null) as TerrainSummary | null;
+  const signature = (row?.velocity_signature ?? null) as VelocitySignature | null;
 
   if (!terrain) {
     return NextResponse.json(
@@ -69,6 +74,16 @@ export async function POST() {
       { status: 400 }
     );
   }
+  if (!signature) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "no_signature",
+        message: "Calibra prima la firma di velocità dalla sezione «Stima gara»",
+      },
+      { status: 400 }
+    );
+  }
 
   // CTL corrente (proxy di fatica) dall'ultimo snapshot.
   const { data: snapshot } = await supabase
@@ -81,11 +96,14 @@ export async function POST() {
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const ctlToday = mirror?.wellness_30d.at(-1)?.ctl ?? null;
 
-  const estimate = computeRaceEstimate(
+  const routeSettings = sanitizeRouteSettings(profile.route_settings);
+  const estimate = computeRaceEstimateV2(
     terrain,
+    signature,
     profile.cp_wprime.cp_w,
     profile.weight_kg,
-    ctlToday
+    ctlToday,
+    routeSettingsToOpts(routeSettings, terrain.climbs)
   );
 
   const generatedAt = new Date().toISOString();

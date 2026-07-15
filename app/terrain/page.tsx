@@ -4,11 +4,14 @@ import type { SavedGapAnalysis } from "@/components/profile/event-analysis";
 import { EventAnalysis } from "@/components/profile/event-analysis";
 import { GapAnalysisButton } from "@/components/profile/gap-analysis-button";
 import { RaceEstimateView } from "@/components/profile/race-estimate";
+import { RouteSettingsForm } from "@/components/profile/route-settings-form";
 import { CalibrateButton } from "@/components/profile/calibrate-button";
 import { CalibrationHelp } from "@/components/profile/calibration-help";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
+import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
 import type { RaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
+import { sanitizeRouteSettings } from "@/lib/terrain/route-settings";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function TerrainPage() {
@@ -22,7 +25,7 @@ export default async function TerrainPage() {
   const { data: row } = await supabase
     .from("athlete_profiles")
     .select(
-      "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level"
+      "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level, profile_data"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -32,6 +35,8 @@ export default async function TerrainPage() {
   const sl = row?.signature_level;
   const signatureLevel: 1 | 2 | null = sl === 1 || sl === 2 ? sl : null;
   const raceEstimate = (row?.race_estimate ?? null) as RaceEstimateV2 | null;
+  const profileData = (row?.profile_data ?? null) as AthleteProfileData | null;
+  const routeSettings = sanitizeRouteSettings(profileData?.route_settings);
 
   return (
     <CurveLoadShell>
@@ -77,6 +82,8 @@ export default async function TerrainPage() {
                 Tempo e strategia
               </h2>
             </div>
+
+            <RouteSettingsForm initialSettings={routeSettings} climbs={eventTerrain.climbs} />
 
             <CalibrationHelp />
 

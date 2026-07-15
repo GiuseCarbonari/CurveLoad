@@ -1,4 +1,5 @@
 import type { DurabilityResult } from "@/lib/profile/durability";
+import type { RaceRouteSettings } from "@/lib/terrain/route-settings";
 import {
   classifyPhenotype,
   computeAPR,
@@ -82,6 +83,8 @@ export interface AthleteProfileData {
    * buildAthleteProfile (come velocity_signature/race_estimate).
    */
   durability?: (DurabilityResult & { built_at: string }) | null;
+  /** Impostazioni percorso/strategia (M1 Race Planner). Persistite in profile_data. */
+  route_settings?: RaceRouteSettings | null;
 }
 
 /** Trova la curva per id, con messaggio chiaro se la finestra manca. */
