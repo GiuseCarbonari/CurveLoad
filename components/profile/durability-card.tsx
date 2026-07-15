@@ -88,7 +88,7 @@ function DurabilityContent({
           {durability.decline.map((entry, index) => {
             const x = 30 + index * 55;
             const pct = entry.decline_pct ?? 0;
-            const barHeight = pct < 0 ? (Math.abs(pct) / maxAbsPct) * 55 : 0;
+            const barHeight = pct < 0 ? (Math.abs(pct) / maxAbsPct) * 42 : 0;
             return (
               <g key={entry.duration_s}>
                 <rect
@@ -102,21 +102,21 @@ function DurabilityContent({
                 />
                 <text
                   x={x}
-                  y={82}
-                  textAnchor="middle"
-                  className="fill-muted"
-                  style={{ fontSize: 9 }}
-                >
-                  {DURATION_LABEL[entry.duration_s] ?? `${entry.duration_s}s`}
-                </text>
-                <text
-                  x={x}
-                  y={20 + barHeight + 12}
+                  y={74}
                   textAnchor="middle"
                   className="fill-secondary"
                   style={{ fontSize: 9 }}
                 >
                   {entry.decline_pct != null ? `${Math.round(entry.decline_pct * 100)}%` : "—"}
+                </text>
+                <text
+                  x={x}
+                  y={86}
+                  textAnchor="middle"
+                  className="fill-muted"
+                  style={{ fontSize: 9 }}
+                >
+                  {DURATION_LABEL[entry.duration_s] ?? `${entry.duration_s}s`}
                 </text>
               </g>
             );
