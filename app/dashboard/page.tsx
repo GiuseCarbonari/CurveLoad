@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 
 import { ConditionTrendChart } from "@/components/dashboard/condition-trend-chart";
+import { EfficiencyTrendChart } from "@/components/dashboard/efficiency-trend-chart";
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { AutoUpdateOrchestrator } from "@/components/dashboard/auto-update-orchestrator";
 import { ReadinessRing } from "@/components/dashboard/readiness-ring";
 import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
+import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
 import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
 import type { BuiltSession } from "@/lib/planner/build-week";
 import type { MirrorData } from "@/lib/intervals/sync";
@@ -100,6 +102,7 @@ export default async function DashboardPage() {
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
+  const efficiencyTrend = mirror ? computeEfficiencyTrend(mirror.activities_90d) : null;
 
   const preferences =
     preferenceRow?.preferences != null &&
@@ -337,6 +340,9 @@ export default async function DashboardPage() {
 
       {/* Trend chart */}
       {mirror && <ConditionTrendChart days={mirror.wellness_30d} />}
+
+      {/* Trend efficienza aerobica (ciclismo) */}
+      {mirror && efficiencyTrend && <EfficiencyTrendChart trend={efficiencyTrend} />}
 
       {/* Footer: disconnect */}
       <div className="border-t border-border pt-4">
