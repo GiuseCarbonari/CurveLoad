@@ -1,3 +1,4 @@
+import type { DurabilityResult } from "@/lib/profile/durability";
 import {
   classifyPhenotype,
   computeAPR,
@@ -75,6 +76,12 @@ export interface AthleteProfileData {
   apr: APRResult | null;
   phenotype: PhenotypeResult;
   vo2max_5m: number | null;
+  /**
+   * Curva di durabilità (calo potenza da fresco vs affaticato). Popolata
+   * dall'orchestratore separato lib/profile/durability-io.ts, non da
+   * buildAthleteProfile (come velocity_signature/race_estimate).
+   */
+  durability?: (DurabilityResult & { built_at: string }) | null;
 }
 
 /** Trova la curva per id, con messaggio chiaro se la finestra manca. */

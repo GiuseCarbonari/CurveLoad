@@ -233,6 +233,9 @@ export async function POST() {
   const levers = (row?.gap_analysis?.limiters ?? [])
     .map((l) => l.training_lever)
     .filter((l): l is string => typeof l === "string");
+  // ponytail: profile_data.durability.durability_index è già esposto (v1) ma
+  // NON aggiunge automaticamente "durability_fatigued" a levers qui. Farlo
+  // richiede una soglia calibrata su dati reali (v2, non implementato).
 
   const todayKey = JS_DAY_TO_KEY[new Date().getDay()];
   const todayDate = new Date().toLocaleDateString("en-CA");
