@@ -168,21 +168,14 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
                 fill="none"
                 stroke={`url(#${gradientId})`}
                 strokeWidth="16"
-                strokeLinecap="round"
+                strokeLinecap="butt"
                 strokeDasharray={circumference}
                 strokeDashoffset={scoreOffset}
-                style={{ filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})` }}
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from={circumference}
-                  to={scoreOffset}
-                  dur="850ms"
-                  fill="freeze"
-                  calcMode="spline"
-                  keySplines="0.16 1 0.3 1"
-                />
-              </circle>
+                style={{
+                  filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})`,
+                  transition: "stroke-dashoffset 850ms cubic-bezier(0.16,1,0.3,1)",
+                }}
+              />
             </g>
           </svg>
           {/* Center text */}
