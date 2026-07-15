@@ -79,6 +79,16 @@ const CONFIDENCE_LABEL: Record<ReadinessResult["confidence"], string> = {
   low: "Pochi segnali",
 };
 
+/** Messaggio esplicativo per i segnali senza dato, mostrato al posto del solo pallino grigio. */
+const UNAVAILABLE_HINT: Record<string, string> = {
+  hrv: "nessun dato disponibile, collega un sensore o inseriscilo su Intervals.icu",
+  rhr: "nessun dato disponibile, collega un sensore o inseriscilo su Intervals.icu",
+  sleep: "nessun dato disponibile, collega un tracker del sonno o inseriscilo su Intervals.icu",
+  ri: "non calcolabile: mancano HRV e/o FC riposo",
+  tsb: "non disponibile, mancano i dati di carico (CTL/ATL) su Intervals.icu",
+  acwr: "non disponibile, mancano i dati di carico (CTL/ATL) su Intervals.icu",
+};
+
 export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const ring = RING[readiness.decision];
   const tone = TONE[readiness.decision];
@@ -88,9 +98,13 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const circumference = 2 * Math.PI * radius;
   const scoreOffset = circumference * (1 - score / 100);
 
-  const visibleSignals = readiness.signals
-    .filter((s) => s.status === "amber" || s.status === "red")
-    .slice(0, 3);
+  const warningSignals = readiness.signals.filter(
+    (s) => s.status === "amber" || s.status === "red"
+  );
+  const unavailableSignals = readiness.signals.filter(
+    (s) => s.status === "unavailable"
+  );
+  const visibleSignals = [...warningSignals, ...unavailableSignals].slice(0, 5);
   const allGreen = visibleSignals.length === 0;
   const leadText =
     readiness.decision === "GO"
@@ -196,9 +210,7 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
           {/* Signal pills */}
           {allGreen ? (
             <p className="text-[12px] text-ready-go">
-              {readiness.signals.some((s) => s.status === "unavailable")
-                ? "Nessun segnale critico rilevato con i dati disponibili."
-                : "Tutti i segnali sono nella norma."}
+              Tutti i segnali sono nella norma.
             </p>
           ) : (
             <ul className="space-y-1.5">
@@ -210,7 +222,9 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
                   />
                   <span className="text-[12px] leading-snug text-secondary">
                     <span className="font-medium text-foreground">{SIGNAL_LABEL[s.name] ?? s.name}:</span>{" "}
-                    {s.detail}
+                    {s.status === "unavailable"
+                      ? (UNAVAILABLE_HINT[s.name] ?? s.detail)
+                      : s.detail}
                   </span>
                 </li>
               ))}

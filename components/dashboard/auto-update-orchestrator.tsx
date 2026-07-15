@@ -6,18 +6,18 @@ import { useRouter } from "next/navigation";
 import { RefreshControl } from "@/components/dashboard/refresh-control";
 
 /**
- * Orchestratore auto-aggiornamento (§2+§3). Client Component montato in
- * dashboard al posto del vecchio pulsante manuale.
+ * Wrapper del pulsante manuale "Aggiorna dati" che concatena il lavoro
+ * post-sync. Nessun sync automatico al mount: l'utente avvia tutto premendo
+ * il pulsante di RefreshControl.
  *
- * Catena su mount (vedi spec §Sequencing):
- *   1. RefreshControl in auto mode fa il sync dati e riporta via onSyncDone.
- *   2. generate piano → legge changed_count          — §2
- *   3. build profilo                                 — §3
+ * Catena dopo un sync manuale riuscito:
+ *   1. RefreshControl fa il sync e riporta l'esito via onSyncDone.
+ *   2. generate piano → legge changed_count
+ *   3. build profilo
  *   4. un solo router.refresh() finale.
  *
- * Anti-loop: ref guard `chainStarted` (StrictMode monta due volte e il refresh
- * finale ri-renderizza, ma il Client Component conserva il ref → la catena gira
- * una sola volta). PERCORSO NON è nella catena (decisione utente).
+ * Anti-loop: ref guard `chainStarted` per evitare che StrictMode/re-render
+ * riavviino la catena più volte per lo stesso sync.
  */
 export function AutoUpdateOrchestrator({
   lastFetchedAt,
@@ -54,12 +54,17 @@ export function AutoUpdateOrchestrator({
 
   const onSyncDone = useCallback(
     (syncOk: boolean) => {
-      // Ref guard: la catena post-sync gira una sola volta.
+      // Ref guard: evita che la catena parta due volte per lo stesso sync
+      // (es. doppio evento), ma si riarma subito dopo per permettere un
+      // nuovo giro al prossimo click su "Aggiorna dati".
       if (chainStarted.current) return;
       chainStarted.current = true;
 
       // Sync fallito → banner errore già mostrato da RefreshControl, niente catena.
-      if (!syncOk) return;
+      if (!syncOk) {
+        chainStarted.current = false;
+        return;
+      }
 
       void (async () => {
         // §2 — rigenera piano e leggi changed_count.
@@ -71,6 +76,7 @@ export function AutoUpdateOrchestrator({
         // §3 — build profilo (deterministico, ricostruisce il profilo).
         await step("/api/profile/build");
 
+        chainStarted.current = false;
         // Un unico refresh finale: rilegge metriche + piano aggiornati.
         router.refresh();
       })();
@@ -83,7 +89,6 @@ export function AutoUpdateOrchestrator({
       <RefreshControl
         lastFetchedAt={lastFetchedAt}
         initialStatus={initialStatus}
-        auto
         onSyncDone={onSyncDone}
       />
 

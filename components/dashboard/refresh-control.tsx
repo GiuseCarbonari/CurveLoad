@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Undo2 } from "lucide-react";
 
@@ -63,14 +63,11 @@ function formatTimestamp(iso: string | null): string {
 export function RefreshControl({
   lastFetchedAt,
   initialStatus,
-  auto = false,
   onSyncDone,
 }: {
   lastFetchedAt: string | null;
   initialStatus: "fresh" | "stale";
-  /** Modalità automatica: nessun pulsante manuale, sync avviato dall'orchestrator. */
-  auto?: boolean;
-  /** Esito del sync automatico (true = ok / già fresh) per concatenare la catena. */
+  /** Esito del sync manuale (true = ok) per concatenare eventuale lavoro extra del chiamante. */
   onSyncDone?: (ok: boolean) => void;
 }) {
   const router = useRouter();
@@ -78,27 +75,12 @@ export function RefreshControl({
   const [errorKind, setErrorKind] = useState<ErrorKind | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timestamp, setTimestamp] = useState<string | null>(null);
-  // Guard StrictMode/refresh: il sync automatico parte una sola volta.
-  const autoStarted = useRef(false);
 
   // Riallinea allo stato calcolato dal server dopo un router.refresh(),
   // ma non durante una sincronizzazione in corso.
   useEffect(() => {
     setStatus((current) => (current === "syncing" ? current : initialStatus));
   }, [initialStatus]);
-
-  // Modalità automatica: avvia il sync una volta su mount (se stale) e riporta
-  // l'esito via onSyncDone così l'orchestrator prosegue la catena.
-  useEffect(() => {
-    if (!auto || autoStarted.current) return;
-    autoStarted.current = true;
-    if (initialStatus === "fresh") {
-      onSyncDone?.(true);
-      return;
-    }
-    void handleRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auto]);
 
   useEffect(() => {
     setTimestamp(
@@ -136,9 +118,10 @@ export function RefreshControl({
       }
 
       setStatus("fresh");
-      // In auto mode l'orchestrator fa un unico router.refresh() finale.
-      if (auto) {
-        onSyncDone?.(true);
+      // Se il chiamante gestisce lavoro extra post-sync (es. rigenera piano),
+      // il router.refresh() finale spetta a lui; altrimenti lo facciamo qui.
+      if (onSyncDone) {
+        onSyncDone(true);
       } else {
         router.refresh();
       }
@@ -177,27 +160,24 @@ export function RefreshControl({
         <span className={STATUS_TEXT[status]}>{timestamp ?? " "}</span>
       </div>
 
-      {/* In auto mode niente pulsante manuale, salvo per ritentare su errore. */}
-      {(!auto || status === "error") && (
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={status === "syncing"}
-          className={cn(
-            "mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[15px] border px-4 py-3.5 text-[14.5px] font-bold transition-opacity",
-            BUTTON_CLASSES[status]
-          )}
-        >
-          {status === "syncing" ? (
-            <RefreshCw className="h-4 w-4 animate-spin" aria-hidden />
-          ) : status === "error" && errorKind === "reconnect" ? (
-            <Undo2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <RefreshCw className="h-4 w-4" aria-hidden />
-          )}
-          {label}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={status === "syncing"}
+        className={cn(
+          "mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[15px] border px-4 py-3.5 text-[14.5px] font-bold transition-opacity",
+          BUTTON_CLASSES[status]
+        )}
+      >
+        {status === "syncing" ? (
+          <RefreshCw className="h-4 w-4 animate-spin" aria-hidden />
+        ) : status === "error" && errorKind === "reconnect" ? (
+          <Undo2 className="h-4 w-4" aria-hidden />
+        ) : (
+          <RefreshCw className="h-4 w-4" aria-hidden />
+        )}
+        {label}
+      </button>
 
       {status === "error" && errorMessage && (
         <p className="mt-2 flex items-center gap-2 text-xs text-ready-skip">
