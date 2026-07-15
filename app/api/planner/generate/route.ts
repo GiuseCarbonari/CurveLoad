@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { generateWeekNarrative, isAIConfigured } from "@/lib/ai/provider";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
 import { diffPlan } from "@/lib/planner/plan-diff";
@@ -304,34 +303,9 @@ export async function POST() {
     });
   }
 
-  // --- Narrativa AI opzionale (solo spiegazione) ----------------------------
-  let narrative: string | null = null;
-  if (isAIConfigured()) {
-    try {
-      narrative = await generateWeekNarrative({
-        phase: phaseResult.phase,
-        phase_reason: phaseResult.reason,
-        days_to_event: daysToEvent,
-        hard_sessions: week.audit.hard_sessions,
-        volume_hours_estimate: week.audit.volume_hours_estimate,
-        sessions: week.sessions
-          .filter((s) => !s.rest)
-          .map((s) => ({
-            day: s.day,
-            title: s.title,
-            objective: s.session_objective,
-            is_hard: s.is_hard,
-            duration_min: s.estimated_duration_min,
-          })),
-      });
-    } catch (error) {
-      // AI non configurata o errore: il piano resta valido senza narrativa.
-      if (!(error instanceof Error && error.message === "AI_NOT_CONFIGURED")) {
-        console.error("Narrativa settimana fallita:", error);
-      }
-      narrative = null;
-    }
-  }
+  // --- Narrativa AI rimossa: pagina piano mostra il fallback deterministico
+  // phase_reason (vedi app/plan/page.tsx). --------------------------------
+  const narrative: string | null = null;
 
   // --- Persistenza (service role: bypassa RLS, scrittura solo backend) ------
   const admin = createAdminClient();

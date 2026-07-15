@@ -6,16 +6,14 @@ import { useRouter } from "next/navigation";
 import { RefreshControl } from "@/components/dashboard/refresh-control";
 
 /**
- * Orchestratore auto-aggiornamento (§1+§2+§3). Client Component montato in
+ * Orchestratore auto-aggiornamento (§2+§3). Client Component montato in
  * dashboard al posto del vecchio pulsante manuale.
  *
  * Catena su mount (vedi spec §Sequencing):
  *   1. RefreshControl in auto mode fa il sync dati e riporta via onSyncDone.
- *   2. commento OGGI (gated server-side)            — §1
- *   3. generate piano → legge changed_count          — §2
- *   4. build profilo                                 — §3 (ferma solo questo step)
- *   5. commento PROFILO (gated)                      — §3
- *   6. un solo router.refresh() finale.
+ *   2. generate piano → legge changed_count          — §2
+ *   3. build profilo                                 — §3
+ *   4. un solo router.refresh() finale.
  *
  * Anti-loop: ref guard `chainStarted` (StrictMode monta due volte e il refresh
  * finale ri-renderizza, ma il Client Component conserva il ref → la catena gira
@@ -64,29 +62,20 @@ export function AutoUpdateOrchestrator({
       if (!syncOk) return;
 
       void (async () => {
-        // §1 — commento OGGI (gated server-side). Niente mirror → la route torna
-        // 409 e ignoriamo silenziosamente.
-        if (hasMirror) {
-          await step("/api/comments/oggi");
-        }
-
         // §2 — rigenera piano e leggi changed_count.
         const gen = await step("/api/planner/generate");
         if (gen.ok && typeof gen.body?.changed_count === "number") {
           setChangedCount(gen.body.changed_count as number);
         }
 
-        // §3 — build profilo (ferma solo questo step su 401/409/422) + commento.
-        const build = await step("/api/profile/build");
-        if (build.ok) {
-          await step("/api/comments/profilo");
-        }
+        // §3 — build profilo (deterministico, ricostruisce il profilo).
+        await step("/api/profile/build");
 
-        // Un unico refresh finale: rilegge metriche + commenti aggiornati.
+        // Un unico refresh finale: rilegge metriche + piano aggiornati.
         router.refresh();
       })();
     },
-    [hasMirror, router]
+    [router]
   );
 
   return (
