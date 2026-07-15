@@ -126,8 +126,9 @@ function DurabilityContent({
 
       {durability.confidence === "low" && (
         <div className="mt-4 rounded-[14px] border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
-          Confidenza bassa: poche uscite lunghe registrate. Il dato è
-          indicativo.
+          {durability.meta.activities_used < 6
+            ? "Confidenza bassa: servono più uscite lunghe (almeno 6 negli ultimi 90 giorni) per un dato affidabile."
+            : "Confidenza bassa: le tue uscite lunghe non includono sforzi a ritmo sostenuto dopo l'accumulo di fatica, quindi il calo su 5 e 20 min non si può ancora misurare."}
         </div>
       )}
     </>
