@@ -13,6 +13,7 @@ import type { MirrorData } from "@/lib/intervals/sync";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import { computeRaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
+import { routeSettingsToOpts, sanitizeRouteSettings } from "@/lib/terrain/route-settings";
 import {
   buildAthleteSignature,
   type ActivityMeta,
@@ -112,12 +113,14 @@ export async function calibrateAthlete(userId: string): Promise<CalibrateResult>
   // Riattiva la stima tempi v2 con la firma appena costruita.
   let raceEstimateUpdated = false;
   if (terrain && profile?.cp_wprime?.cp_w && profile.weight_kg != null) {
+    const routeSettings = sanitizeRouteSettings(profile.route_settings);
     const estimate = computeRaceEstimateV2(
       terrain,
       signature,
       profile.cp_wprime.cp_w,
       profile.weight_kg,
-      ctlToday
+      ctlToday,
+      routeSettingsToOpts(routeSettings, terrain.climbs)
     );
     update.race_estimate = estimate;
     update.race_estimate_at = signatureAt;

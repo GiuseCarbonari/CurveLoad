@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --import tsx --test tests/readiness.test.ts tests/intervals-client.test.ts tests/power-profile.test.ts tests/pace-profile.test.ts tests/race-estimator.test.ts tests/planner.test.ts tests/velocity-signature.test.ts tests/intervals-workout-format.test.ts tests/session-persistence.test.ts tests/gpx-parser.test.ts tests/gap-analysis.test.ts tests/reconcile.test.ts tests/plan-diff.test.ts tests/readiness-ring-signals.test.ts tests/refresh-orchestrator-chain.test.ts tests/efficiency-trend.test.ts tests/durability.test.ts"
+    "test": "node --import tsx --test tests/readiness.test.ts tests/intervals-client.test.ts tests/power-profile.test.ts tests/pace-profile.test.ts tests/race-estimator.test.ts tests/planner.test.ts tests/velocity-signature.test.ts tests/intervals-workout-format.test.ts tests/session-persistence.test.ts tests/gpx-parser.test.ts tests/gap-analysis.test.ts tests/reconcile.test.ts tests/plan-diff.test.ts tests/readiness-ring-signals.test.ts tests/refresh-orchestrator-chain.test.ts tests/efficiency-trend.test.ts tests/durability.test.ts tests/route-settings.test.ts tests/race-planner-opts.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",

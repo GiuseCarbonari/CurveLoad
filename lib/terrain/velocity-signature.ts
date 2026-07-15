@@ -350,12 +350,18 @@ export function archetypeSignature(
   };
 }
 
-/** Velocità fisica pura (L3) — solo salita, dove il modello è accurato. */
+/**
+ * Velocità fisica pura (L3) — solo salita, dove il modello è accurato.
+ * `cda`/`crr` opzionali: propagati a solveVelocity per il Race Planner (M1),
+ * default alle costanti MTB se non passati.
+ */
 export function physicsVelocity(
   gradientFrac: number,
   cpW: number,
   weightKg: number,
-  powerFraction: number
+  powerFraction: number,
+  cda?: number,
+  crr?: number
 ): number {
-  return solveVelocity(cpW * powerFraction, weightKg, gradientFrac);
+  return solveVelocity(cpW * powerFraction, weightKg, gradientFrac, cda, crr);
 }

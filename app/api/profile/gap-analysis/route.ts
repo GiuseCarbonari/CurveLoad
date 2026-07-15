@@ -10,6 +10,7 @@ import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import { computeGapAnalysis } from "@/lib/terrain/gap-analysis";
 import { detectClimbs, parseGPX } from "@/lib/terrain/gpx-parser";
 import { computeRaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
+import { routeSettingsToOpts, sanitizeRouteSettings } from "@/lib/terrain/route-settings";
 import type { VelocitySignature } from "@/lib/terrain/velocity-signature";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -300,6 +301,7 @@ export async function POST(request: Request) {
   // Stima tempi v2 (M7): si aggiorna con la nuova analisi evento SOLO se esiste
   // una firma di velocità (calibrata o archetipo) oltre a CP e peso. Senza
   // firma non si scrive race_estimate (la UI invita a calibrare).
+  const routeSettings = sanitizeRouteSettings(profile.route_settings);
   const raceEstimate =
     signature && profile.cp_wprime?.cp_w && profile.weight_kg != null
       ? computeRaceEstimateV2(
@@ -307,7 +309,8 @@ export async function POST(request: Request) {
           signature,
           profile.cp_wprime.cp_w,
           profile.weight_kg,
-          ctlToday
+          ctlToday,
+          routeSettingsToOpts(routeSettings, terrain.climbs)
         )
       : null;
 

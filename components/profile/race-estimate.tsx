@@ -1,6 +1,7 @@
 import { InfoTooltip } from "@/components/profile/info-tooltip";
 import type { CourseCharacter, TerrainSummary } from "@/lib/terrain/gpx-parser";
-import type { RaceEstimate } from "@/lib/terrain/race-estimator";
+import type { RaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
+import { SURFACES } from "@/lib/terrain/route-settings";
 
 const SVG_W = 1000;
 const SVG_H = 200;
@@ -20,6 +21,16 @@ function formatHm(seconds: number): string {
   return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
 }
 
+/** "X min" se sotto un'ora, altrimenti "Hh MMmin" (tempo su una salita). */
+function formatClimbTime(seconds: number): string {
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+  return formatHm(seconds);
+}
+
+const SURFACE_LABEL: Record<string, string> = Object.fromEntries(
+  SURFACES.map((s) => [s.key, s.label])
+);
+
 function speedColor(kmh: number): string {
   if (kmh < 8) return "var(--text-primary)";
   if (kmh < 18) return "var(--amber-hover)";
@@ -31,7 +42,7 @@ function PacingChart({
   estimate,
 }: {
   terrain: TerrainSummary;
-  estimate: RaceEstimate;
+  estimate: RaceEstimateV2;
 }) {
   const polyline = terrain.polyline;
   const segments = estimate.scenarios.realistic.segments;
@@ -116,7 +127,7 @@ export function RaceEstimateView({
   generatedAt,
 }: {
   terrain: TerrainSummary;
-  estimate: RaceEstimate;
+  estimate: RaceEstimateV2;
   generatedAt: string | null;
 }) {
   const { optimistic, realistic, conservative } = estimate.scenarios;
@@ -201,6 +212,64 @@ export function RaceEstimateView({
         </div>
       )}
 
+      {estimate.climb_estimates?.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-base font-medium text-foreground">
+            Dettaglio salite
+          </h3>
+          <p className="mt-1 text-sm text-secondary">
+            Ogni salita del percorso nello scenario realistico, con potenza
+            target e fondo scelto.
+          </p>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-[900px] w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] uppercase tracking-[0.08em] text-muted">
+                  <th className="py-3">Salita</th>
+                  <th className="py-3 text-right">Dist.</th>
+                  <th className="py-3 text-right">D+</th>
+                  <th className="py-3 text-right">Pend. media</th>
+                  <th className="py-3 text-right">Quota max</th>
+                  <th className="py-3 text-right">P target (W)</th>
+                  <th className="py-3 text-right">%CP</th>
+                  <th className="py-3 text-right">W/kg</th>
+                  <th className="py-3 text-right">Tempo</th>
+                  <th className="py-3 text-right">km/h</th>
+                  <th className="py-3 text-right">VAM</th>
+                  <th className="py-3 text-right">Fondo</th>
+                </tr>
+              </thead>
+              <tbody className="tabular-nums">
+                {estimate.climb_estimates.map((climb) => (
+                  <tr key={climb.index} className="border-b border-border last:border-0">
+                    <td className="py-3 font-medium text-foreground">{climb.name}</td>
+                    <td className="py-3 text-right">{climb.distance_km} km</td>
+                    <td className="py-3 text-right">{climb.elevation_m} m</td>
+                    <td className="py-3 text-right">{climb.avg_gradient_pct}%</td>
+                    <td className="py-3 text-right">{climb.max_elevation_m} m</td>
+                    <td className="py-3 text-right font-medium text-foreground">
+                      {climb.power_w}
+                    </td>
+                    <td className="py-3 text-right">
+                      {climb.pct_cp != null ? `${climb.pct_cp}%` : "—"}
+                    </td>
+                    <td className="py-3 text-right">
+                      {climb.wkg != null ? climb.wkg : "—"}
+                    </td>
+                    <td className="py-3 text-right">{formatClimbTime(climb.time_on_climb_s)}</td>
+                    <td className="py-3 text-right">{climb.avg_speed_kmh}</td>
+                    <td className="py-3 text-right">{climb.vam_mh} m/h</td>
+                    <td className="py-3 text-right text-secondary">
+                      {SURFACE_LABEL[climb.surface] ?? climb.surface}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
         <h3 className="text-base font-medium text-foreground">
           Velocità stimata sul percorso
@@ -261,8 +330,12 @@ export function RaceEstimateView({
           <InfoTooltip term="cp_usato" />, su un modello fisico MTB con
           resistenza al rotolamento{" "}
           <InfoTooltip term="rolling_resistance" /> e aerodinamica. Peso usato:{" "}
-          {estimate.weight_kg} kg. Non include meteo, soste extra o tratti
-          tecnici estremi. Percorso {COURSE_LABEL[terrain.course_character]}.
+          {estimate.weight_kg} kg atleta
+          {estimate.bike_weight_kg > 0 ? ` + ${estimate.bike_weight_kg} kg bici` : ""}.
+          Margine di ripetibilità applicato:{" "}
+          {Math.round((estimate.repeatability_frac ?? 1) * 100)}% della potenza target.
+          Non include meteo, soste extra o tratti tecnici estremi. Percorso{" "}
+          {COURSE_LABEL[terrain.course_character]}.
           {generatedAt &&
             ` Aggiornata il ${new Date(generatedAt).toLocaleDateString("it-IT")}.`}
         </p>

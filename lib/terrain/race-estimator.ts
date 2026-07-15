@@ -85,14 +85,17 @@ export interface RaceEstimate {
  * Risolve P = m·g·v·(grad + CRR) + ½·CDA·RHO·v³ per v (m/s).
  * Salita (>3%): aero trascurabile → forma lineare. Altrove (flat/discesa):
  * Newton sulla cubica (3 iterazioni). Clamp: min 1.5 m/s; in discesa cap a
- * MAX_DESCENT_KMH.
+ * MAX_DESCENT_KMH. `cda`/`crr` opzionali (default alle costanti MTB storiche)
+ * per i chiamanti che vogliono parametrizzare posizione/fondo (Race Planner M1).
  */
 export function solveVelocity(
   powerW: number,
   massKg: number,
-  gradientFrac: number
+  gradientFrac: number,
+  cda: number = CDA,
+  crr: number = CRR
 ): number {
-  const resistive = massKg * GRAVITY * (gradientFrac + CRR);
+  const resistive = massKg * GRAVITY * (gradientFrac + crr);
   let v: number;
 
   if (gradientFrac > STEEP_GRADIENT) {
@@ -102,8 +105,8 @@ export function solveVelocity(
     // Newton su f(v) = ½·CDA·RHO·v³ + resistive·v − P.
     v = 6; // guess iniziale ragionevole (flat/discesa)
     for (let i = 0; i < 3; i++) {
-      const f = 0.5 * CDA * RHO * v ** 3 + resistive * v - powerW;
-      const fp = 1.5 * CDA * RHO * v ** 2 + resistive;
+      const f = 0.5 * cda * RHO * v ** 3 + resistive * v - powerW;
+      const fp = 1.5 * cda * RHO * v ** 2 + resistive;
       if (fp === 0) break;
       v = v - f / fp;
     }
