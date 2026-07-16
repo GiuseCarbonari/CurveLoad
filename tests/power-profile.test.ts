@@ -219,3 +219,25 @@ test("buildAthleteProfile: senza modelli CP la confidence scende a low", () => {
   assert.equal(profile.apr, null);
   assert.equal(profile.meta.confidence, "low");
 });
+
+test("buildAthleteProfile: power model senza ftp + declaredFtpW → fallback dichiarato", () => {
+  const response: PowerCurvesResponse = {
+    list: [
+      curve("90d", {
+        powerModels: [
+          { type: "MORTON_3P", criticalPower: 238, wPrime: 21351, pMax: 965, ftp: undefined },
+        ],
+      }),
+    ],
+  };
+  const profile = buildAthleteProfile(response, {}, undefined, 250);
+  assert.equal(profile.ftp_model_w, 250);
+  assert.equal(profile.ftp_source, "declared");
+  assert.equal(profile.cp_wprime?.ftp_model_w, null); // il campo interno resta quello letto
+});
+
+test("buildAthleteProfile: ftp presente → la stima non è mai sovrascritta dal dichiarato", () => {
+  const profile = buildAthleteProfile(RESPONSE, {}, undefined, 999);
+  assert.equal(profile.ftp_model_w, 236); // Morton 3P ftp della fixture (curve())
+  assert.equal(profile.ftp_source, "estimated");
+});

@@ -47,6 +47,14 @@ export interface AthleteProfileData {
   weight_kg: number | null;
   weight_source: "power_curve" | "icu_weight" | null;
   rpp: RPPEntry[];
+  /**
+   * FTP a livello top (fonte di verità per i consumer nuovi): la stima del
+   * modello CP se presente, altrimenti il valore dichiarato dall'atleta
+   * (ftp_outdoor_w) come fallback. `cp_wprime.ftp_model_w` resta per
+   * retrocompat ma non va più letto per questo scopo.
+   */
+  ftp_model_w: number | null;
+  ftp_source: "declared" | "estimated" | null;
   cp_wprime: {
     cp_w: number;
     cp_wkg: number | null;
@@ -98,7 +106,8 @@ function findCurve(
 export function buildAthleteProfile(
   powerCurves: PowerCurvesResponse,
   athleteRaw: Record<string, unknown>,
-  generatedAt: string = new Date().toISOString()
+  generatedAt: string = new Date().toISOString(),
+  declaredFtpW: number | null = null
 ): AthleteProfileData {
   // Curva primaria 42d: stima più recente dello stato di forma.
   // Fallback 90d se la 42d non è disponibile (dati insufficienti).
@@ -159,6 +168,15 @@ export function buildAthleteProfile(
   const confidence: AthleteProfileData["meta"]["confidence"] =
     cpw == null ? "low" : phenotype.confidence;
 
+  // --- FTP top-level: stima del modello CP se presente, altrimenti il
+  // dichiarato (fallback), altrimenti null. Il dichiarato non sovrascrive mai
+  // una stima valida (Intervento 2).
+  const hasDeclaredFtp = declaredFtpW != null && declaredFtpW > 0;
+  const ftpModelW: number | null =
+    cpw?.ftp ?? (hasDeclaredFtp ? declaredFtpW : null);
+  const ftpSource: AthleteProfileData["ftp_source"] =
+    cpw?.ftp != null ? "estimated" : hasDeclaredFtp ? "declared" : null;
+
   return {
     meta: {
       generated_at: generatedAt,
@@ -169,6 +187,8 @@ export function buildAthleteProfile(
     weight_kg: weightKg,
     weight_source: weightSource,
     rpp,
+    ftp_model_w: ftpModelW,
+    ftp_source: ftpSource,
     cp_wprime: cpw
       ? {
           cp_w: cpw.cp,

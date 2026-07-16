@@ -49,12 +49,14 @@ export async function POST() {
   // (power-curves). Il default (sport non dichiarato) resta il percorso bici.
   const { data: dossier } = await admin
     .from("athlete_profiles")
-    .select("sport_principali")
+    .select("sport_principali, ftp_outdoor_w")
     .eq("user_id", user.id)
     .maybeSingle();
   const runner = isRunnerOnly(
     (dossier?.sport_principali as string[] | null) ?? []
   );
+  const declaredFtpW =
+    typeof dossier?.ftp_outdoor_w === "number" ? dossier.ftp_outdoor_w : null;
 
   const fetcher = new IntervalsFetcher(
     decryptToken(connection.access_token_encrypted)
@@ -62,7 +64,7 @@ export async function POST() {
 
   return runner
     ? buildRunner(fetcher, admin, supabase, user.id)
-    : buildCyclist(fetcher, admin, supabase, user.id);
+    : buildCyclist(fetcher, admin, supabase, user.id, declaredFtpW);
 }
 
 /** Percorso ciclismo: power-curves → CP/W′ (PRD §33). */
@@ -70,7 +72,8 @@ async function buildCyclist(
   fetcher: IntervalsFetcher,
   admin: ReturnType<typeof createAdminClient>,
   supabase: ReturnType<typeof createClient>,
-  userId: string
+  userId: string,
+  declaredFtpW: number | null
 ) {
   let powerCurves;
   let athleteRaw;
@@ -99,7 +102,7 @@ async function buildCyclist(
 
   let profileData;
   try {
-    profileData = buildAthleteProfile(powerCurves, athleteRaw);
+    profileData = buildAthleteProfile(powerCurves, athleteRaw, undefined, declaredFtpW);
   } catch (error) {
     console.error(
       "Build profilo fallita:",
