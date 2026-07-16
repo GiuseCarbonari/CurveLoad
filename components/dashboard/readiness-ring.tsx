@@ -96,7 +96,8 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const score = computeReadinessScore(readiness);
   const radius = 84;
   const circumference = 2 * Math.PI * radius;
-  const scoreOffset = circumference * (1 - score / 100);
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const scoreOffset = circumference * (1 - pct);
 
   const warningSignals = readiness.signals.filter(
     (s) => s.status === "amber" || s.status === "red"
@@ -171,18 +172,11 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={scoreOffset}
-                style={{ filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})` }}
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from={circumference}
-                  to={scoreOffset}
-                  dur="850ms"
-                  fill="freeze"
-                  calcMode="spline"
-                  keySplines="0.16 1 0.3 1"
-                />
-              </circle>
+                style={{
+                  filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})`,
+                  transition: "stroke-dashoffset 850ms cubic-bezier(0.16,1,0.3,1)",
+                }}
+              />
             </g>
           </svg>
           {/* Center text */}
