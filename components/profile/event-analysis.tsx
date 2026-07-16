@@ -1,4 +1,5 @@
 import { InfoTooltip } from "@/components/profile/info-tooltip";
+import { RouteMapLazy } from "@/components/profile/route-map-lazy";
 import type {
   ClimbDemand,
   GapAnalysisResult,
@@ -281,6 +282,9 @@ export function EventAnalysis({
       )}
 
       <div className="mt-6 overflow-hidden rounded-[11px] border border-border bg-base px-2 pt-3">
+        <div className="mb-3">
+          <RouteMapLazy terrain={terrain} />
+        </div>
         <ElevationProfile terrain={terrain} />
         <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-border px-2 py-2 text-xs text-muted">
           <ClimbLegend hex="#4fa3e0" label="dolce · sotto 5%" />
