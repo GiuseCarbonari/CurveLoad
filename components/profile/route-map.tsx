@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression, LatLngTuple } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -23,6 +23,20 @@ import { climbColor, climbSegmentPoints } from "@/lib/terrain/route-map-segments
 const BASE_TRACK_COLOR = "#606060";
 const BASE_TRACK_HALO_COLOR = "#ffffff";
 
+type MapLayer = "street" | "satellite";
+
+// Esri World Imagery: satellitare gratuito, senza API key (come i tile OSM).
+const TILE_LAYERS: Record<MapLayer, { url: string; attribution: string }> = {
+  street: {
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: "&copy; OpenStreetMap contributors",
+  },
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri",
+  },
+};
+
 /** `bounds` di MapContainer si applica solo al mount: qui si aggiorna la
  * vista ogni volta che il percorso (quindi `bounds`) cambia davvero. */
 function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
@@ -35,6 +49,8 @@ function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
 }
 
 export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element {
+  const [layer, setLayer] = useState<MapLayer>("street");
+
   const polyline = terrain.polyline.filter(
     (p) => Number.isFinite(p[1]) && Number.isFinite(p[2])
   );
@@ -51,55 +67,63 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
   const bounds: LatLngBoundsExpression = positions;
   const start = positions[0];
   const end = positions[positions.length - 1];
+  const tile = TILE_LAYERS[layer];
 
   return (
-    <MapContainer
-      bounds={bounds}
-      scrollWheelZoom={false}
-      className="h-64 w-full rounded-[11px] sm:h-80"
-    >
-      <FitBounds bounds={bounds} />
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setLayer((l) => (l === "street" ? "satellite" : "street"))}
+        className="absolute right-2 top-2 z-[1000] rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-surface-2"
+      >
+        {layer === "street" ? "Vista satellite" : "Vista mappa"}
+      </button>
 
-      <TileLayer
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
+      <MapContainer
+        bounds={bounds}
+        scrollWheelZoom={false}
+        className="h-64 w-full rounded-[11px] sm:h-80"
+      >
+        <FitBounds bounds={bounds} />
 
-      {/* Alone bianco sotto il tratto scuro: leggibile anche sul verde/marrone dei tile. */}
-      <Polyline positions={positions} pathOptions={{ color: BASE_TRACK_HALO_COLOR, weight: 6, opacity: 0.9 }} />
-      <Polyline positions={positions} pathOptions={{ color: BASE_TRACK_COLOR, weight: 3, opacity: 1 }} />
+        <TileLayer key={layer} url={tile.url} attribution={tile.attribution} />
 
-      {terrain.climbs.map((climb, index) => {
-        const points = climbSegmentPoints(polyline, climb);
-        if (points.length < 2) return null;
-        const segment: LatLngTuple[] = points.map((p) => [p[1], p[2]]);
-        return (
-          <Polyline
-            key={`halo-${index}`}
-            positions={segment}
-            pathOptions={{ color: BASE_TRACK_HALO_COLOR, weight: 7, opacity: 0.9 }}
-          />
-        );
-      })}
-      {terrain.climbs.map((climb, index) => {
-        const points = climbSegmentPoints(polyline, climb);
-        if (points.length < 2) return null;
-        const segment: LatLngTuple[] = points.map((p) => [p[1], p[2]]);
-        return (
-          <Polyline
-            key={`climb-${index}`}
-            positions={segment}
-            pathOptions={{ color: climbColor(climb.avg_gradient_pct), weight: 4, opacity: 1 }}
-          />
-        );
-      })}
+        {/* Alone bianco sotto il tratto scuro: leggibile anche sul verde/marrone dei tile. */}
+        <Polyline positions={positions} pathOptions={{ color: BASE_TRACK_HALO_COLOR, weight: 6, opacity: 0.9 }} />
+        <Polyline positions={positions} pathOptions={{ color: BASE_TRACK_COLOR, weight: 3, opacity: 1 }} />
 
-      <CircleMarker center={start} radius={6} pathOptions={{ color: "#ffffff", fillColor: "#22c55e", fillOpacity: 1, weight: 2 }}>
-        <Tooltip>Partenza</Tooltip>
-      </CircleMarker>
-      <CircleMarker center={end} radius={6} pathOptions={{ color: "#ffffff", fillColor: "#f2553d", fillOpacity: 1, weight: 2 }}>
-        <Tooltip>Arrivo</Tooltip>
-      </CircleMarker>
-    </MapContainer>
+        {terrain.climbs.map((climb, index) => {
+          const points = climbSegmentPoints(polyline, climb);
+          if (points.length < 2) return null;
+          const segment: LatLngTuple[] = points.map((p) => [p[1], p[2]]);
+          return (
+            <Polyline
+              key={`halo-${index}`}
+              positions={segment}
+              pathOptions={{ color: BASE_TRACK_HALO_COLOR, weight: 7, opacity: 0.9 }}
+            />
+          );
+        })}
+        {terrain.climbs.map((climb, index) => {
+          const points = climbSegmentPoints(polyline, climb);
+          if (points.length < 2) return null;
+          const segment: LatLngTuple[] = points.map((p) => [p[1], p[2]]);
+          return (
+            <Polyline
+              key={`climb-${index}`}
+              positions={segment}
+              pathOptions={{ color: climbColor(climb.avg_gradient_pct), weight: 4, opacity: 1 }}
+            />
+          );
+        })}
+
+        <CircleMarker center={start} radius={6} pathOptions={{ color: "#ffffff", fillColor: "#22c55e", fillOpacity: 1, weight: 2 }}>
+          <Tooltip>Partenza</Tooltip>
+        </CircleMarker>
+        <CircleMarker center={end} radius={6} pathOptions={{ color: "#ffffff", fillColor: "#f2553d", fillOpacity: 1, weight: 2 }}>
+          <Tooltip>Arrivo</Tooltip>
+        </CircleMarker>
+      </MapContainer>
+    </div>
   );
 }
