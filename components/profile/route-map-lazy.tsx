@@ -24,6 +24,23 @@ const RouteMap = dynamic(
   { ssr: false, loading: () => <MapPlaceholder /> }
 );
 
-export function RouteMapLazy({ terrain }: { terrain: TerrainSummary }) {
-  return <RouteMap terrain={terrain} />;
+export function RouteMapLazy({
+  terrain,
+  selectedClimb,
+  onSelectClimb,
+  heightClass,
+}: {
+  terrain: TerrainSummary;
+  selectedClimb?: number | null;
+  onSelectClimb?: (idx: number | null) => void;
+  heightClass?: string;
+}) {
+  return (
+    <RouteMap
+      terrain={terrain}
+      selectedClimb={selectedClimb}
+      onSelectClimb={onSelectClimb}
+      heightClass={heightClass}
+    />
+  );
 }

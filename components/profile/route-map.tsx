@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
 import { climbColor, climbSegmentPoints } from "@/lib/terrain/route-map-segments";
+import { cn } from "@/lib/utils";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -78,13 +79,13 @@ function mapStyle(): maplibregl.StyleSpecification {
 /** FeatureCollection LineString unico, colore per feature via property "color".
  * ponytail: un source, color da property, invece di N layer per segmento. */
 function segmentsGeoJSON(
-  segments: Array<{ points: TerrainSummary["polyline"]; color: string }>
-): GeoJSON.FeatureCollection<GeoJSON.LineString, { color: string }> {
+  segments: Array<{ points: TerrainSummary["polyline"]; color: string; climbIdx?: number }>
+): GeoJSON.FeatureCollection<GeoJSON.LineString, { color: string; climbIdx: number }> {
   return {
     type: "FeatureCollection",
-    features: segments.map(({ points, color }) => ({
+    features: segments.map(({ points, color, climbIdx }) => ({
       type: "Feature",
-      properties: { color },
+      properties: { color, climbIdx: climbIdx ?? -1 },
       geometry: {
         type: "LineString",
         // Coordinate MapLibre: [lon, lat] (GeoJSON), non [lat, lon] come Leaflet.
@@ -93,6 +94,14 @@ function segmentsGeoJSON(
       },
     })),
   };
+}
+
+/** Testo compatto del popup di una salita selezionata (vedi spec "Popup"). */
+function climbPopupText(climb: TerrainSummary["climbs"][number]): string {
+  return (
+    `Pos. ${climb.position_km} km · ${climb.distance_km} km · ` +
+    `${climb.elevation_m} m D+ · ${climb.avg_gradient_pct}% · Cat. ${climb.category ?? "—"}`
+  );
 }
 
 function markerElement(fill: string): HTMLDivElement {
@@ -106,13 +115,34 @@ function markerElement(fill: string): HTMLDivElement {
   return el;
 }
 
-export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element {
+export function RouteMap({
+  terrain,
+  selectedClimb = null,
+  onSelectClimb,
+  heightClass,
+}: {
+  terrain: TerrainSummary;
+  /** Indice in terrain.climbs da evidenziare dall'esterno (tabella salite). */
+  selectedClimb?: number | null;
+  /** Notifica click su una salita (o `null` su click su area vuota). */
+  onSelectClimb?: (idx: number | null) => void;
+  /** Override altezza contenitore mappa (default invariato: h-64 sm:h-80). */
+  heightClass?: string;
+}): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
   const [webglError, setWebglError] = useState(false);
 
   const polyline = terrain.polyline.filter(
     (p) => Number.isFinite(p[1]) && Number.isFinite(p[2])
   );
+
+  // Ref sempre aggiornata: gli handler del click (dentro l'effect che crea la
+  // mappa, con dep solo su `polyline`) devono poter chiamare la ultima
+  // `onSelectClimb` senza ricreare la mappa a ogni cambio di prop.
+  const onSelectClimbRef = useRef(onSelectClimb);
+  onSelectClimbRef.current = onSelectClimb;
 
   useEffect(() => {
     if (polyline.length < 2 || !containerRef.current) return;
@@ -125,6 +155,7 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
         pitch: 60,
         bearing: -15,
         interactive: true,
+        attributionControl: false, // riaggiunta sotto in top-right: quella di default in bottom-left copre il bottom sheet
       });
     } catch {
       // WebGL non disponibile (device/browser vecchio, GPU blocklisted).
@@ -132,7 +163,10 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
       return;
     }
 
+    mapRef.current = map;
+
     map.scrollZoom.disable(); // replica scrollWheelZoom={false} del vecchio Leaflet
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "top-right");
     map.addControl(
       // ponytail: controllo nativo, no bottone custom
       new maplibregl.NavigationControl({ visualizePitch: true }),
@@ -167,10 +201,12 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
       });
 
       // Segmenti salita: colore per pendenza, riusando climbSegmentPoints/climbColor.
+      // climbIdx = indice in terrain.climbs, per selezione/click (vedi effect separato sotto).
       const climbSegments = terrain.climbs
-        .map((climb) => ({
+        .map((climb, climbIdx) => ({
           points: climbSegmentPoints(polyline, climb),
           color: climbColor(climb.avg_gradient_pct),
+          climbIdx,
         }))
         .filter((s) => s.points.length >= 2); // stesso guard del vecchio file
 
@@ -189,6 +225,22 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
           source: "climb-segments",
           paint: { "line-color": ["get", "color"], "line-width": 4, "line-opacity": 1 },
         });
+
+        // Click su una salita -> notifica selezione; click su area vuota -> deseleziona.
+        map.on("click", "climb-segments", (e) => {
+          const idx = e.features?.[0]?.properties?.climbIdx;
+          if (typeof idx === "number") onSelectClimbRef.current?.(idx);
+        });
+        map.on("click", (e) => {
+          const hits = map.queryRenderedFeatures(e.point, { layers: ["climb-segments"] });
+          if (hits.length === 0) onSelectClimbRef.current?.(null);
+        });
+        map.on("mouseenter", "climb-segments", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "climb-segments", () => {
+          map.getCanvas().style.cursor = "";
+        });
       }
 
       // Marker partenza/arrivo (polyline già filtrata: coordinate finite).
@@ -204,11 +256,48 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
         .addTo(map);
     });
 
-    return () => map.remove();
+    return () => {
+      mapRef.current = null;
+      popupRef.current = null;
+      map.remove();
+    };
     // Dep sui dati del percorso (stesso pattern del vecchio FitBounds): un
     // nuovo `terrain` distrugge e ricrea la mappa, niente istanze orfane.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(polyline)]);
+
+  // Selezione -> evidenzia il segmento e mostra il popup. Effect separato
+  // dalla creazione della mappa: NON deve ricreare/distruggere la mappa a
+  // ogni cambio di selezione (vedi spec "selectedClimb must not recreate the
+  // map"), lavora sull'istanza esistente via mapRef.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("climb-segments")) return;
+
+    map.setPaintProperty("climb-segments", "line-width", [
+      "case",
+      ["==", ["get", "climbIdx"], selectedClimb ?? -1],
+      7,
+      4,
+    ]);
+    map.setPaintProperty("climb-segments", "line-opacity", [
+      "case",
+      ["==", ["get", "climbIdx"], selectedClimb ?? -1],
+      1,
+      selectedClimb == null ? 1 : 0.55,
+    ]);
+
+    popupRef.current?.remove();
+    popupRef.current = null;
+
+    const climb = selectedClimb != null ? terrain.climbs[selectedClimb] : null;
+    if (climb) {
+      popupRef.current = new maplibregl.Popup({ closeButton: false, offset: 10 })
+        .setLngLat([climb.start_coords.lon, climb.start_coords.lat])
+        .setText(climbPopupText(climb))
+        .addTo(map);
+    }
+  }, [selectedClimb, terrain.climbs]);
 
   if (polyline.length < 2) {
     return (
@@ -220,15 +309,20 @@ export function RouteMap({ terrain }: { terrain: TerrainSummary }): JSX.Element 
 
   if (webglError) {
     return (
-      <div className="flex h-64 w-full items-center justify-center rounded-[11px] bg-surface-2 px-3 text-center text-sm text-muted sm:h-80">
+      <div
+        className={cn(
+          "flex w-full items-center justify-center rounded-[11px] bg-surface-2 px-3 text-center text-sm text-muted",
+          heightClass ?? "h-64 sm:h-80"
+        )}
+      >
         Mappa 3D non disponibile su questo dispositivo.
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      <div ref={containerRef} className="h-64 w-full rounded-[11px] sm:h-80" />
+    <div className={cn("relative w-full", heightClass ?? "h-64 sm:h-80")}>
+      <div ref={containerRef} className="h-full w-full rounded-[11px]" />
     </div>
   );
 }

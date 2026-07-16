@@ -20,12 +20,53 @@ import {
  * ripetibilità (Race Planner M1). POST /api/profile/route-settings, poi
  * router.refresh() (stesso pattern di calibrate-button.tsx). Nessuna nuova
  * dipendenza: <select>/<input type="range"|"number"> nativi.
+ *
+ * Diviso in due form indipendenti (step "Bici e strategia" / step "Margine di
+ * ripetibilità" nel card-stack Stima, vedi route-card-stack.tsx): l'API
+ * sostituisce sempre l'intero blob route_settings, quindi ciascun form invia
+ * l'intero `RaceRouteSettings` costruito a partire da `initialSettings` — non
+ * solo i campi che possiede — cosí salvare uno step non perde i valori
+ * dell'altro.
  */
 
 const INPUT_CLASS =
   "rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand";
 
-export function RouteSettingsForm({
+async function saveRouteSettings(settings: RaceRouteSettings): Promise<string | null> {
+  try {
+    const response = await fetch("/api/profile/route-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings }),
+    });
+    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    if (!response.ok) return body?.message ?? "Salvataggio fallito";
+    return null;
+  } catch {
+    return "Errore di rete, riprova";
+  }
+}
+
+function SaveRow({
+  onSave,
+  loading,
+  error,
+}: {
+  onSave: () => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  return (
+    <div className="mt-6 flex flex-col items-start gap-1.5">
+      <Button onClick={onSave} disabled={loading}>
+        {loading ? "Salvo…" : "Salva impostazioni"}
+      </Button>
+      {error && <span className="text-xs text-destructive">{error}</span>}
+    </div>
+  );
+}
+
+export function BikeStrategyForm({
   initialSettings,
   climbs,
 }: {
@@ -43,9 +84,6 @@ export function RouteSettingsForm({
   const [climbSurfaces, setClimbSurfaces] = useState<Record<string, SurfaceKey>>(
     initialSettings.climb_surfaces
   );
-  const [repeatabilityPct, setRepeatabilityPct] = useState<number>(
-    Math.round(initialSettings.repeatability_frac * 100)
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,30 +99,20 @@ export function RouteSettingsForm({
   async function handleSave() {
     setLoading(true);
     setError(null);
-    try {
-      const settings: RaceRouteSettings = {
-        bike_weight_kg: bikeWeightKg.trim() === "" ? null : Number(bikeWeightKg),
-        riding_position: ridingPosition,
-        cda_m2: Number(cdaM2),
-        climb_surfaces: climbSurfaces,
-        repeatability_frac: repeatabilityPct / 100,
-      };
-      const response = await fetch("/api/profile/route-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings }),
-      });
-      const body = (await response.json().catch(() => null)) as { message?: string } | null;
-      if (!response.ok) {
-        setError(body?.message ?? "Salvataggio fallito");
-        return;
-      }
-      router.refresh();
-    } catch {
-      setError("Errore di rete, riprova");
-    } finally {
-      setLoading(false);
+    const settings: RaceRouteSettings = {
+      ...initialSettings,
+      bike_weight_kg: bikeWeightKg.trim() === "" ? null : Number(bikeWeightKg),
+      riding_position: ridingPosition,
+      cda_m2: Number(cdaM2),
+      climb_surfaces: climbSurfaces,
+    };
+    const message = await saveRouteSettings(settings);
+    setLoading(false);
+    if (message) {
+      setError(message);
+      return;
     }
+    router.refresh();
   }
 
   return (
@@ -93,7 +121,7 @@ export function RouteSettingsForm({
         Peso bici, posizione e strategia
       </h3>
       <p className="mt-1 text-sm text-secondary">
-        Affina la stima con i dati del tuo mezzo e quanto vuoi rischiare in gara.
+        Affina la stima con i dati del tuo mezzo.
       </p>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -191,9 +219,51 @@ export function RouteSettingsForm({
         </div>
       )}
 
-      <div className="mt-6">
+      <SaveRow onSave={() => void handleSave()} loading={loading} error={error} />
+    </section>
+  );
+}
+
+export function RepeatabilityForm({
+  initialSettings,
+}: {
+  initialSettings: RaceRouteSettings;
+}) {
+  const router = useRouter();
+  const [repeatabilityPct, setRepeatabilityPct] = useState<number>(
+    Math.round(initialSettings.repeatability_frac * 100)
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setLoading(true);
+    setError(null);
+    const settings: RaceRouteSettings = {
+      ...initialSettings,
+      repeatability_frac: repeatabilityPct / 100,
+    };
+    const message = await saveRouteSettings(settings);
+    setLoading(false);
+    if (message) {
+      setError(message);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+      <h3 className="text-base font-medium text-foreground">
+        Margine di ripetibilità
+      </h3>
+      <p className="mt-1 text-sm text-secondary">
+        Quanto vuoi rischiare in gara: più conservativo, più sicuro reggere tutta la salita.
+      </p>
+
+      <div className="mt-5">
         <label htmlFor="repeatability" className="text-sm font-medium text-foreground">
-          Margine di ripetibilità: {repeatabilityPct}%
+          Margine: {repeatabilityPct}%
         </label>
         <p className="mt-1 text-xs leading-5 text-faint">
           Più conservativo = target di potenza più basso, più sicuro di reggere
@@ -224,12 +294,7 @@ export function RouteSettingsForm({
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col items-start gap-1.5">
-        <Button onClick={() => void handleSave()} disabled={loading}>
-          {loading ? "Salvo…" : "Salva impostazioni"}
-        </Button>
-        {error && <span className="text-xs text-destructive">{error}</span>}
-      </div>
+      <SaveRow onSave={() => void handleSave()} loading={loading} error={error} />
     </section>
   );
 }
