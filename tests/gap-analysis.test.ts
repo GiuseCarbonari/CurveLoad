@@ -46,6 +46,8 @@ function makeProfile(overrides: Partial<AthleteProfileData> = {}): AthleteProfil
       { duration_s: 1200, actual_secs: 1200, watts: 240, wkg: 3.2, exact: true, watts_1y: null, wkg_1y: null },
       { duration_s: 3600, actual_secs: 3600, watts: 200, wkg: 2.67, exact: true, watts_1y: null, wkg_1y: null },
     ],
+    ftp_model_w: 226,
+    ftp_source: "estimated",
     cp_wprime: {
       cp_w: 238,
       cp_wkg: 3.17,

@@ -4,6 +4,7 @@ import type { MirrorData } from "@/lib/intervals/sync";
 import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import { isInjured } from "@/lib/planner/injury";
+import { hasHealthNote } from "@/lib/planner/health-flag";
 import { detectPhase, type Phase } from "@/lib/planner/phase-detector";
 import { computeProgressionStateByFormat } from "@/lib/planner/progression";
 import {
@@ -123,6 +124,9 @@ interface ProfileRow {
   ha_rulli: boolean | null;
   sport_principali: string[] | null;
   injury_periods: Array<{ start: string; end: string; note?: string }> | null;
+  dolore_attuale: string | null;
+  farmaci_integratori: string | null;
+  limiti_principali: string | null;
 }
 
 export async function POST() {
@@ -141,13 +145,18 @@ export async function POST() {
   const { data: profileRow } = await supabase
     .from("athlete_profiles")
     .select(
-      "profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, injury_periods"
+      "profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, injury_periods, dolore_attuale, farmaci_integratori, limiti_principali"
     )
     .eq("user_id", user.id)
     .maybeSingle();
 
   const row = (profileRow ?? null) as ProfileRow | null;
   const profile = row?.profile_data ?? null;
+  const healthNote = hasHealthNote({
+    dolore_attuale: row?.dolore_attuale,
+    farmaci_integratori: row?.farmaci_integratori,
+    limiti_principali: row?.limiti_principali,
+  });
 
   // --- Ultimo snapshot: CTL/ACWR/RI/readiness (letti, non ricalcolati) ------
   const { data: snapshot } = await supabase
@@ -286,6 +295,19 @@ export async function POST() {
     week.sessions = week.sessions.map((s) => {
       if (!isInjured(s.date, injuryPeriods)) return s;
       return { ...s, blocked_by_user: true, rest: true, is_hard: false, title: 'Infortunio', description: '', session_objective: '', interval_structure: '', coach_notes: '', library_id: null };
+    });
+  }
+
+  // --- Nota di salute: freno prudenziale sulle dure (Q1=Opzione C, nessuna
+  // riduzione automatica di volume/intensità) ------------------------------
+  if (healthNote) {
+    const HEALTH_NOTE =
+      "Nota di salute attiva nel tuo profilo: valuta di ridurre l'intensità in via " +
+      "precauzionale. Se è un infortunio vero, dichiara un Periodo Infortunio " +
+      "(blocca le sedute).";
+    week.sessions = week.sessions.map((s) => {
+      if (s.rest || s.blocked_by_user || !s.is_hard) return s;
+      return { ...s, coach_notes: [s.coach_notes, HEALTH_NOTE].filter(Boolean).join(" ") };
     });
   }
 
