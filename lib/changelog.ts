@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.7.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,20 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.7.0",
+    date: "16 lug 2026",
+    title: "Percorso in 3D, GPS live e piano più attento a te",
+    items: [
+      { type: "new", text: "Mappa del percorso in 3D fotorealistica, con vista satellite e tracciato colorato per pendenza" },
+      { type: "new", text: "Posizione GPS in tempo reale sulla mappa mentre pedali o corri" },
+      { type: "new", text: "Scheda percorso ridisegnata a schermo intero, scorrevole a card: mappa, limitatori di gara, stima tempo" },
+      { type: "new", text: "Analisi di durabilità: come cala la tua potenza quando sei affaticato, non solo da fresco" },
+      { type: "new", text: "Trend dell'efficienza aerobica (rapporto potenza/frequenza cardiaca) in dashboard" },
+      { type: "new", text: "Se compili una nota di salute nel profilo, le sedute dure del piano mostrano un avviso — il piano non le riduce da solo, decidi tu" },
+      { type: "improve", text: "Se non hai ancora abbastanza dati per stimare la tua soglia di potenza (FTP), l'app usa il valore che hai dichiarato in Impostazioni, finché non ha una stima migliore" },
+    ],
+  },
   {
     version: "1.4.0",
     date: "25 giu 2026",
