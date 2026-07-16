@@ -20,7 +20,7 @@ import { climbColor, climbSegmentPoints } from "@/lib/terrain/route-map-segments
 
 // Tratto base: scuro + alone bianco per restare leggibile sul verde/marrone
 // dei tile OSM (il precedente #94a3b8 sottile si mimetizzava sullo sfondo).
-const BASE_TRACK_COLOR = "#1e3a8a";
+const BASE_TRACK_COLOR = "#202020";
 const BASE_TRACK_HALO_COLOR = "#ffffff";
 
 /** `bounds` di MapContainer si applica solo al mount: qui si aggiorna la
