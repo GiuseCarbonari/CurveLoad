@@ -51,6 +51,8 @@ export function RouteMapCard({
 }) {
   const [selectedClimb, setSelectedClimb] = useState<number | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [showMyLocation, setShowMyLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Nuova analisi -> reset selezione (edge case: indice potrebbe non
   // riferirsi più a una salita esistente nel nuovo terrain).
@@ -72,7 +74,35 @@ export function RouteMapCard({
         selectedClimb={selectedClimb}
         onSelectClimb={selectClimb}
         heightClass="h-full"
+        showMyLocation={showMyLocation}
+        onLocationError={setLocationError}
       />
+
+      {/* Toggle "tu sei qui": solo mobile/touch, la fixata IP su desktop è
+          city-level e inutile per orientarsi (vedi spec, mai in gate JS). */}
+      <div className="hidden [@media(pointer:coarse)]:block">
+        <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setShowMyLocation((v) => !v);
+              if (showMyLocation) setLocationError(null);
+            }}
+            aria-pressed={showMyLocation}
+            className={cn(
+              "flex min-h-10 min-w-10 items-center justify-center rounded-full text-xs font-medium shadow-sm transition-colors",
+              showMyLocation ? "bg-brand text-brand-on" : "bg-surface text-muted"
+            )}
+          >
+            GPS
+          </button>
+          {locationError && (
+            <span className="max-w-[12rem] rounded-md bg-surface px-2 py-1 text-xs text-ready-skip shadow-sm">
+              {locationError}
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Bottom sheet: peek (grab handle + riepilogo) oppure espanso (tabella scrollabile). */}
       <div
