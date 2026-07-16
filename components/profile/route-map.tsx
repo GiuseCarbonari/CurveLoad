@@ -115,11 +115,25 @@ function markerElement(fill: string): HTMLDivElement {
   return el;
 }
 
+function locationMarkerElement(): HTMLDivElement {
+  const el = document.createElement("div");
+  el.style.width = "16px";
+  el.style.height = "16px";
+  el.style.borderRadius = "50%";
+  el.style.background = "#2563eb"; // blu "current location", diverso da verde/rosso start/arrivo
+  el.style.border = "3px solid #ffffff";
+  el.style.boxShadow = "0 0 6px rgba(37,99,235,0.8)";
+  el.style.animation = "pulseDot 1.5s ease-in-out infinite"; // keyframe già presente in globals.css
+  return el;
+}
+
 export function RouteMap({
   terrain,
   selectedClimb = null,
   onSelectClimb,
   heightClass,
+  showMyLocation = false,
+  onLocationError,
 }: {
   terrain: TerrainSummary;
   /** Indice in terrain.climbs da evidenziare dall'esterno (tabella salite). */
@@ -128,10 +142,16 @@ export function RouteMap({
   onSelectClimb?: (idx: number | null) => void;
   /** Override altezza contenitore mappa (default invariato: h-64 sm:h-80). */
   heightClass?: string;
+  /** Attiva il marker GPS live "tu sei qui" (watchPosition). Default off. */
+  showMyLocation?: boolean;
+  /** Notifica errore geolocalizzazione (messaggio breve IT) o `null` su fix riuscito. */
+  onLocationError?: (msg: string | null) => void;
 }): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const locationMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const [webglError, setWebglError] = useState(false);
 
   const polyline = terrain.polyline.filter(
@@ -143,6 +163,12 @@ export function RouteMap({
   // `onSelectClimb` senza ricreare la mappa a ogni cambio di prop.
   const onSelectClimbRef = useRef(onSelectClimb);
   onSelectClimbRef.current = onSelectClimb;
+
+  // Ref sempre aggiornata: i callback di watchPosition (registrati una sola
+  // volta nell'effect sotto) devono poter chiamare l'ultima `onLocationError`
+  // senza far ripartire l'effect (stesso pattern di onSelectClimbRef sopra).
+  const onLocationErrorRef = useRef(onLocationError);
+  onLocationErrorRef.current = onLocationError;
 
   useEffect(() => {
     if (polyline.length < 2 || !containerRef.current) return;
@@ -298,6 +324,59 @@ export function RouteMap({
         .addTo(map);
     }
   }, [selectedClimb, terrain.climbs]);
+
+  // Marker GPS live "tu sei qui". Effect separato, dep solo su
+  // `showMyLocation`: NON deve ricreare/distruggere la mappa (stesso vincolo
+  // dell'effect di selezione sopra), lavora su mapRef.current esistente. Mai
+  // auto-recenter: ogni fix chiama solo setLngLat sul marker, mai
+  // flyTo/easeTo/panTo (vedi spec).
+  useEffect(() => {
+    if (!showMyLocation) return; // off: nothing to start; cleanup below handles teardown
+
+    if (!("geolocation" in navigator)) {
+      onLocationErrorRef.current?.("Geolocalizzazione non supportata su questo dispositivo.");
+      return;
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const map = mapRef.current;
+        // Oltre a "map esiste", lo stile deve essere completamente caricato:
+        // un fix GPS può arrivare prima dell'evento "load" (i marker
+        // partenza/arrivo sopra vengono aggiunti solo dentro map.on("load", ...)
+        // per lo stesso motivo). Aggiungere un Marker mentre MapLibre sta
+        // ancora processando le sorgenti/lo stile fa scattare un redraw interno
+        // che assume sorgenti già pronte (crash "clearFadeHold" osservato).
+        if (!map || !map.isStyleLoaded()) return;
+        const lngLat: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        if (!locationMarkerRef.current) {
+          locationMarkerRef.current = new maplibregl.Marker({ element: locationMarkerElement() })
+            .setLngLat(lngLat)
+            .addTo(map);
+        } else {
+          locationMarkerRef.current.setLngLat(lngLat); // reposition existing marker, no re-init
+        }
+        onLocationErrorRef.current?.(null); // clear any prior error on a good fix
+      },
+      (err) => {
+        onLocationErrorRef.current?.(
+          err.code === err.PERMISSION_DENIED
+            ? "Permesso posizione negato. Attivalo nelle impostazioni del browser."
+            : "Posizione non disponibile."
+        );
+      },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+    );
+
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      locationMarkerRef.current?.remove();
+      locationMarkerRef.current = null;
+    };
+  }, [showMyLocation]);
 
   if (polyline.length < 2) {
     return (

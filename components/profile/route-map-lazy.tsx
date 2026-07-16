@@ -29,11 +29,15 @@ export function RouteMapLazy({
   selectedClimb,
   onSelectClimb,
   heightClass,
+  showMyLocation,
+  onLocationError,
 }: {
   terrain: TerrainSummary;
   selectedClimb?: number | null;
   onSelectClimb?: (idx: number | null) => void;
   heightClass?: string;
+  showMyLocation?: boolean;
+  onLocationError?: (msg: string | null) => void;
 }) {
   return (
     <RouteMap
@@ -41,6 +45,8 @@ export function RouteMapLazy({
       selectedClimb={selectedClimb}
       onSelectClimb={onSelectClimb}
       heightClass={heightClass}
+      showMyLocation={showMyLocation}
+      onLocationError={onLocationError}
     />
   );
 }
