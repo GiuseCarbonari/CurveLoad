@@ -96,24 +96,14 @@ const CONFIDENCE_SCORE_PENALTY: Record<ReadinessResult["confidence"], number> = 
   low: 9,
 };
 
-const SCORE_BANDS: Record<
-  ReadinessResult["decision"],
-  { min: number; max: number }
-> = {
-  GO: { min: 70, max: 100 },
-  MODIFY: { min: 40, max: 69 },
-  SKIP: { min: 0, max: 39 },
-};
-
-function clampScore(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 /**
- * Trasforma la decisione Section 11 in un indice 0-100 senza cambiarla.
- * Le bande restano coerenti con la ladder: SKIP 0-39, MODIFY 40-69, GO 70-100.
+ * Media pesata dei segnali disponibili, indipendente dalla decisione.
+ * `null` se nessun segnale è disponibile (dati insufficienti). Non assume
+ * mai che il risultato cada in una "banda" legata a GO/MODIFY/SKIP.
  */
-export function computeReadinessScore(readiness: ReadinessResult): number {
+export function computeReadinessScore(
+  readiness: ReadinessResult
+): number | null {
   let weightedHealth = 0;
   let totalWeight = 0;
 
@@ -126,18 +116,32 @@ export function computeReadinessScore(readiness: ReadinessResult): number {
     totalWeight += weight;
   }
 
-  const baseHealth = totalWeight > 0 ? weightedHealth / totalWeight : 0.72;
+  if (totalWeight === 0) return null;
+
+  const baseHealth = weightedHealth / totalWeight;
   const rawScore = Math.round(
     baseHealth * 100 - CONFIDENCE_SCORE_PENALTY[readiness.confidence]
   );
 
-  let { min, max } = SCORE_BANDS[readiness.decision];
+  return Math.max(0, Math.min(100, rawScore));
+}
 
-  if (readiness.decision === "SKIP") {
-    max = readiness.priority === 0 ? 24 : readiness.priority === 1 ? 34 : max;
-  }
-
-  return clampScore(rawScore, min, max);
+/**
+ * True quando il numero e il colore/decisione dell'anello, letti insieme,
+ * comunicherebbero cose opposte (es. punteggio 55 dentro un anello rosso
+ * SKIP). Capita perché il colore segue sempre la sicurezza — un solo
+ * segnale d'allarme può bastare per SKIP anche se la media dei dati resta
+ * discreta. Serve solo per mostrare una frase di spiegazione, non cambia
+ * né lo score né il colore.
+ */
+export function isScoreDecisionMismatch(
+  score: number | null,
+  decision: ReadinessResult["decision"]
+): boolean {
+  if (score == null) return false;
+  if (decision === "SKIP") return score >= 40;
+  if (decision === "GO") return score < 70;
+  return false;
 }
 
 /**
