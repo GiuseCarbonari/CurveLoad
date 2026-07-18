@@ -97,8 +97,7 @@ export function OnboardingWizard({
 
   const progressPct = Math.round((step / LAST_STEP) * 100);
 
-  const canAdvanceStep5 =
-    form.nome.trim() !== "" && form.sport_principali.length > 0 && form.livello_esperienza !== "";
+  const canAdvanceStep5 = form.nome.trim() !== "" && form.livello_esperienza !== "";
   const canAdvanceStep7 = form.disponibilita_ore_sett.trim() !== "";
 
   function goBack(prevStep: number) {
@@ -234,7 +233,7 @@ export function OnboardingWizard({
           </div>
           {!canAdvanceStep5 && (
             <p className="text-right text-xs text-muted">
-              Compila nome, almeno uno sport e il livello di esperienza per continuare.
+              Compila nome e livello di esperienza per continuare.
             </p>
           )}
         </section>

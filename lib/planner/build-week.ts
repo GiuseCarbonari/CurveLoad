@@ -18,7 +18,6 @@ import {
   countHardSessions,
   effectiveMinGapDays,
   hardSpacingOk,
-  isRunSport,
   type DayKey,
   type SelectedSession,
 } from "@/lib/planner/session-selector";
@@ -27,11 +26,6 @@ import {
   type WorkoutDomain,
   type WorkoutTemplate,
 } from "@/lib/planner/workout-library";
-import {
-  getRunTemplate,
-  type RunWorkoutDomain,
-  type RunWorkoutTemplate,
-} from "@/lib/planner/run-workout-library";
 import {
   resolveProgressionState,
   type ProgressionState,
@@ -63,17 +57,6 @@ const DOMAIN_OBJECTIVE: Record<WorkoutDomain, string> = {
   strength_endurance: "Forza-resistenza e torque (bassa cadenza)",
 };
 
-const RUN_DOMAIN_OBJECTIVE: Record<RunWorkoutDomain, string> = {
-  endurance: "Costruire base aerobica e durabilità in corsa",
-  tempo: "Volume a intensità moderata, ponte verso il passo soglia",
-  sweet_spot: "Stimolo a passo soglia ad alto rendimento",
-  threshold: "Elevare il passo soglia (LT2/MLSS)",
-  vo2max: "Massima capacità aerobica e gittata cardiaca",
-  anaerobic: "Capacità anaerobica e reclutamento neuromuscolare in corsa",
-  race_specific: "Fitness specifica di gara e gestione del passo",
-  strength_endurance: "Forza-resistenza e potenza muscolare in salita",
-};
-
 /** Framework citati per dominio (oltre a quelli di base del piano). */
 const DOMAIN_FRAMEWORKS: Record<WorkoutDomain, string[]> = {
   endurance: ["Seiler-TID"],
@@ -86,38 +69,8 @@ const DOMAIN_FRAMEWORKS: Record<WorkoutDomain, string[]> = {
   strength_endurance: ["Section11-WR§1F"],
 };
 
-const RUN_DOMAIN_FRAMEWORKS: Record<RunWorkoutDomain, string[]> = {
-  endurance: ["Seiler-TID"],
-  tempo: ["Daniels-Running"],
-  sweet_spot: ["Daniels-Running"],
-  threshold: ["Daniels-Running", "Seiler-LongIntervals"],
-  vo2max: ["Seiler-TID", "Buchheit-HIIT"],
-  anaerobic: ["Section11-B§3.2"],
-  race_specific: ["Section11-B§3.2"],
-  strength_endurance: ["Section11-WR§1F"],
-};
-
 /** Alternativa "in caso di fatica" per library_id (downgrade ragionato). */
 const FATIGUE_ALTERNATIVE: Record<string, string | null> = {
-  // Corsa
-  "RA-1": "RA-4",
-  "RA-2": "RA-1",
-  "RA-3": "RA-2",
-  "RA-4": null,
-  "RA-5": "RA-4",
-  "RA-6": "RA-3",
-  "RS-1": "RS-4",
-  "RS-2": "RS-4",
-  "RS-3": "RS-4",
-  "RS-4": "RA-5",
-  "RV-1": "RS-4",
-  "RV-2": "RS-4",
-  "RV-3": "RS-4",
-  "RN-1": "RA-4",
-  "RN-2": "RA-1",
-  "RR-1": "RS-4",
-  "RR-2": "RA-4",
-  // Ciclismo
   // Endurance
   "AE-1": "AE-4",
   "AE-2": "AE-1",
@@ -267,21 +220,13 @@ function restSession(s: SelectedSession, date: string): BuiltSession {
 
 /** Descrizione semplice + struttura con riferimento WU/CD per le strutturate. */
 function describe(
-  template: WorkoutTemplate | RunWorkoutTemplate,
-  durationMin: number | null,
-  isRun = false
+  template: WorkoutTemplate,
+  durationMin: number | null
 ): { description: string; structure: string } {
   const needsWuCd = template.domain !== "endurance";
-  let wuCd: string;
-  if (isRun) {
-    wuCd = needsWuCd
-      ? " Includi riscaldamento (10–15′ jogging facile) e defaticamento (8–10′ camminata/jogging)."
-      : " Corsa con entrata progressiva (5–10′ a ritmo Z1) e uscita graduale.";
-  } else {
-    wuCd = needsWuCd
-      ? " Includi riscaldamento (WU-STD/WU-PROG, 15–20′) e defaticamento (CD-STD, 10–15′)."
-      : " Pedalata con ramp-in/ramp-out (10–15′ in entrata e in uscita).";
-  }
+  const wuCd = needsWuCd
+    ? " Includi riscaldamento (WU-STD/WU-PROG, 15–20′) e defaticamento (CD-STD, 10–15′)."
+    : " Pedalata con ramp-in/ramp-out (10–15′ in entrata e in uscita).";
   const dur = durationMin != null ? ` Durata totale prevista ~${durationMin}′.` : "";
   return {
     description: `${template.title}. ${template.structure}.${dur}${wuCd}`,
@@ -293,15 +238,8 @@ function describe(
 function resolveSport(
   dossier: { indoor_outdoor?: string | null; sport_principali?: string[] }
 ): string {
-  const sports = dossier.sport_principali ?? [];
-  const isRun = sports.some((s) => /corsa|running|trail/i.test(s));
-  const isCycling = sports.some((s) => /cicl|mtb|gravel|bici|bike/i.test(s));
-  const isTrail = sports.some((s) => /trail/i.test(s));
-
-  if (isRun && !isCycling) {
-    return isTrail ? "Trail running" : "Corsa";
-  }
   if (dossier.indoor_outdoor === "indoor") return "indoor";
+  const sports = dossier.sport_principali ?? [];
   const isMtb = sports.some((s) => /mtb|gravel/i.test(s));
   return isMtb ? "MTB" : "Ciclismo";
 }
@@ -329,26 +267,22 @@ export function buildWeek(
 ): BuiltWeek {
   const hasInputs = athleteProfile?.cp_wprime?.cp_w != null && athleteProfile.weight_kg != null;
   const confidence: "high" | "medium" | "low" = hasInputs ? "high" : "medium";
-  const run = isRunSport({ sport_principali: dossier.sport_principali ?? [] } as Parameters<typeof isRunSport>[0]);
   const sport = resolveSport(dossier);
 
   const built: BuiltSession[] = sessions.map((s) => {
     const date = addDays(weekStartDate, DAY_KEYS.indexOf(s.day));
     if (s.library_id == null) return restSession(s, date);
 
-    // Cerca nella libreria corretta in base allo sport
-    const template = run ? getRunTemplate(s.library_id) : getTemplate(s.library_id);
+    const template = getTemplate(s.library_id);
     if (!template) return restSession(s, date);
 
-    const domainFrameworks = run
-      ? RUN_DOMAIN_FRAMEWORKS[template.domain as RunWorkoutDomain]
-      : DOMAIN_FRAMEWORKS[template.domain as WorkoutDomain];
+    const domainFrameworks = DOMAIN_FRAMEWORKS[template.domain as WorkoutDomain];
     const frameworks = [...BASE_FRAMEWORKS, ...(domainFrameworks ?? [])];
 
     // §5.2 — se la seduta è stata progredita (multi-vettore), usa la struttura
     // risolta dello stato al posto di quella base (durata già adattata nel selector).
     const progResolved =
-      !run && s.progression_state != null
+      s.progression_state != null
         ? resolveProgressionState(s.library_id, s.progression_state)
         : null;
     const effectiveTemplate = progResolved
@@ -356,8 +290,7 @@ export function buildWeek(
       : template;
     const { description, structure } = describe(
       effectiveTemplate,
-      s.adapted_duration_min,
-      run
+      s.adapted_duration_min
     );
 
     const checklist_passed: Array<number | string> = [0, 1, 8];
@@ -374,9 +307,7 @@ export function buildWeek(
       adapted_duration_min: s.adapted_duration_min,
     };
 
-    const sessionObjective = run
-      ? RUN_DOMAIN_OBJECTIVE[template.domain as RunWorkoutDomain]
-      : DOMAIN_OBJECTIVE[template.domain as WorkoutDomain];
+    const sessionObjective = DOMAIN_OBJECTIVE[template.domain as WorkoutDomain];
 
     return {
       day: s.day,

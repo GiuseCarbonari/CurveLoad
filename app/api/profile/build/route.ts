@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 
 import { decryptToken } from "@/lib/crypto";
 import { IntervalsApiError, IntervalsFetcher } from "@/lib/intervals-client";
-import { isRunnerOnly } from "@/lib/onboarding/dossier";
 import { buildAthleteProfile } from "@/lib/profile/build-profile";
-import { buildRunnerProfile } from "@/lib/profile/build-runner-profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,16 +43,12 @@ export async function POST() {
     );
   }
 
-  // Sport dal dossier: i runner usano CS/D′ (pace-curves), i ciclisti CP/W′
-  // (power-curves). Il default (sport non dichiarato) resta il percorso bici.
+  // FTP dichiarato dal dossier: fallback finché non c'è una stima da power-curves.
   const { data: dossier } = await admin
     .from("athlete_profiles")
-    .select("sport_principali, ftp_outdoor_w")
+    .select("ftp_outdoor_w")
     .eq("user_id", user.id)
     .maybeSingle();
-  const runner = isRunnerOnly(
-    (dossier?.sport_principali as string[] | null) ?? []
-  );
   const declaredFtpW =
     typeof dossier?.ftp_outdoor_w === "number" ? dossier.ftp_outdoor_w : null;
 
@@ -62,9 +56,7 @@ export async function POST() {
     decryptToken(connection.access_token_encrypted)
   );
 
-  return runner
-    ? buildRunner(fetcher, admin, supabase, user.id)
-    : buildCyclist(fetcher, admin, supabase, user.id, declaredFtpW);
+  return buildCyclist(fetcher, admin, supabase, user.id, declaredFtpW);
 }
 
 /** Percorso ciclismo: power-curves → CP/W′ (PRD §33). */
@@ -152,96 +144,6 @@ async function buildCyclist(
     success: true,
     phenotype: profileData.phenotype.primary,
     confidence: profileData.meta.confidence,
-  });
-}
-
-/** Percorso corsa: pace-curves → CS/D′ + power-law (Modulo Corsa). */
-async function buildRunner(
-  fetcher: IntervalsFetcher,
-  admin: ReturnType<typeof createAdminClient>,
-  supabase: ReturnType<typeof createClient>,
-  userId: string
-) {
-  let paceCurves;
-  let athleteRaw;
-  try {
-    [paceCurves, athleteRaw] = await Promise.all([
-      fetcher.getPaceCurves(),
-      fetcher.getProfile(),
-    ]);
-  } catch (error) {
-    if (error instanceof IntervalsApiError && error.status === 401) {
-      return handleTokenInvalid(admin, userId);
-    }
-    const status = error instanceof IntervalsApiError ? error.status : null;
-    console.error(
-      `Build profilo corsa fallita: ${status ? `HTTP ${status}` : "errore di rete"}`
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "api_error",
-        message: "Lettura dati da Intervals fallita, riprova",
-      },
-      { status: 502 }
-    );
-  }
-
-  let runnerData;
-  try {
-    runnerData = buildRunnerProfile(paceCurves, athleteRaw);
-  } catch (error) {
-    console.error(
-      "Build profilo corsa fallita:",
-      error instanceof Error ? error.message : "errore sconosciuto"
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "build_error",
-        message:
-          "Dati corsa insufficienti: registra qualche corsa con GPS su Intervals.icu, poi riprova",
-      },
-      { status: 422 }
-    );
-  }
-
-  const { error: upsertError } = await supabase
-    .from("athlete_profiles")
-    .upsert(
-      { user_id: userId, runner_profile_data: runnerData },
-      { onConflict: "user_id" }
-    );
-  if (upsertError) {
-    console.error("Salvataggio profilo corsa fallito:", upsertError.message);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "internal_error",
-        message: "Salvataggio profilo fallito",
-      },
-      { status: 500 }
-    );
-  }
-
-  await admin.from("audit_logs").insert({
-    user_id: userId,
-    action: "profile.built",
-    source: "profile_build",
-    payload: {
-      sport: "run",
-      phenotype: runnerData.phenotype.primary,
-      confidence: runnerData.meta.confidence,
-      cs_ms: runnerData.cs_dprime?.cs_ms ?? null,
-      d_prime_m: runnerData.cs_dprime?.d_prime_m ?? null,
-    },
-  });
-
-  return NextResponse.json({
-    success: true,
-    sport: "run",
-    phenotype: runnerData.phenotype.primary,
-    confidence: runnerData.meta.confidence,
   });
 }
 

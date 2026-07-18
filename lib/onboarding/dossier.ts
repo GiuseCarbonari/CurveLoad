@@ -85,18 +85,7 @@ export interface GaraTargetForm {
 
 export const SPORT_OPTIONS = [
   "Ciclismo",
-  "Corsa",
 ] as const;
-
-/** True se il set di sport selezionati include almeno uno sport in bici. */
-export function hasCycling(sports: string[]): boolean {
-  return sports.includes("Ciclismo");
-}
-
-/** True se il set di sport include la corsa (e nessuno sport in bici). */
-export function isRunnerOnly(sports: string[]): boolean {
-  return sports.includes("Corsa") && !hasCycling(sports);
-}
 
 export const LIVELLO_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "beginner", label: "Principiante" },
@@ -245,7 +234,7 @@ export function emptyDossierForm(): DossierForm {
     altezza_cm: "",
     peso_dichiarato_kg: "",
     peso_target_kg: "",
-    sport_principali: [],
+    sport_principali: ["Ciclismo"],
     livello_esperienza: "",
     obiettivi: "",
     fase_corrente: "",

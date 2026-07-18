@@ -4,12 +4,10 @@ import {
   CICLOCOMPUTER_OPTIONS,
   FASE_OPTIONS,
   GIORNI,
-  hasCycling,
   INDOOR_OUTDOOR_OPTIONS,
   LIVELLO_OPTIONS,
   PIATTAFORMA_OPTIONS,
   SESSO_OPTIONS,
-  SPORT_OPTIONS,
   STILE_OPTIONS,
   type DossierForm,
   type GaraTargetForm,
@@ -91,12 +89,6 @@ export function StepChiSei({
         onChange={(v) => update("peso_target_kg", v)}
         placeholder="Lascia vuoto se non hai un target"
         hint="Opzionale"
-      />
-      <ChipMultiSelect
-        label="Sport principali *"
-        values={form.sport_principali}
-        options={SPORT_OPTIONS.map((s) => ({ value: s, label: s }))}
-        onToggle={(v) => update("sport_principali", toggle(form.sport_principali, v))}
       />
       <SelectField
         label="Livello di esperienza *"
@@ -250,8 +242,6 @@ export function StepFisiologia({
   form: DossierForm;
   update: DossierUpdater;
 }) {
-  const cycling = hasCycling(form.sport_principali);
-
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-[11px] border border-l-[3px] border-border border-l-brand bg-surface p-4 text-sm leading-relaxed text-secondary">
@@ -260,30 +250,28 @@ export function StepFisiologia({
         aggiornerà non appena la sync sarà attiva.
       </div>
 
-      {cycling && (
-        <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
-          <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-            FTP — Functional Threshold Power
-          </legend>
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <TextField
-              label="FTP outdoor (W)"
-              type="number"
-              value={form.ftp_outdoor_w}
-              onChange={(v) => update("ftp_outdoor_w", v)}
-              placeholder="es. 260"
-            />
-            <TextField
-              label="FTP indoor (W)"
-              type="number"
-              value={form.ftp_indoor_w}
-              onChange={(v) => update("ftp_indoor_w", v)}
-              placeholder="es. 245"
-              hint="Di solito ~5% in meno"
-            />
-          </div>
-        </fieldset>
-      )}
+      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+          FTP — Functional Threshold Power
+        </legend>
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <TextField
+            label="FTP outdoor (W)"
+            type="number"
+            value={form.ftp_outdoor_w}
+            onChange={(v) => update("ftp_outdoor_w", v)}
+            placeholder="es. 260"
+          />
+          <TextField
+            label="FTP indoor (W)"
+            type="number"
+            value={form.ftp_indoor_w}
+            onChange={(v) => update("ftp_indoor_w", v)}
+            placeholder="es. 245"
+            hint="Di solito ~5% in meno"
+          />
+        </div>
+      </fieldset>
 
       <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
@@ -312,15 +300,13 @@ export function StepFisiologia({
           LT1 — Prima soglia (soglia aerobica)
         </legend>
         <div className="grid grid-cols-2 gap-4 pt-2">
-          {cycling && (
-            <TextField
-              label="Potenza LT1 (W)"
-              type="number"
-              value={form.lt1_w}
-              onChange={(v) => update("lt1_w", v)}
-              placeholder="es. 185"
-            />
-          )}
+          <TextField
+            label="Potenza LT1 (W)"
+            type="number"
+            value={form.lt1_w}
+            onChange={(v) => update("lt1_w", v)}
+            placeholder="es. 185"
+          />
           <TextField
             label="FC a LT1 (bpm)"
             type="number"
@@ -336,15 +322,13 @@ export function StepFisiologia({
           LT2 — Seconda soglia (MLSS / soglia anaerobica)
         </legend>
         <div className="grid grid-cols-2 gap-4 pt-2">
-          {cycling && (
-            <TextField
-              label="Potenza LT2 (W)"
-              type="number"
-              value={form.lt2_w}
-              onChange={(v) => update("lt2_w", v)}
-              placeholder="es. 255"
-            />
-          )}
+          <TextField
+            label="Potenza LT2 (W)"
+            type="number"
+            value={form.lt2_w}
+            onChange={(v) => update("lt2_w", v)}
+            placeholder="es. 255"
+          />
           <TextField
             label="FC a LT2 (bpm)"
             type="number"
@@ -367,27 +351,21 @@ export function StepAttrezzatura({
   form: DossierForm;
   update: DossierUpdater;
 }) {
-  const cycling = hasCycling(form.sport_principali);
-
   return (
     <div className="flex flex-col gap-4">
-      {cycling && (
-        <SelectField
-          label="Ciclocomputer / dispositivo principale"
-          value={form.ciclocomputer}
-          onChange={(v) => update("ciclocomputer", v)}
-          options={CICLOCOMPUTER_OPTIONS}
-          hint="Determina la disponibilità di DFA a1"
-        />
-      )}
+      <SelectField
+        label="Ciclocomputer / dispositivo principale"
+        value={form.ciclocomputer}
+        onChange={(v) => update("ciclocomputer", v)}
+        options={CICLOCOMPUTER_OPTIONS}
+        hint="Determina la disponibilità di DFA a1"
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {cycling && (
-          <YesNoField
-            label="Misuratore di potenza?"
-            value={form.ha_misuratore_potenza}
-            onChange={(v) => update("ha_misuratore_potenza", v)}
-          />
-        )}
+        <YesNoField
+          label="Misuratore di potenza?"
+          value={form.ha_misuratore_potenza}
+          onChange={(v) => update("ha_misuratore_potenza", v)}
+        />
         <YesNoField
           label="Fascia cardio?"
           value={form.ha_fascia_cardio}
@@ -398,32 +376,26 @@ export function StepAttrezzatura({
           value={form.ha_smartwatch}
           onChange={(v) => update("ha_smartwatch", v)}
         />
-        {cycling && (
-          <YesNoField
-            label="Rulli / smart trainer indoor?"
-            value={form.ha_rulli}
-            onChange={(v) => update("ha_rulli", v)}
-          />
-        )}
+        <YesNoField
+          label="Rulli / smart trainer indoor?"
+          value={form.ha_rulli}
+          onChange={(v) => update("ha_rulli", v)}
+        />
       </div>
-      {cycling && (
-        <>
-          <TextField
-            label="Bici outdoor (modello)"
-            value={form.bici_outdoor}
-            onChange={(v) => update("bici_outdoor", v)}
-            placeholder="es. Canyon Endurace CF SL 7"
-            hint="Opzionale"
-          />
-          <SelectField
-            label="Piattaforma indoor"
-            value={form.piattaforma_indoor}
-            onChange={(v) => update("piattaforma_indoor", v)}
-            options={PIATTAFORMA_OPTIONS}
-            hint="Opzionale"
-          />
-        </>
-      )}
+      <TextField
+        label="Bici outdoor (modello)"
+        value={form.bici_outdoor}
+        onChange={(v) => update("bici_outdoor", v)}
+        placeholder="es. Canyon Endurace CF SL 7"
+        hint="Opzionale"
+      />
+      <SelectField
+        label="Piattaforma indoor"
+        value={form.piattaforma_indoor}
+        onChange={(v) => update("piattaforma_indoor", v)}
+        options={PIATTAFORMA_OPTIONS}
+        hint="Opzionale"
+      />
       <SelectField
         label="Preferisci indoor o outdoor?"
         value={form.indoor_outdoor}

@@ -14,7 +14,6 @@
  */
 
 import { getTemplate, type WorkoutTemplate } from "@/lib/planner/workout-library";
-import { getRunTemplate } from "@/lib/planner/run-workout-library";
 import type { Phase } from "@/lib/planner/phase-detector";
 import {
   resolveProgressionState,
@@ -62,21 +61,6 @@ export interface PlannerDossier {
   indoor_outdoor: string | null;
   ha_rulli: boolean | null;
   sport_principali?: string[];
-}
-
-/** true se lo sport principale è corsa (running/trail), non ciclismo. */
-export function isRunSport(dossier: PlannerDossier): boolean {
-  const sports = dossier.sport_principali ?? [];
-  if (sports.length === 0) return false;
-  const running = sports.some((s) =>
-    /corsa|running|trail/i.test(s)
-  );
-  const cycling = sports.some((s) =>
-    /cicl|mtb|gravel|bici|bike/i.test(s)
-  );
-  // Running se ha sport di corsa E non ha sport di ciclismo come primo sport,
-  // oppure se non ha affatto sport di ciclismo.
-  return running && !cycling;
 }
 
 /** Readiness di OGGI (l'unica disponibile): si applica al giorno corrente. */
@@ -142,10 +126,9 @@ function sequencingPriority(domain: string | undefined): number {
   }
 }
 
-/** Dominio del template (ciclismo o corsa) per un library_id. */
-function domainOf(libraryId: string, isRun: boolean): string | undefined {
-  const t = isRun ? getRunTemplate(libraryId) : getTemplate(libraryId);
-  return t?.domain;
+/** Dominio del template per un library_id. */
+function domainOf(libraryId: string): string | undefined {
+  return getTemplate(libraryId)?.domain;
 }
 
 /**
@@ -155,10 +138,7 @@ function domainOf(libraryId: string, isRun: boolean): string | undefined {
  * priorità più alta deve venire prima. Con gap ≥3 (≥2 giorni di recupero)
  * l'ordine è ininfluente e non si interviene. Mutazione in-place della mappa.
  */
-function enforceCloseHardOrdering(
-  sessions: Map<DayKey, SelectedSession>,
-  isRun: boolean
-): void {
+function enforceCloseHardOrdering(sessions: Map<DayKey, SelectedSession>): void {
   const hard = DAY_KEYS.map((d) => sessions.get(d)).filter(
     (s): s is SelectedSession => s != null && s.is_hard && s.library_id != null
   );
@@ -167,8 +147,8 @@ function enforceCloseHardOrdering(
     const b = hard[i + 1];
     const gap = dayIndex(b.day) - dayIndex(a.day); // ≥1 (a precede b)
     if (gap > 2) continue; // ≥2 giorni di recupero: ordine ininfluente
-    const pa = sequencingPriority(domainOf(a.library_id!, isRun));
-    const pb = sequencingPriority(domainOf(b.library_id!, isRun));
+    const pa = sequencingPriority(domainOf(a.library_id!));
+    const pb = sequencingPriority(domainOf(b.library_id!));
     if (pb > pa) {
       // b (priorità più alta) dovrebbe precedere a: scambia i giorni.
       const swappedA: SelectedSession = { ...b, day: a.day };
@@ -218,48 +198,6 @@ function pickDay(
 interface SlotChoice {
   library_id: string;
   note: string;
-}
-
-// --- Template per la CORSA (run-workout-library) ----------------------------
-
-function primaryHardChoiceRun(phase: Phase): SlotChoice {
-  switch (phase) {
-    case "build":
-    case "peak":
-      return { library_id: "RV-1", note: "VO₂max (ripetute) prioritario in build/peak" };
-    case "base":
-      return { library_id: "RS-1", note: "Tempo run come dura principale in base" };
-    case "taper":
-      return { library_id: "RR-2", note: "Opener pre-gara in taper" };
-    case "recovery":
-      return { library_id: "RA-4", note: "Solo recupero in fase recovery" };
-  }
-}
-
-function secondaryHardChoiceRun(phase: Phase, lev: Set<string>): SlotChoice {
-  if (phase === "recovery" || phase === "taper") {
-    return { library_id: "RA-1", note: "Nessuna seconda dura in recovery/taper" };
-  }
-  if (lev.has("threshold_long") && (phase === "build" || phase === "peak")) {
-    return { library_id: "RS-1", note: "Limitatore threshold_long → tempo run diretto" };
-  }
-  if (phase === "peak") {
-    return { library_id: "RR-1", note: "Lavoro race-specific (race-pace run) in peak" };
-  }
-  if (phase === "base") {
-    return { library_id: "RS-2", note: "Cruise intervals come seconda dura in base" };
-  }
-  return { library_id: "RS-1", note: "Seconda strutturata tempo run in build" };
-}
-
-function longRunChoice(phase: Phase, lev: Set<string>): SlotChoice {
-  if (phase === "recovery") {
-    return { library_id: "RA-2", note: "Lungo ridotto (Z2, cap) in recovery" };
-  }
-  if (lev.has("durability_fatigued") && (phase === "build" || phase === "peak")) {
-    return { library_id: "RA-6", note: "Limitatore durabilità → lungo fast-finish (occupa slot duro)" };
-  }
-  return { library_id: "RA-3", note: "Lungo di durabilità settimanale" };
 }
 
 /** Template della seduta dura PRIMARIA per fase. */
@@ -341,13 +279,12 @@ function buildSession(
   baseNote: string,
   dossier: PlannerDossier,
   extraNotes: string[],
-  isRun = false,
   /** Stato di progressione §5.2 (multi-vettore) per questo formato. */
   progressionState?: ProgressionState,
   /** Fattore volume del mesociclo §4.2 (1 = nessuna variazione). */
   volumeFactor = 1
 ): SelectedSession {
-  const template = isRun ? getRunTemplate(libraryId) : getTemplate(libraryId);
+  const template = getTemplate(libraryId);
   if (!template) {
     return {
       day,
@@ -361,11 +298,11 @@ function buildSession(
   }
   const notes = [baseNote, ...extraNotes];
 
-  // §5.2 — progressione multi-vettore (solo ciclismo, solo formati con scaletta).
+  // §5.2 — progressione multi-vettore (solo formati con scaletta).
   // duration → recovery → intensity. Sovrascrive durata/struttura PRIMA del cap.
   let estTotal = template.est_total_minutes;
   let appliedState: ProgressionState | undefined;
-  if (!isRun && progressionState != null) {
+  if (progressionState != null) {
     const resolved = resolveProgressionState(libraryId, progressionState);
     if (resolved) {
       estTotal = resolved.est_total_minutes;
@@ -392,11 +329,8 @@ function buildSession(
       `Durata adattata a ${minutes}′ (max del giorno): applicate regole time-crunch §5.4 (taglia CD, poi WU, poi n. intervalli).`
     );
   }
-  // Nota indoor solo per il ciclismo (la corsa non richiede rulli)
-  if (!isRun) {
-    const indoor = indoorNote(template as WorkoutTemplate, dossier);
-    if (indoor) notes.push(indoor);
-  }
+  const indoor = indoorNote(template, dossier);
+  if (indoor) notes.push(indoor);
 
   return {
     day,
@@ -451,8 +385,6 @@ export function selectWeekSessions(
       : 2;
   const minGapDays = effectiveMinGapDays(readiness.tsb ?? null, readiness.ri ?? null);
 
-  const run = isRunSport(dossier);
-
   // readiness si applica solo al giorno indicato (oggi).
   const readinessDay = readiness.dayKey;
   const isReadinessDay = (d: DayKey) => readinessDay != null && d === readinessDay;
@@ -461,13 +393,13 @@ export function selectWeekSessions(
   const hardDays: DayKey[] = [];
   const taken = new Set<DayKey>();
 
-  // ID di recupero/facile in base allo sport
-  const recoveryId = run ? "RA-4" : "AE-4";
-  const easyId = run ? "RA-1" : "AE-1";
+  // ID di recupero/facile.
+  const recoveryId = "AE-4";
+  const easyId = "AE-1";
 
   // Downgrade MODIFY per le sedute dure
-  const modifyDowngradeId = run ? "RS-4" : MODIFY_DOWNGRADE_ID;
-  const longModifyDowngradeId = run ? "RA-3" : LONG_MODIFY_DOWNGRADE_ID;
+  const modifyDowngradeId = MODIFY_DOWNGRADE_ID;
+  const longModifyDowngradeId = LONG_MODIFY_DOWNGRADE_ID;
 
   // recovery/taper: niente sedute dure strutturate, settimana leggera.
   const allowStructuredHard = phase !== "recovery" && phase !== "taper";
@@ -475,10 +407,8 @@ export function selectWeekSessions(
   // 1) Lungo (di norma weekend). In taper niente lungo.
   let longDay: DayKey | null = null;
   if (phase !== "taper") {
-    const longChoice = run ? longRunChoice(phase, lev) : longRideChoice(phase, lev);
-    const longTemplate = run
-      ? getRunTemplate(longChoice.library_id)
-      : getTemplate(longChoice.library_id);
+    const longChoice = longRideChoice(phase, lev);
+    const longTemplate = getTemplate(longChoice.library_id);
     const longIsHard = longTemplate?.is_hard_session ?? false;
     longDay =
       pickDay(["sat", "sun"], available, taken, hardDays, false) ??
@@ -496,7 +426,7 @@ export function selectWeekSessions(
         libId = recoveryId;
         extra.push("Readiness SKIP oggi: lungo sostituito da recupero attivo.");
       }
-      const finalTemplate = run ? getRunTemplate(libId) : getTemplate(libId);
+      const finalTemplate = getTemplate(libId);
       const session = buildSession(
         longDay,
         libId,
@@ -504,7 +434,6 @@ export function selectWeekSessions(
         `Fase ${phase}. Lungo settimanale. ${longChoice.note}.`,
         dossier,
         extra,
-        run,
         undefined,
         volumeFactor
       );
@@ -525,20 +454,19 @@ export function selectWeekSessions(
   if (structuredTarget >= 1) {
     hardSlotPlan.push({
       slot: "primary_hard",
-      choice: run ? primaryHardChoiceRun(phase) : primaryHardChoice(phase),
+      choice: primaryHardChoice(phase),
     });
   }
   if (structuredTarget >= 2) {
     hardSlotPlan.push({
       slot: "secondary_hard",
-      choice: run ? secondaryHardChoiceRun(phase, lev) : secondaryHardChoice(phase, lev),
+      choice: secondaryHardChoice(phase, lev),
     });
   }
   if (structuredTarget >= 3) {
-    const thirdId = run ? "RS-4" : "SS-4";
     hardSlotPlan.push({
       slot: "third_hard",
-      choice: { library_id: thirdId, note: "Terza strutturata (volume tempo) — disponibilità alta" },
+      choice: { library_id: "SS-4", note: "Terza strutturata (volume tempo) — disponibilità alta" },
     });
   }
 
@@ -549,8 +477,8 @@ export function selectWeekSessions(
   const orderedSlotPlan = hardSlotPlan
     .map((entry, i) => ({ entry, i }))
     .sort((a, b) => {
-      const pa = sequencingPriority(domainOf(a.entry.choice.library_id, run));
-      const pb = sequencingPriority(domainOf(b.entry.choice.library_id, run));
+      const pa = sequencingPriority(domainOf(a.entry.choice.library_id));
+      const pb = sequencingPriority(domainOf(b.entry.choice.library_id));
       return pb - pa || a.i - b.i;
     })
     .map((x) => x.entry);
@@ -572,11 +500,7 @@ export function selectWeekSessions(
     }
     if (isReadinessDay(day) && readiness.decision === "MODIFY") {
       libId = modifyDowngradeId;
-      extra.push(
-        run
-          ? "Readiness MODIFY oggi: dura declassata a tempo moderato (RS-4)."
-          : "Readiness MODIFY oggi: dura declassata a tempo (SS-4/AE-7, §5.1)."
-      );
+      extra.push("Readiness MODIFY oggi: dura declassata a tempo (SS-4/AE-7, §5.1).");
     } else if (isReadinessDay(day) && readiness.decision === "SKIP") {
       const session = buildSession(
         day,
@@ -584,8 +508,7 @@ export function selectWeekSessions(
         "recovery",
         `Fase ${phase}. Readiness SKIP oggi: niente seduta dura, recupero attivo.`,
         dossier,
-        [],
-        run
+        []
       );
       sessions.set(day, session);
       taken.add(day);
@@ -598,7 +521,7 @@ export function selectWeekSessions(
       );
     }
 
-    const finalTemplate = run ? getRunTemplate(libId) : getTemplate(libId);
+    const finalTemplate = getTemplate(libId);
     const session = buildSession(
       day,
       libId,
@@ -606,7 +529,6 @@ export function selectWeekSessions(
       `Fase ${phase}. Seduta dura ${slot === "primary_hard" ? "primaria" : slot === "secondary_hard" ? "secondaria" : "aggiuntiva"}. ${choice.note}.`,
       dossier,
       extra,
-      run,
       progressionByFormat[libId],
       volumeFactor
     );
@@ -619,21 +541,19 @@ export function selectWeekSessions(
   //     loro), quella a priorità di sequencing più alta deve venire PRIMA.
   //     Se l'ordine è invertito, scambia i due giorni. Con ≥2 giorni di gap
   //     l'ordine non conta (§3.2) e non si tocca nulla.
-  enforceCloseHardOrdering(sessions, run);
+  enforceCloseHardOrdering(sessions);
 
   // 4) Taper: un opener leggero sul primo giorno disponibile infrasett.
   if (phase === "taper") {
-    const openerId = run ? "RR-2" : "MIX-2";
     const openerDay = pickDay(["wed", "thu", "fri", "tue"], available, taken, [], false);
     if (openerDay) {
       const session = buildSession(
         openerDay,
-        openerId,
+        "MIX-2",
         "opener",
         "Fase taper: opener di attivazione pre-gara (§4.3 race-week), senza fatica.",
         dossier,
-        [],
-        run
+        []
       );
       sessions.set(openerDay, session);
       taken.add(openerDay);
@@ -668,7 +588,7 @@ export function selectWeekSessions(
           : "Mantenimento aerobico facile.";
     sessions.set(
       day,
-      buildSession(day, fillId, slot, note, dossier, [], run, undefined, volumeFactor)
+      buildSession(day, fillId, slot, note, dossier, [], undefined, volumeFactor)
     );
   }
 

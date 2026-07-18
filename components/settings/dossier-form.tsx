@@ -18,7 +18,6 @@ import {
   FASE_OPTIONS,
   formToPatch,
   GIORNI,
-  hasCycling,
   INDOOR_OUTDOOR_OPTIONS,
   LIVELLO_OPTIONS,
   PIATTAFORMA_OPTIONS,
@@ -294,41 +293,25 @@ export function SettingsDossierForm({
                           )}
                           {g.key === "fisiologia" && (
                             <>
-                              {hasCycling(saved.sport_principali) && (
-                                <>
-                                  <Row label="FTP outdoor" value={num(saved.ftp_outdoor_w, " W")} />
-                                  <Row label="FTP indoor" value={num(saved.ftp_indoor_w, " W")} />
-                                </>
-                              )}
+                              <Row label="FTP outdoor" value={num(saved.ftp_outdoor_w, " W")} />
+                              <Row label="FTP indoor" value={num(saved.ftp_indoor_w, " W")} />
                               <Row label="FC max" value={num(saved.max_hr, " bpm")} />
                               <Row label="FC soglia" value={num(saved.threshold_hr, " bpm")} />
-                              {hasCycling(saved.sport_principali) && (
-                                <Row label="LT1 potenza" value={num(saved.lt1_w, " W")} />
-                              )}
+                              <Row label="LT1 potenza" value={num(saved.lt1_w, " W")} />
                               <Row label="LT1 FC" value={num(saved.lt1_hr, " bpm")} />
-                              {hasCycling(saved.sport_principali) && (
-                                <Row label="LT2 potenza" value={num(saved.lt2_w, " W")} />
-                              )}
+                              <Row label="LT2 potenza" value={num(saved.lt2_w, " W")} />
                               <Row label="LT2 FC" value={num(saved.lt2_hr, " bpm")} />
                             </>
                           )}
                           {g.key === "attrezzatura" && (
                             <>
-                              {hasCycling(saved.sport_principali) && (
-                                <>
-                                  <Row label="Ciclocomputer" value={optLabel(CICLOCOMPUTER_OPTIONS, saved.ciclocomputer)} />
-                                  <Row label="Misuratore potenza" value={yesNo(saved.ha_misuratore_potenza)} />
-                                </>
-                              )}
+                              <Row label="Ciclocomputer" value={optLabel(CICLOCOMPUTER_OPTIONS, saved.ciclocomputer)} />
+                              <Row label="Misuratore potenza" value={yesNo(saved.ha_misuratore_potenza)} />
                               <Row label="Fascia cardio" value={yesNo(saved.ha_fascia_cardio)} />
                               <Row label="Smartwatch" value={yesNo(saved.ha_smartwatch)} />
-                              {hasCycling(saved.sport_principali) && (
-                                <>
-                                  <Row label="Rulli indoor" value={yesNo(saved.ha_rulli)} />
-                                  <Row label="Bici outdoor" value={text(saved.bici_outdoor)} />
-                                  <Row label="Piattaforma indoor" value={optLabel(PIATTAFORMA_OPTIONS, saved.piattaforma_indoor)} />
-                                </>
-                              )}
+                              <Row label="Rulli indoor" value={yesNo(saved.ha_rulli)} />
+                              <Row label="Bici outdoor" value={text(saved.bici_outdoor)} />
+                              <Row label="Piattaforma indoor" value={optLabel(PIATTAFORMA_OPTIONS, saved.piattaforma_indoor)} />
                               <Row label="Indoor / outdoor" value={optLabel(INDOOR_OUTDOOR_OPTIONS, saved.indoor_outdoor)} />
                             </>
                           )}

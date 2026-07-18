@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.0";
+export const APP_VERSION = "1.8.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.8.0",
+    date: "18 lug 2026",
+    title: "CurveLoad si dedica solo al ciclismo",
+    items: [
+      { type: "improve", text: "L'app ora si concentra esclusivamente sul ciclismo: rimossi il profilo e la libreria allenamenti dedicati alla corsa" },
+    ],
+  },
   {
     version: "1.7.0",
     date: "16 lug 2026",
