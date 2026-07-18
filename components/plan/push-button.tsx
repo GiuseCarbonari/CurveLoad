@@ -161,7 +161,7 @@ export function PushButton({
             ✓ Inviata ·{" "}
             <a
               className="underline"
-              href="https://intervals.icu/calendar"
+              href="https://intervals.icu/"
               target="_blank"
               rel="noreferrer"
             >
