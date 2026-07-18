@@ -1,5 +1,6 @@
 import {
   computeReadinessScore,
+  isScoreDecisionMismatch,
   type ReadinessResult,
 } from "@/lib/readiness";
 
@@ -94,9 +95,10 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const tone = TONE[readiness.decision];
   const gradientId = `ring-${readiness.decision}`;
   const score = computeReadinessScore(readiness);
+  const mismatch = isScoreDecisionMismatch(score, readiness.decision);
   const radius = 84;
   const circumference = 2 * Math.PI * radius;
-  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const pct = score == null ? 0 : Math.max(0, Math.min(100, score)) / 100;
   const scoreOffset = circumference * (1 - pct);
 
   const warningSignals = readiness.signals.filter(
@@ -143,11 +145,18 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
         {/* Ring */}
         <div
           className="relative h-[130px] w-[130px] shrink-0 sm:h-[144px] sm:w-[144px]"
-          aria-label={`Readiness ${score} su 100, decisione ${readiness.decision}`}
+          aria-label={
+            score == null
+              ? `Readiness non disponibile, decisione ${readiness.decision}`
+              : `Readiness ${score} su 100, decisione ${readiness.decision}`
+          }
         >
           <svg
             viewBox="0 0 200 200"
-            className="h-full w-full"
+            className="h-full w-full overflow-visible"
+            style={{
+              filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})`,
+            }}
           >
             <defs>
               <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -173,23 +182,24 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
                 strokeDasharray={circumference}
                 strokeDashoffset={scoreOffset}
                 style={{
-                  filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})`,
                   transition: "stroke-dashoffset 850ms cubic-bezier(0.16,1,0.3,1)",
                 }}
               />
             </g>
           </svg>
           {/* Center text */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center -translate-y-[3px]">
             <span
-              className="font-body text-[35px] font-semibold leading-[0.9] tabular-nums sm:text-[38px]"
+              className="font-body text-[40px] font-semibold leading-none tabular-nums sm:text-[42px]"
               style={{ color: ring.labelColor }}
             >
-              {score}
+              {score == null ? "—" : score}
             </span>
-            <span className="mt-1 text-[8px] uppercase leading-none tracking-[0.14em] text-muted">
-              su 100
-            </span>
+            {score == null && (
+              <span className="mt-1 text-[8px] uppercase leading-none tracking-[0.14em] text-muted">
+                dati insufficienti
+              </span>
+            )}
           </div>
         </div>
 
@@ -200,6 +210,12 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
             {leadText}{" "}
             <span className="font-medium text-foreground">{CTA[readiness.decision]}</span>
           </p>
+
+          {mismatch && (
+            <p className="text-[11px] leading-snug text-faint">
+              Il numero {score} riassume tutti i dati disponibili, ma un singolo segnale di sicurezza guida la decisione di oggi.
+            </p>
+          )}
 
           {/* Signal pills */}
           {allGreen ? (
@@ -236,10 +252,17 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
       <div className="mt-4 flex gap-2 border-t border-border pt-3">
         {readiness.signals.map((s) => (
           <div key={s.name} className="flex flex-1 flex-col items-center gap-1.5">
-            <span
-              className={`h-1 w-full rounded-full ${STATUS_DOT[s.status] ?? "bg-muted/40"}`}
-              style={{ opacity: s.status === "unavailable" ? 1 : 0.85 }}
-            />
+            {s.status === "unavailable" ? (
+              <span
+                className="h-1 w-full rounded-full bg-faint"
+                aria-label="dato non disponibile"
+              />
+            ) : (
+              <span
+                className={`h-1 w-full rounded-full ${STATUS_DOT[s.status]}`}
+                style={{ opacity: 0.85 }}
+              />
+            )}
             <span className="text-[9px] uppercase tracking-[0.08em] text-faint">
               {SIGNAL_LABEL[s.name] ?? s.name}
             </span>

@@ -5,6 +5,7 @@ import {
   computeReadiness,
   computeReadinessScore,
   computeRecoveryIndex,
+  isScoreDecisionMismatch,
   riConsecutiveDaysBelow,
   type ReadinessInputDay,
 } from "../lib/readiness";
@@ -135,22 +136,82 @@ test("Readiness usa SDNN quando è il protocollo selezionato", () => {
   assert.match(hrvSignal?.detail ?? "", /HRV SDNN/);
 });
 
-test("Readiness score: GO, MODIFY e SKIP restano nelle bande operative", () => {
+test("Readiness score: media pesata dei segnali disponibili, indipendente dalla decisione", () => {
+  // Tutto verde, confidence high (penalità 0) → media pesata = 1 → 100.
   const go = computeReadiness(day(), history());
-  const modify = computeReadiness(day({ ctl: 60, atl: 80 }), history());
-  const skip = computeReadiness(day(), history(), { recoveryIndex: 0.55 });
+  assert.equal(computeReadinessScore(go), 100);
 
-  assert.ok(computeReadinessScore(go) >= 70);
-  assert.ok(computeReadinessScore(modify) >= 40);
-  assert.ok(computeReadinessScore(modify) <= 69);
-  assert.ok(computeReadinessScore(skip) <= 39);
+  // ctl 60/atl 80 → TSB −20 (amber), ACWR 1.33 (amber), resto verde,
+  // confidence high (0 penalità): media pesata = 86 (calcolata a mano dai pesi).
+  const modify = computeReadiness(day({ ctl: 60, atl: 80 }), history());
+  assert.equal(computeReadinessScore(modify), 86);
+
+  // Stesso identico set di segnali di `modify` (stessi input), ma la
+  // decisione viene forzata a SKIP: lo score deve restare invariato perché
+  // decision/priority non entrano più nel calcolo (cuore del fix).
+  const modifyForcedSkip = { ...modify, decision: "SKIP" as const, priority: 0 as const };
+  assert.equal(computeReadinessScore(modifyForcedSkip), computeReadinessScore(modify));
+
+  // P0 su RI (SKIP) ma resto dei segnali verde: lo score riflette il resto
+  // dei dati, non la banda 0-39 di un tempo. Confidence high → 85.
+  const skip = computeReadiness(day(), history(), { recoveryIndex: 0.55 });
+  assert.equal(skip.decision, "SKIP");
+  assert.equal(computeReadinessScore(skip), 85);
 });
 
-test("Readiness score: pochi dati abbassano un GO senza cambiare decisione", () => {
+test("Readiness score: zero segnali disponibili → null (niente più fallback 72)", () => {
   const result = computeReadiness(null, []);
 
   assert.equal(result.decision, "GO");
-  assert.equal(computeReadinessScore(result), 70);
+  assert.ok(result.signals.every((s) => s.status === "unavailable"));
+  assert.equal(computeReadinessScore(result), null);
+});
+
+test("Readiness score: un solo segnale disponibile produce comunque un valore", () => {
+  // Solo il sonno è disponibile (verde); tutto il resto unavailable.
+  const today: ReadinessInputDay = {
+    date: "2026-06-12",
+    ctl: null,
+    atl: null,
+    restingHR: null,
+    hrv: null,
+    sleepSecs: 8 * 3600,
+  };
+  const result = computeReadiness(today, []);
+  const score = computeReadinessScore(result);
+
+  assert.notEqual(score, null);
+  assert.ok(score! > 0);
+});
+
+test("Readiness score: segnali misti danno uno score intermedio deterministico", () => {
+  // Sonno 4h → red; HRV e RHR pari alla baseline → green; RI si calcola
+  // internamente da HRV+RHR (green); TSB/ACWR unavailable (niente ctl/atl).
+  // Confidence "medium" (2 su 4 segnali chiave disponibili) → penalità 4.
+  // Media pesata attesa (calcolata a mano dai pesi):
+  // (1*1.15 + 1*1.15 + 0.18*1 + 1*1.25) / (1.15+1.15+1+1.25) = 0.8198 → 82 − 4 = 78.
+  const today = day({ ctl: null, atl: null, sleepSecs: 4 * 3600 });
+  const baseline = history({ ctl: null, atl: null });
+  const result = computeReadiness(today, baseline);
+
+  assert.equal(result.confidence, "medium");
+  assert.equal(computeReadinessScore(result), 78);
+});
+
+test("isScoreDecisionMismatch: segnala solo quando numero e colore si contraddicono", () => {
+  // Score alto ma decisione SKIP (es. P0 di sicurezza su un solo segnale,
+  // resto dei dati buono) → il numero da solo sembrerebbe un semaforo verde.
+  assert.equal(isScoreDecisionMismatch(85, "SKIP"), true);
+  // Score basso coerente con SKIP → nessun disallineamento da spiegare.
+  assert.equal(isScoreDecisionMismatch(20, "SKIP"), false);
+  // Score basso ma decisione GO → stesso tipo di contraddizione, verso GO.
+  assert.equal(isScoreDecisionMismatch(50, "GO"), true);
+  assert.equal(isScoreDecisionMismatch(90, "GO"), false);
+  // MODIFY non ha soglie fisse strette: mai segnalato come mismatch.
+  assert.equal(isScoreDecisionMismatch(10, "MODIFY"), false);
+  assert.equal(isScoreDecisionMismatch(95, "MODIFY"), false);
+  // Nessun numero disponibile → niente da confrontare.
+  assert.equal(isScoreDecisionMismatch(null, "SKIP"), false);
 });
 
 // --- Recovery Index calcolato internamente -----------------------------------
