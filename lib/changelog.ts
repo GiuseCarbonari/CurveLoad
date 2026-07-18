@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.0";
+export const APP_VERSION = "1.9.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.9.0",
+    date: "18 lug 2026",
+    title: "Scheda telaio per la gara",
+    items: [
+      { type: "new", text: "Nuovo PDF scaricabile dalla pagina Percorso, formato adesivo da tubo del telaio (6×10 cm): profilo altimetrico e tabella delle salite con orario di passaggio e potenza target, colorate per livello di difficoltà. Disponibile solo dopo la calibrazione, per numeri sempre affidabili" },
+    ],
+  },
   {
     version: "1.8.0",
     date: "18 lug 2026",
