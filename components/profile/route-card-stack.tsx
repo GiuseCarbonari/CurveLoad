@@ -9,6 +9,7 @@ import { InfoTooltip } from "@/components/profile/info-tooltip";
 import { RaceEstimateView } from "@/components/profile/race-estimate";
 import { RouteMapCard } from "@/components/profile/route-map-card";
 import { BikeStrategyForm, RepeatabilityForm } from "@/components/profile/route-settings-form";
+import { RouteTubePdfButton } from "@/components/profile/route-tube-pdf-button";
 import type {
   ClimbDemand,
   GapAnalysisResult,
@@ -126,7 +127,7 @@ export function RouteCardStack({
   if (!hasAnalysis) {
     return (
       <div className="space-y-4">
-        <Header analysis={null} terrain={null} hasAnalysis={false} />
+        <Header analysis={null} terrain={null} estimate={null} hasAnalysis={false} />
         <div className="rounded-[16px] border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
           Seleziona una gara da Intervals.icu o carica un GPX per vedere il
           profilo altimetrico e i limitatori specifici.
@@ -142,7 +143,7 @@ export function RouteCardStack({
 
   return (
     <div className="flex flex-col gap-3">
-      <Header analysis={analysis} terrain={terrain} hasAnalysis />
+      <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
 
       <div className="flex gap-1 rounded-[11px] bg-base p-1 text-sm">
         {TABS.map((t) => (
@@ -184,10 +185,12 @@ export function RouteCardStack({
 function Header({
   analysis,
   terrain,
+  estimate,
   hasAnalysis,
 }: {
   analysis: SavedGapAnalysis | null;
   terrain: TerrainSummary | null;
+  estimate: RaceEstimateV2 | null;
   hasAnalysis: boolean;
 }) {
   return (
@@ -210,7 +213,10 @@ function Header({
           </h2>
         )}
       </div>
-      <div className="shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
+        {hasAnalysis && analysis && terrain && estimate && (
+          <RouteTubePdfButton terrain={terrain} estimate={estimate} event={analysis.event} />
+        )}
         <GapAnalysisButton hasAnalysis={hasAnalysis} />
       </div>
     </div>
