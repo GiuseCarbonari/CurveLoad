@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { SettingsDossierForm } from "@/components/settings/dossier-form";
+import { GroqKeyForm } from "@/components/settings/groq-key-form";
 import {
   DOSSIER_COLUMNS,
   rowToForm,
@@ -31,9 +32,16 @@ export default async function SettingsProfilePage() {
 
   const initialInjuryPeriods: InjuryPeriod[] = row?.injury_periods ?? [];
 
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("groq_key_encrypted")
+    .eq("id", user.id)
+    .maybeSingle<{ groq_key_encrypted: string | null }>();
+
   return (
     <CurveLoadShell>
       <SettingsDossierForm initialForm={rowToForm(row)} initialInjuryPeriods={initialInjuryPeriods} />
+      <GroqKeyForm hasKey={userRow?.groq_key_encrypted != null} />
     </CurveLoadShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { BuildProfileButton } from "./build-button";
+import { ExplainProfileButton } from "./explain-profile-button";
 import { InfoTooltip } from "./info-tooltip";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 
@@ -32,9 +33,20 @@ interface ProfileTabsProps {
     source: string;
   } | null;
   row: unknown;
+  /** Chiave Groq disponibile: propria o fallback server (mai la chiave stessa). */
+  aiEnabled: boolean;
+  aiComment: string | null;
+  aiCommentAt: string | null;
 }
 
-export function ProfileTabs({ profile, cpw, row }: ProfileTabsProps) {
+export function ProfileTabs({
+  profile,
+  cpw,
+  row,
+  aiEnabled,
+  aiComment,
+  aiCommentAt,
+}: ProfileTabsProps) {
   return (
     <>
       {/* Header */}
@@ -100,6 +112,27 @@ export function ProfileTabs({ profile, cpw, row }: ProfileTabsProps) {
                       profile.phenotype.primary}
                   </p>
                   <PowerLawCompare cpw={cpw} powerLaw={profile.cp_power_law} />
+
+                  {/* Commento AI (spec docs/scheda_atleta_tooltip_e_commento.md §3) */}
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    {aiComment && (
+                      <>
+                        <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
+                          {aiComment}
+                        </p>
+                        {aiCommentAt && (
+                          <p className="mb-2 mt-1.5 text-[11px] text-faint">
+                            Commento AI ·{" "}
+                            {new Date(aiCommentAt).toLocaleDateString("it-IT")}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    <ExplainProfileButton
+                      enabled={aiEnabled}
+                      hasComment={aiComment != null}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-[18px] border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
