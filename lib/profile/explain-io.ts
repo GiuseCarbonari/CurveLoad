@@ -1,3 +1,4 @@
+import { assembleAthleteContext } from "@/lib/ai/context";
 import { GroqCallError, callLlm, DEFAULT_AI_MODEL } from "@/lib/ai/groq";
 import {
   buildProfileExplainPrompt,
@@ -38,7 +39,10 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
   const profile = (row?.profile_data ?? null) as AthleteProfileData | null;
   if (!profile) return { ok: false, reason: "no_profile" };
 
-  const prompt = buildProfileExplainPrompt(profile);
+  // Passo 4: il fascicolo completo (dossier, condizione, decisioni recenti)
+  // entra in ogni chiamata AI — qui il primo call site.
+  const context = await assembleAthleteContext(userId);
+  const prompt = buildProfileExplainPrompt(profile, context);
 
   let comment: string;
   try {
@@ -85,6 +89,11 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
       model: DEFAULT_AI_MODEL,
       comment_chars: comment.length,
       unexpected_numbers: unexpectedNumbers,
+      context_sections: {
+        atleta: context.atleta != null,
+        condizione: context.condizione != null,
+        decisioni_recenti: context.decisioni_recenti.length,
+      },
     },
   });
 

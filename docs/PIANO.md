@@ -54,8 +54,17 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       l'utente, 254 test verdi. Region Supabase verificata: **eu-west-3
       (Paris)**, dentro UE. Verificato da Giuseppe nel browser: email non in
       lista → messaggio "Questa beta è ad invito…")
-- [ ] **Passo 4 — Il cervello che vede tutto (context assembler)**: la
-      funzione che raccoglie profilo+storia+decisioni per ogni chiamata AI
+- [x] **Passo 4 — Il cervello che vede tutto (context assembler)** (fatto
+      2026-07-31: `lib/ai/context.ts` — `condenseContext` pura +
+      `assembleAthleteContext` I/O; fascicolo = dossier ripulito dai campi
+      vuoti + condizione dall'ultimo mirror [prontezza oggi, CTL/ATL, FTP,
+      peso, qualità dati, attività ultimi 14 giorni cap 20] + ultime 10
+      `coach_decisions`; memoria coach rimandata al Passo 5. Integrato in
+      `buildProfileExplainPrompt(profile, context)` — i numeri del contesto
+      entrano in `allowedNumbers` — e in `explain-io.ts`, che logga
+      `context_sections` in `audit_logs`. 263 test verdi. Verificato da
+      Giuseppe nel browser: il commento cita obiettivo CP 263→280 W e gara
+      target Esatrail Super Hero, dati che vivono solo nel dossier)
 - [ ] **Passo 5 — La memoria del coach**: tabella `athlete_memory` (le "note
       del coach" che si accumulano nel tempo)
 - [ ] **Passo 6 — Le altre due narrative**: commento readiness del giorno

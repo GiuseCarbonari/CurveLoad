@@ -1,3 +1,4 @@
+import type { AthleteContext } from "@/lib/ai/context";
 import type { AthleteProfileData, RPPEntry } from "@/lib/profile/build-profile";
 
 /**
@@ -18,10 +19,10 @@ const RPP_LABELS: Record<number, string> = {
   3600: "60min",
 };
 
-const SYSTEM_PROMPT = `Sei un assistente che spiega a un ciclista amatoriale il suo profilo di potenza, già calcolato da Intervals.icu. Non calcoli e non inventi numeri: usi solo quelli forniti nell'input. Parli italiano semplice, tono incoraggiante e concreto, senza gergo non spiegato. Non prescrivi allenamenti specifici (quello arriva dal planner). Rispondi con esattamente 3 paragrafi brevi, senza titoli né elenchi:
+const SYSTEM_PROMPT = `Sei un assistente che spiega a un ciclista amatoriale il suo profilo di potenza, già calcolato da Intervals.icu. Non calcoli e non inventi numeri: usi solo quelli forniti nell'input. Parli italiano semplice, tono incoraggiante e concreto, senza gergo non spiegato. Non prescrivi allenamenti specifici (quello arriva dal planner). Se l'input contiene anche il "contesto" dell'atleta (chi è, obiettivi, condizione recente, decisioni del coach), usalo per rendere il commento personale e concreto — sempre citando solo numeri presenti nell'input. Rispondi con esattamente 3 paragrafi brevi, senza titoli né elenchi:
 1. Chi sei — il fenotipo in parole povere, cosa sai fare bene.
 2. Punti di forza e debolezza — leggendo il Record Power Profile e il confronto con i migliori valori dell'ultimo anno, dove sei forte e dove hai margine, in modo concreto.
-3. Su cosa lavorare — la direzione generale di miglioramento, senza sedute specifiche.`;
+3. Su cosa lavorare — la direzione generale di miglioramento, senza sedute specifiche; se conosci obiettivi o gara target dell'atleta, aggancia la direzione a quelli.`;
 
 export interface ProfileExplainPrompt {
   system: string;
@@ -40,13 +41,17 @@ function rppRow(entry: RPPEntry) {
 }
 
 export function buildProfileExplainPrompt(
-  profile: AthleteProfileData
+  profile: AthleteProfileData,
+  context?: AthleteContext
 ): ProfileExplainPrompt {
   const rpp = profile.rpp
     .filter((e) => e.duration_s in RPP_LABELS)
     .map(rppRow);
 
   const input = {
+    // Fascicolo del context assembler (Passo 4): entra nell'input così
+    // collect() qui sotto autorizza automaticamente anche i suoi numeri.
+    contesto: context ?? null,
     fenotipo: {
       primary: profile.phenotype.primary,
       secondary: profile.phenotype.secondary,
@@ -73,8 +78,9 @@ export function buildProfileExplainPrompt(
     else if (value && typeof value === "object") Object.values(value).forEach(collect);
   };
   collect(input);
-  // Le durate dei label ("5s", "20min"...) compariranno nel testo come numeri.
-  allowedNumbers.push(1, 5, 20, 60);
+  // Le durate dei label ("5s", "20min"...) e la finestra "ultimi 14 giorni"
+  // del contesto compariranno nel testo come numeri.
+  allowedNumbers.push(1, 5, 14, 20, 60);
 
   return {
     system: SYSTEM_PROMPT,
