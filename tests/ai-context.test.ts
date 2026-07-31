@@ -96,8 +96,14 @@ test("condenseContext: tutte le fonti assenti -> fascicolo vuoto ma valido", () 
     mirror: null,
     dataQualityLevel: null,
     decisions: [],
+    memories: [],
   });
-  assert.deepEqual(ctx, { atleta: null, condizione: null, decisioni_recenti: [] });
+  assert.deepEqual(ctx, {
+    atleta: null,
+    condizione: null,
+    decisioni_recenti: [],
+    memoria: [],
+  });
 });
 
 test("condenseContext: dossier ripulito da null, stringhe e array vuoti", () => {
@@ -113,6 +119,7 @@ test("condenseContext: dossier ripulito da null, stringhe e array vuoti", () => 
     mirror: null,
     dataQualityLevel: null,
     decisions: [],
+    memories: [],
   });
   assert.deepEqual(ctx.atleta, {
     nome: "Giuseppe",
@@ -127,6 +134,7 @@ test("condenseContext: dossier con soli campi vuoti -> atleta null", () => {
     mirror: null,
     dataQualityLevel: null,
     decisions: [],
+    memories: [],
   });
   assert.equal(ctx.atleta, null);
 });
@@ -137,6 +145,7 @@ test("condenseContext: condizione dal mirror — forma dall'ultima riga wellness
     mirror: mirror(),
     dataQualityLevel: 3,
     decisions: [],
+    memories: [],
   });
   assert.ok(ctx.condizione);
   assert.equal(ctx.condizione.aggiornata_al, "2026-07-31");
@@ -160,6 +169,7 @@ test("condenseContext: attività filtrate a 14 giorni dal fetched_at, ordinate r
     }),
     dataQualityLevel: null,
     decisions: [],
+    memories: [],
   });
   assert.ok(ctx.condizione);
   assert.deepEqual(
@@ -180,6 +190,7 @@ test("condenseContext: attività cap a 20 anche se la finestra ne contiene di pi
     mirror: mirror({ activities_90d: many }),
     dataQualityLevel: null,
     decisions: [],
+    memories: [],
   });
   assert.equal(ctx.condizione?.attivita_ultimi_14g.length, 20);
 });
@@ -195,12 +206,34 @@ test("condenseContext: decisioni mappate e cap a 10", () => {
     mirror: null,
     dataQualityLevel: null,
     decisions,
+    memories: [],
   });
   assert.equal(ctx.decisioni_recenti.length, 10);
   assert.deepEqual(ctx.decisioni_recenti[0], {
     data: "2026-07-31",
     tipo: "weekly_plan",
     decisione: "SED-0",
+  });
+});
+
+test("condenseContext: memoria mappata (data corta) e cap a 20", () => {
+  const memories = Array.from({ length: 25 }, (_, i) => ({
+    created_at: `2026-07-${String(31 - (i % 28)).padStart(2, "0")}T10:00:00.000Z`,
+    memory_type: "osservazione",
+    nota: `Nota ${i}`,
+  }));
+  const ctx = condenseContext({
+    dossier: null,
+    mirror: null,
+    dataQualityLevel: null,
+    decisions: [],
+    memories,
+  });
+  assert.equal(ctx.memoria.length, 20);
+  assert.deepEqual(ctx.memoria[0], {
+    data: "2026-07-31",
+    tipo: "osservazione",
+    nota: "Nota 0",
   });
 });
 
@@ -223,11 +256,20 @@ test("buildProfileExplainPrompt: il contesto entra nel messaggio e i suoi numeri
     mirror: mirror(),
     dataQualityLevel: 4,
     decisions: [{ date: "2026-07-28", decision_type: "weekly_plan", recommendation: "EN-2" }],
+    memories: [
+      {
+        created_at: "2026-07-30T09:00:00.000Z",
+        memory_type: "preferenza",
+        nota: "Preferisce le salite lunghe",
+      },
+    ],
   });
   const prompt = buildProfileExplainPrompt(profileFixture, context);
 
   assert.ok(prompt.user.includes('"contesto"'));
   assert.ok(prompt.user.includes("Granfondo"));
+  // Il taccuino (Passo 5) è nel fascicolo e quindi nel messaggio.
+  assert.ok(prompt.user.includes("Preferisce le salite lunghe"));
   // Numeri presenti SOLO nel contesto (ctl 61.2, ore 9.5) devono essere ammessi.
   assert.ok(prompt.allowedNumbers.includes(61.2));
   assert.ok(prompt.allowedNumbers.includes(9.5));

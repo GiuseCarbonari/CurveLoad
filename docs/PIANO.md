@@ -65,8 +65,19 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       `context_sections` in `audit_logs`. 263 test verdi. Verificato da
       Giuseppe nel browser: il commento cita obiettivo CP 263→280 W e gara
       target Esatrail Super Hero, dati che vivono solo nel dossier)
-- [ ] **Passo 5 — La memoria del coach**: tabella `athlete_memory` (le "note
-      del coach" che si accumulano nel tempo)
+- [x] **Passo 5 — La memoria del coach** (fatto 2026-07-31: migration 021
+      `athlete_memory` [memory_type in allowlist preferenza/infortunio/
+      traguardo/osservazione, nota text ≤300, source, RLS select-own, unique
+      (user_id, nota) per dedup]; `lib/ai/coach-memory.ts` `extractCoachNotes`
+      pura — l'LLM emette una riga `NOTE_COACH: [...]` in coda al commento,
+      il codice la stacca e valida: output vincolato, mai scrittura libera
+      nel DB; sezione `memoria` (cap 20) nel fascicolo di `lib/ai/context.ts`;
+      prompt profilo chiede 0-2 note NUOVE senza ripetere memoria/dossier;
+      explain-io salva con ON CONFLICT DO NOTHING e logga
+      `coach_notes_saved/discarded` in audit_logs; card "📝 Taccuino del
+      coach" in /profile. 273 test verdi. Verificato da Giuseppe nel browser:
+      prima nota reale «tenere d'occhio i carichi di allenamento per evitare
+      di esacerbare i fastidi alla schiena»)
 - [ ] **Passo 6 — Le altre due narrative**: commento readiness del giorno
       (`ai_comment_oggi`) e commento percorso (`ai_comment_percorso`)
 - [ ] **Passo 7 — Vestito nuovo**: design del command center (colori, vetro,

@@ -4,8 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Context assembler (PIANO.md Passo 4) — il "fascicolo" che ogni chiamata AI
  * riceve insieme alla domanda specifica: chi è l'atleta (dossier), come sta
- * (ultimo mirror Intervals) e cosa il coach gli ha già detto (decisioni
- * recenti). La memoria del coach (athlete_memory) arriva col Passo 5.
+ * (ultimo mirror Intervals), cosa il coach gli ha già detto (decisioni
+ * recenti) e cosa si è annotato sul taccuino (athlete_memory, Passo 5).
  *
  * Stesso spartito del resto del layer AI: condensazione PURA (testabile a
  * tavolino) + un orchestratore I/O sottile. Regola No Virtual Math: qui non
@@ -41,11 +41,19 @@ export interface DecisionRow {
   recommendation: string;
 }
 
+/** Riga condensata di athlete_memory (taccuino del coach, migration 021). */
+export interface MemoryRow {
+  created_at: string;
+  memory_type: string;
+  nota: string;
+}
+
 export interface ContextSources {
   dossier: DossierRow | null;
   mirror: MirrorData | null;
   dataQualityLevel: number | null;
   decisions: DecisionRow[];
+  memories: MemoryRow[];
 }
 
 export interface AthleteContext {
@@ -73,10 +81,13 @@ export interface AthleteContext {
     }>;
   } | null;
   decisioni_recenti: Array<{ data: string; tipo: string; decisione: string }>;
+  /** Note del taccuino del coach, dalla più recente. */
+  memoria: Array<{ data: string; tipo: string; nota: string }>;
 }
 
 const MAX_ACTIVITIES = 20;
 const MAX_DECISIONS = 10;
+const MAX_MEMORIES = 20;
 
 /** Rimuove null/undefined, stringhe vuote e array vuoti (prompt più compatto). */
 function prune(obj: Record<string, unknown>): Record<string, unknown> | null {
@@ -144,11 +155,17 @@ export function condenseContext(sources: ContextSources): AthleteContext {
       decisione: d.recommendation,
     }));
 
-  return { atleta, condizione, decisioni_recenti };
+  const memoria = sources.memories.slice(0, MAX_MEMORIES).map((m) => ({
+    data: m.created_at.slice(0, 10),
+    tipo: m.memory_type,
+    nota: m.nota,
+  }));
+
+  return { atleta, condizione, decisioni_recenti, memoria };
 }
 
 /**
- * Orchestratore I/O: legge le tre fonti e restituisce il fascicolo condensato.
+ * Orchestratore I/O: legge le quattro fonti e restituisce il fascicolo condensato.
  * Ogni fonte mancante degrada a null/[] — il chiamante decide se è un problema
  * (per la prosa non lo è: si personalizza con quello che c'è).
  */
@@ -157,7 +174,7 @@ export async function assembleAthleteContext(
 ): Promise<AthleteContext> {
   const admin = createAdminClient();
 
-  const [dossierRes, snapshotRes, decisionsRes] = await Promise.all([
+  const [dossierRes, snapshotRes, decisionsRes, memoriesRes] = await Promise.all([
     admin
       .from("athlete_profiles")
       .select(
@@ -178,6 +195,12 @@ export async function assembleAthleteContext(
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(MAX_DECISIONS),
+    admin
+      .from("athlete_memory")
+      .select("created_at, memory_type, nota")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(MAX_MEMORIES),
   ]);
 
   return condenseContext({
@@ -185,5 +208,6 @@ export async function assembleAthleteContext(
     mirror: (snapshotRes.data?.mirror_data ?? null) as MirrorData | null,
     dataQualityLevel: snapshotRes.data?.data_quality_level ?? null,
     decisions: (decisionsRes.data ?? []) as DecisionRow[],
+    memories: (memoriesRes.data ?? []) as MemoryRow[],
   });
 }

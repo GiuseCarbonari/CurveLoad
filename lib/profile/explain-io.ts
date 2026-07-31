@@ -1,3 +1,4 @@
+import { extractCoachNotes } from "@/lib/ai/coach-memory";
 import { assembleAthleteContext } from "@/lib/ai/context";
 import { GroqCallError, callLlm, DEFAULT_AI_MODEL } from "@/lib/ai/groq";
 import {
@@ -14,9 +15,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * esterna → scrittura DB → audit_logs). NON è puro; la costruzione del
  * prompt e il check numeri restano puri in lib/ai/profile-explain-prompt.ts.
  *
- * Scrive SOLO ai_comment_profilo + ai_comment_profilo_at, mai profile_data:
- * il trigger updated_at scatta comunque, ma la freschezza del profilo si
- * misura su profile_data.meta.generated_at, che qui non viene toccato.
+ * Scrive ai_comment_profilo + ai_comment_profilo_at (mai profile_data: il
+ * trigger updated_at scatta comunque, ma la freschezza del profilo si misura
+ * su profile_data.meta.generated_at, che qui non viene toccato) e — Passo 5 —
+ * le note del taccuino in athlete_memory, via output vincolato
+ * (lib/ai/coach-memory.ts).
  */
 
 export type ExplainOutcome =
@@ -44,12 +47,14 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
   const context = await assembleAthleteContext(userId);
   const prompt = buildProfileExplainPrompt(profile, context);
 
-  let comment: string;
+  let rawText: string;
   try {
-    comment = await callLlm({
+    rawText = await callLlm({
       apiKey: resolvedKey.apiKey,
       system: prompt.system,
       userMessage: prompt.user,
+      // I 3 paragrafi + la riga NOTE_COACH (Passo 5) nello stesso budget.
+      maxTokens: 800,
     });
   } catch (error) {
     // Chiave PROPRIA rifiutata da Groq: niente fallback silenzioso, l'utente
@@ -67,6 +72,12 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
     return { ok: false, reason: "ai_error" };
   }
 
+  // Passo 5 (taccuino del coach): la riga NOTE_COACH viene staccata dal
+  // commento e validata; all'utente arriva solo la prosa. Se il modello
+  // rispondesse con la sola riga note, si ripiega sul testo grezzo.
+  const { comment: stripped, notes, discarded } = extractCoachNotes(rawText);
+  const comment = stripped || rawText.trim();
+
   const generatedAt = new Date().toISOString();
   const { error: saveError } = await admin
     .from("athlete_profiles")
@@ -75,6 +86,19 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
   if (saveError) {
     console.error("Salvataggio commento AI fallito:", saveError.message);
     return { ok: false, reason: "internal_error" };
+  }
+
+  // Le note sopravvissute al validatore finiscono nel taccuino. Dedup esatto
+  // via unique index (user_id, nota) + DO NOTHING; errore non fatale — il
+  // commento è già salvato, il taccuino è un bonus.
+  if (notes.length > 0) {
+    const { error: memError } = await admin.from("athlete_memory").upsert(
+      notes.map((n) => ({ user_id: userId, memory_type: n.tipo, nota: n.nota })),
+      { onConflict: "user_id,nota", ignoreDuplicates: true }
+    );
+    if (memError) {
+      console.error("Salvataggio note coach fallito:", memError.message);
+    }
   }
 
   // Check anti-numeri-inventati: log-only, non blocca il salvataggio (è
@@ -93,7 +117,10 @@ export async function explainAthleteProfile(userId: string): Promise<ExplainOutc
         atleta: context.atleta != null,
         condizione: context.condizione != null,
         decisioni_recenti: context.decisioni_recenti.length,
+        memoria: context.memoria.length,
       },
+      coach_notes_saved: notes.length,
+      coach_notes_discarded: discarded,
     },
   });
 

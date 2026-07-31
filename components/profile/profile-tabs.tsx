@@ -37,6 +37,13 @@ interface ProfileTabsProps {
   aiEnabled: boolean;
   aiComment: string | null;
   aiCommentAt: string | null;
+  /** Taccuino del coach (athlete_memory, Passo 5) — note più recenti prima. */
+  coachNotes: Array<{
+    id: string;
+    created_at: string;
+    memory_type: string;
+    nota: string;
+  }>;
 }
 
 export function ProfileTabs({
@@ -46,6 +53,7 @@ export function ProfileTabs({
   aiEnabled,
   aiComment,
   aiCommentAt,
+  coachNotes,
 }: ProfileTabsProps) {
   return (
     <>
@@ -132,6 +140,30 @@ export function ProfileTabs({
                       enabled={aiEnabled}
                       hasComment={aiComment != null}
                     />
+
+                    {/* Taccuino del coach (Passo 5): le note che l'AI si è
+                        segnata su di te — si accumulano nel tempo. */}
+                    {coachNotes.length > 0 && (
+                      <div className="mt-3 border-t border-border/60 pt-3">
+                        <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
+                          📝 Taccuino del coach
+                        </div>
+                        <ul className="mt-2 space-y-1.5">
+                          {coachNotes.map((note) => (
+                            <li
+                              key={note.id}
+                              className="text-[13px] leading-snug text-secondary"
+                            >
+                              <span className="text-faint">
+                                {new Date(note.created_at).toLocaleDateString("it-IT")}{" "}
+                                · {note.memory_type} ·
+                              </span>{" "}
+                              {note.nota}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

@@ -14,7 +14,7 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  const [{ data: row }, { data: userRow }] = await Promise.all([
+  const [{ data: row }, { data: userRow }, { data: memoryRows }] = await Promise.all([
     supabase
       .from("athlete_profiles")
       .select("profile_data, updated_at, ai_comment_profilo, ai_comment_profilo_at")
@@ -25,6 +25,12 @@ export default async function ProfilePage() {
       .select("groq_key_encrypted")
       .eq("id", user.id)
       .maybeSingle<{ groq_key_encrypted: string | null }>(),
+    // Taccuino del coach (Passo 5): lettura via RLS, solo le proprie note.
+    supabase
+      .from("athlete_memory")
+      .select("id, created_at, memory_type, nota")
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   const profile = (row?.profile_data ?? null) as AthleteProfileData | null;
@@ -41,6 +47,7 @@ export default async function ProfilePage() {
         aiEnabled={aiEnabled}
         aiComment={row?.ai_comment_profilo ?? null}
         aiCommentAt={row?.ai_comment_profilo_at ?? null}
+        coachNotes={memoryRows ?? []}
       />
 
       <div className="pt-4">
