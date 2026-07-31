@@ -1,30 +1,19 @@
+import { CircleCheck, CircleAlert, CircleX } from "lucide-react";
 import {
   computeReadinessScore,
   type ReadinessResult,
 } from "@/lib/readiness";
 
-const RING: Record<
-  ReadinessResult["decision"],
-  { from: string; to: string; labelColor: string; glow: string }
-> = {
-  GO: {
-    from: "#46b88a",
-    to: "#7fc8c0",
-    labelColor: "var(--ready-go)",
-    glow: "rgba(70,184,138,0.45)",
-  },
-  MODIFY: {
-    from: "#e0a83e",
-    to: "#f0c878",
-    labelColor: "var(--ready-modify)",
-    glow: "rgba(224,168,62,0.45)",
-  },
-  SKIP: {
-    from: "#d9665b",
-    to: "#ed8a82",
-    labelColor: "var(--ready-skip)",
-    glow: "rgba(217,102,91,0.45)",
-  },
+const DECISION_ICON: Record<ReadinessResult["decision"], typeof CircleCheck> = {
+  GO: CircleCheck,
+  MODIFY: CircleAlert,
+  SKIP: CircleX,
+};
+
+const RING: Record<ReadinessResult["decision"], { labelColor: string; glow: string }> = {
+  GO: { labelColor: "var(--ready-go)", glow: "rgba(70,184,138,0.45)" },
+  MODIFY: { labelColor: "var(--ready-modify)", glow: "rgba(224,168,62,0.45)" },
+  SKIP: { labelColor: "var(--ready-skip)", glow: "rgba(217,102,91,0.45)" },
 };
 
 const TONE: Record<ReadinessResult["decision"], { border: string; bg: string; pillBg: string; pillBorder: string; pillText: string }> = {
@@ -92,12 +81,8 @@ const UNAVAILABLE_HINT: Record<string, string> = {
 export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   const ring = RING[readiness.decision];
   const tone = TONE[readiness.decision];
-  const gradientId = `ring-${readiness.decision}`;
   const score = computeReadinessScore(readiness);
-  const radius = 84;
-  const circumference = 2 * Math.PI * radius;
-  const pct = Math.max(0, Math.min(100, score)) / 100;
-  const scoreOffset = circumference * (1 - pct);
+  const DecisionIcon = DECISION_ICON[readiness.decision];
 
   const warningSignals = readiness.signals.filter(
     (s) => s.status === "amber" || s.status === "red"
@@ -140,57 +125,19 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
 
       {/* Body: ring + right column */}
       <div className="mt-4 flex items-center gap-5">
-        {/* Ring */}
+        {/* Decision icon */}
         <div
-          className="relative h-[130px] w-[130px] shrink-0 sm:h-[144px] sm:w-[144px]"
+          className="relative flex h-[130px] w-[130px] shrink-0 items-center justify-center sm:h-[144px] sm:w-[144px]"
           aria-label={`Readiness ${score} su 100, decisione ${readiness.decision}`}
         >
-          <svg
-            viewBox="0 0 200 200"
-            className="h-full w-full"
-          >
-            <defs>
-              <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={ring.from} />
-                <stop offset="100%" stopColor={ring.to} />
-              </linearGradient>
-            </defs>
-            <g transform="rotate(-90 100 100)">
-              {/* Track */}
-              <circle
-                cx="100" cy="100" r={radius}
-                fill="none"
-                stroke="color-mix(in srgb, var(--foreground) 7%, transparent)"
-                strokeWidth="16"
-              />
-              {/* Active arc */}
-              <circle
-                cx="100" cy="100" r={radius}
-                fill="none"
-                stroke={`url(#${gradientId})`}
-                strokeWidth="16"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={scoreOffset}
-                style={{
-                  filter: `drop-shadow(0 0 14px ${ring.glow}) drop-shadow(0 0 4px ${ring.glow})`,
-                  transition: "stroke-dashoffset 850ms cubic-bezier(0.16,1,0.3,1)",
-                }}
-              />
-            </g>
-          </svg>
-          {/* Center text */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
-            <span
-              className="font-body text-[35px] font-semibold leading-[0.9] tabular-nums sm:text-[38px]"
-              style={{ color: ring.labelColor }}
-            >
-              {score}
-            </span>
-            <span className="mt-1 text-[8px] uppercase leading-none tracking-[0.14em] text-muted">
-              su 100
-            </span>
-          </div>
+          <DecisionIcon
+            className="h-16 w-16 sm:h-[72px] sm:w-[72px]"
+            style={{
+              color: ring.labelColor,
+              filter: `drop-shadow(0 0 14px ${ring.glow})`,
+            }}
+            strokeWidth={1.75}
+          />
         </div>
 
         {/* Right: reason + signals */}
