@@ -30,6 +30,9 @@ function localizeError(message: string): string {
   return message;
 }
 
+const NOT_INVITED_MESSAGE =
+  "Questa beta è ad invito: la tua email non è nella lista degli invitati. Chiedi un invito a chi ti ha parlato di CurveLoad.";
+
 interface PasswordStrength {
   score: number; // 0-4
   label: string;
@@ -128,13 +131,26 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     setNotice(null);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const result = await res.json().catch(() => null);
     setLoading(false);
-    if (error) {
-      setError(localizeError(error.message));
+
+    if (!res.ok || !result?.success) {
+      if (result?.error === "not_invited") {
+        setError(NOT_INVITED_MESSAGE);
+      } else if (result?.error === "supabase_error") {
+        setError(localizeError(result.message ?? ""));
+      } else {
+        setError("Registrazione non riuscita. Riprova tra qualche minuto.");
+      }
       return;
     }
-    if (!data.session) {
+
+    if (result.needsEmailConfirmation) {
       setNotice(
         "Registrazione avviata: controlla la tua email per confermare l'account."
       );

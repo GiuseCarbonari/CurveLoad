@@ -45,8 +45,15 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       401], card "API key Groq" in `/settings/profile` scrittura-only,
       `/api/settings/groq-key` POST/DELETE, `aiEnabled` ora vero anche con
       sola chiave propria, 248 test verdi — verificato da Giuseppe nel browser)
-- [ ] **Passo 3 — Porta d'ingresso della beta**: allowlist email alla
-      registrazione + verifica region EU di Supabase
+- [x] **Passo 3 — Porta d'ingresso della beta** (fatto 2026-07-31: allowlist
+      `BETA_ALLOWED_EMAILS` in `.env.local` [carbonarigiuseppe95, cesarialessandro001,
+      dadocola99, mattifagio9 @gmail.com], `lib/auth/beta-allowlist.ts`
+      [`isEmailAllowed`, fail-closed se la variabile manca], registrazione
+      spostata da `/api/auth/signup` [prima parlava con Supabase direttamente
+      dal client] — email fuori lista bloccata con 403 prima di creare
+      l'utente, 254 test verdi. Region Supabase verificata: **eu-west-3
+      (Paris)**, dentro UE. Verificato da Giuseppe nel browser: email non in
+      lista → messaggio "Questa beta è ad invito…")
 - [ ] **Passo 4 — Il cervello che vede tutto (context assembler)**: la
       funzione che raccoglie profilo+storia+decisioni per ogni chiamata AI
 - [ ] **Passo 5 — La memoria del coach**: tabella `athlete_memory` (le "note
