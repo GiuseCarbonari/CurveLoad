@@ -11,9 +11,9 @@ const DECISION_ICON: Record<ReadinessResult["decision"], typeof CircleCheck> = {
 };
 
 const RING: Record<ReadinessResult["decision"], { labelColor: string; glow: string }> = {
-  GO: { labelColor: "var(--ready-go)", glow: "rgba(70,184,138,0.45)" },
-  MODIFY: { labelColor: "var(--ready-modify)", glow: "rgba(224,168,62,0.45)" },
-  SKIP: { labelColor: "var(--ready-skip)", glow: "rgba(217,102,91,0.45)" },
+  GO: { labelColor: "var(--ready-go)", glow: "color-mix(in srgb, var(--ready-go) 45%, transparent)" },
+  MODIFY: { labelColor: "var(--ready-modify)", glow: "color-mix(in srgb, var(--ready-modify) 45%, transparent)" },
+  SKIP: { labelColor: "var(--ready-skip)", glow: "color-mix(in srgb, var(--ready-skip) 45%, transparent)" },
 };
 
 const TONE: Record<ReadinessResult["decision"], { border: string; bg: string; pillBg: string; pillBorder: string; pillText: string }> = {
@@ -102,7 +102,7 @@ export function ReadinessRing({ readiness }: { readiness: ReadinessResult }) {
   return (
     <div
       id="tour-readiness"
-      className={`relative overflow-hidden rounded-[24px] px-5 py-5 ${tone.border}`}
+      className={`relative overflow-hidden rounded-card px-5 py-5 ${tone.border}`}
       style={{
         background: "var(--glass-bg)",
         border: "1px solid",

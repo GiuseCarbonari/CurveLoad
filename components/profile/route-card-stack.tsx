@@ -136,7 +136,7 @@ export function RouteCardStack({
     return (
       <div className="space-y-4">
         <Header analysis={null} terrain={null} estimate={null} hasAnalysis={false} />
-        <div className="rounded-[16px] border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
+        <div className="rounded-metric border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
           Seleziona una gara da Intervals.icu o carica un GPX per vedere il
           profilo altimetrico e i limitatori specifici.
         </div>
@@ -154,7 +154,7 @@ export function RouteCardStack({
       <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
 
       {/* Commento AI "Spiega il percorso" (Passo 6) */}
-      <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
+      <div className="rounded-metric border border-border bg-surface px-5 py-4">
         {aiComment && (
           <>
             <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
@@ -170,14 +170,14 @@ export function RouteCardStack({
         <ExplainPercorsoButton enabled={aiEnabled} hasComment={aiComment != null} />
       </div>
 
-      <div className="flex gap-1 rounded-[11px] bg-base p-1 text-sm">
+      <div className="flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
             className={cn(
-              "min-h-10 flex-1 rounded-[9px] px-2 py-1 transition-colors",
+              "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
               tab === t.key
                 ? "bg-brand font-medium text-brand-on shadow-sm"
                 : "text-muted hover:text-foreground"
@@ -219,7 +219,7 @@ function Header({
   hasAnalysis: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-base pb-1 pt-1">
+    <div className="sticky top-0 z-10 flex items-center justify-between gap-3 pb-1 pt-1">
       <div className="min-w-0">
         <div className="text-[10.5px] uppercase tracking-[0.14em] text-accent2">
           Analisi evento
@@ -260,7 +260,7 @@ function LimitersCard({
   );
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+    <section className="rounded-metric border border-border bg-surface p-5 sm:p-7">
       <h3 className="flex items-center gap-1.5 text-base font-medium text-foreground">
         Limitatori per questa gara
         <InfoTooltip term="limitatore" />
@@ -363,7 +363,7 @@ function EstimateCard({
           <CalibrationHelp />
 
           {signatureLevel == null && (
-            <div className="flex items-center justify-between gap-3 rounded-[14px] border border-ready-skip-border bg-surface px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-ready-skip-border bg-surface px-4 py-3.5">
               <div>
                 <p className="text-[13px] font-medium text-foreground">
                   Calibrazione assente
@@ -379,7 +379,7 @@ function EstimateCard({
           )}
 
           {signatureLevel === 2 && (
-            <div className="flex items-center justify-between gap-3 rounded-[14px] border border-ready-modify-border bg-surface px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-ready-modify-border bg-surface px-4 py-3.5">
               <div>
                 <p className="text-[13px] font-medium text-foreground">
                   Stima su valori medi MTB
@@ -397,7 +397,7 @@ function EstimateCard({
           )}
 
           {signatureLevel === 1 && (
-            <div className="flex items-center justify-between gap-3 rounded-[14px] border border-ready-go-border bg-surface px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-ready-go-border bg-surface px-4 py-3.5">
               <div>
                 <p className="text-[13px] font-medium text-foreground">
                   Calibrata sui tuoi dati
@@ -432,7 +432,7 @@ function EstimateCard({
           )}
 
           {signatureLevel != null && !estimate && (
-            <p className="rounded-[14px] border border-border bg-surface px-4 py-4 text-sm text-secondary">
+            <p className="rounded-lg border border-border bg-surface px-4 py-4 text-sm text-secondary">
               Firma pronta. Rianalizza l&apos;evento per generare la stima.
             </p>
           )}

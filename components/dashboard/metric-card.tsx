@@ -77,7 +77,7 @@ export function MetricCard({
       </div>
 
       {open && (
-        <div className="mt-2.5 rounded-xl border border-border bg-base/60 backdrop-blur-sm p-[11px]">
+        <div className="mt-2.5 rounded-lg border border-border bg-nest backdrop-blur-sm p-[11px]">
           <p className="text-[11.5px] leading-relaxed text-secondary">{tooltip}</p>
           {footer}
         </div>

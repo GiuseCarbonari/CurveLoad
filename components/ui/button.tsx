@@ -7,19 +7,20 @@ import { cn } from "@/lib/utils";
 // Componente Button standard di shadcn/ui (copiato, non generato:
 // shadcn funziona per copia dei sorgenti nel progetto).
 const buttonVariants = cva(
-  "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[9px] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber disabled:pointer-events-none disabled:opacity-50",
+  // Pill: nel command center ogni bottone ha raggio pieno (999px).
+  "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default: "bg-amber text-amber-on hover:bg-amber-hover",
         destructive:
-          "bg-ready-skip text-foreground hover:opacity-90",
+          "bg-ready-skip text-ready-on hover:opacity-90",
         outline:
-          "border-[0.5px] border-border bg-transparent text-secondary hover:bg-surface-2 hover:text-foreground",
+          "border border-border bg-surface-2 text-secondary hover:bg-surface hover:text-foreground",
         secondary:
           "bg-surface-2 text-secondary hover:text-foreground",
         ghost: "text-secondary hover:bg-surface-2 hover:text-foreground",
-        link: "min-h-0 text-amber underline-offset-4 hover:text-amber-hover hover:underline",
+        link: "min-h-0 text-brand-ink underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -145,14 +145,14 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
       </Button>
 
       {open && (
-        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-4 text-left">
+        <div className="w-full max-w-md rounded-metric border border-border bg-surface p-4 text-left">
           {/* Tab */}
-          <div className="mb-3 flex gap-1 rounded-[11px] bg-base p-1 text-sm">
+          <div className="mb-3 flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
             <button
               type="button"
               onClick={() => setTab("intervals")}
               className={cn(
-                "min-h-10 flex-1 rounded-[9px] px-2 py-1 transition-colors",
+                "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
                 tab === "intervals" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
               )}
             >
@@ -162,7 +162,7 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
               type="button"
               onClick={() => setTab("upload")}
               className={cn(
-                "min-h-10 flex-1 rounded-[9px] px-2 py-1 transition-colors",
+                "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
                 tab === "upload" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
               )}
             >
@@ -219,14 +219,14 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
                   acceptFile(e.dataTransfer.files?.[0]);
                 }}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-[11px] border border-dashed p-6 text-center text-sm transition-colors",
+                  "flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm transition-colors",
                   dragOver ? "border-amber bg-amber-dim" : "border-border"
                 )}
               >
                 <p className="text-muted">
                   Trascina qui un file <span className="font-medium">.gpx</span>
                 </p>
-                <label className="cursor-pointer text-xs text-amber underline">
+                <label className="cursor-pointer text-xs text-brand-ink underline">
                   oppure scegli un file
                   <input
                     type="file"

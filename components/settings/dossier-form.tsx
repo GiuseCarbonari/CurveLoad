@@ -189,7 +189,7 @@ export function SettingsDossierForm({
 
   const saveBar = editing !== null && (
     <div
-      className="sticky bottom-20 flex items-center justify-end gap-3 rounded-[18px] px-4 py-3"
+      className="sticky bottom-20 flex items-center justify-end gap-3 rounded-metric px-4 py-3"
       style={{
         background: "var(--glass-bg)",
         border: "1px solid var(--glass-border)",
@@ -223,7 +223,7 @@ export function SettingsDossierForm({
       </div>
 
       <div
-        className="rounded-[18px] overflow-hidden"
+        className="rounded-metric overflow-hidden"
         style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--glass-shadow)" }}
       >
         {GROUPS.map((g, i) => {
@@ -331,7 +331,7 @@ export function SettingsDossierForm({
                           onClick={() => openEdit(g.key as GroupKey)}
                           disabled={editing !== null}
                           aria-label={`Modifica ${g.label}`}
-                          className="mt-3 rounded-full border border-border px-3 py-1 text-[13px] text-secondary transition-all duration-150 hover:bg-brand-dim hover:border-brand/30 hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+                          className="mt-3 rounded-full border border-border px-3 py-1 text-[13px] text-secondary transition-all duration-150 hover:bg-brand-dim hover:border-brand/30 hover:text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           ✎ Modifica
                         </button>
@@ -383,7 +383,7 @@ export function SettingsDossierForm({
                             type="date"
                             value={injuryStart}
                             onChange={e => setInjuryStart(e.target.value)}
-                            className="rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
+                            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
                             aria-label="Inizio infortunio"
                           />
                           <input
@@ -391,7 +391,7 @@ export function SettingsDossierForm({
                             value={injuryEnd}
                             min={injuryStart}
                             onChange={e => setInjuryEnd(e.target.value)}
-                            className="rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
+                            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
                             aria-label="Fine infortunio"
                           />
                           <input
@@ -399,7 +399,7 @@ export function SettingsDossierForm({
                             placeholder="Nota (opzionale)"
                             value={injuryNote}
                             onChange={e => setInjuryNote(e.target.value)}
-                            className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-brand"
+                            className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-brand"
                           />
                           <Button
                             onClick={addInjuryPeriod}
@@ -431,14 +431,14 @@ export function SettingsDossierForm({
           <button
             type="button"
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-ready-skip/30 px-4 py-3 text-sm font-medium text-ready-skip transition-colors hover:bg-ready-skip/10"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-ready-skip/30 px-4 py-3 text-sm font-medium text-ready-skip transition-colors hover:bg-ready-skip/10"
           >
             <LogOut className="h-4 w-4" aria-hidden />
             Esci da CurveLoad
           </button>
         ) : (
           <div
-            className="rounded-[14px] px-4 py-4 space-y-3"
+            className="rounded-lg px-4 py-4 space-y-3"
             style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--glass-shadow)" }}
           >
             <p className="text-sm text-foreground text-center">Vuoi davvero uscire?</p>

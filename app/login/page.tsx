@@ -51,7 +51,7 @@ function checkPassword(pw: string): PasswordStrength {
     { score: 0, label: "", color: "" },
     { score: 1, label: "Debole", color: "#e05252" },
     { score: 2, label: "Sufficiente", color: "#e0a052" },
-    { score: 3, label: "Buona", color: "#5b8def" },
+    { score: 3, label: "Buona", color: "var(--accent-2)" },
     { score: 4, label: "Ottima", color: "#4caf7d" },
   ];
   return levels[score];
@@ -195,18 +195,19 @@ export default function LoginPage() {
   const isReset = mode === "reset";
 
   const tabClass = (active: boolean) =>
-    `rounded-[9px] py-1.5 text-[13px] font-medium transition-colors ${
+    // Tab attiva: blocco pieno come il command center (.tab-btn.active),
+    // non un grigio translucido indistinguibile dalla card.
+    `rounded-full py-1.5 text-[13px] font-semibold transition-colors ${
       active
-        ? "bg-surface-2 text-foreground"
+        ? "bg-nest text-foreground shadow-[0_2px_8px_rgba(20,21,15,0.1)]"
         : "text-muted hover:text-foreground"
     }`;
 
-  const inputClass =
-    "h-10 w-full rounded-[9px] border-[0.5px] border-border bg-base px-3 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:ring-2 focus:ring-brand";
+  const inputClass = "form-control h-10 w-full";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-10">
-      <div className="w-full max-w-[420px] rounded-2xl border-[0.5px] border-border bg-surface p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[420px] rounded-metric border-[0.5px] border-border bg-surface p-8">
         {/* Logo / nome */}
         <div className="mb-6 flex flex-col items-center text-center">
           <svg width="36" height="36" viewBox="0 0 58 58" fill="none" aria-label="CurveLoad logo" className="mb-3">
@@ -219,8 +220,8 @@ export default function LoginPage() {
             />
             <defs>
               <linearGradient id="lgLogin" x1="0" y1="0" x2="58" y2="58">
-                <stop offset="0%" stopColor="#5b8def" />
-                <stop offset="100%" stopColor="#7fc8c0" />
+                <stop offset="0%" stopColor="var(--accent-2)" />
+                <stop offset="100%" stopColor="var(--lime)" />
               </linearGradient>
             </defs>
           </svg>
@@ -238,11 +239,11 @@ export default function LoginPage() {
 
         {/* Prerequisiti — visibili solo in signup */}
         {isSignup && (
-          <div className="mb-5 rounded-[13px] border border-border bg-base px-4 py-3.5 text-[12.5px] leading-relaxed text-secondary">
+          <div className="mb-5 rounded-lg border border-border bg-nest px-4 py-3.5 text-[12.5px] leading-relaxed text-secondary">
             <p className="mb-2 font-semibold text-foreground">Prima di iniziare</p>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
-                <span className="mt-[3px] text-brand">①</span>
+                <span className="mt-[3px] text-brand-ink">①</span>
                 <span>
                   Serve un account su{" "}
                   <strong className="text-foreground">intervals.icu</strong>{" "}
@@ -250,7 +251,7 @@ export default function LoginPage() {
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-[3px] text-brand">②</span>
+                <span className="mt-[3px] text-brand-ink">②</span>
                 <span>
                   Nelle impostazioni di Intervals.icu, vai su{" "}
                   <strong className="text-foreground">Connessioni</strong> e collega
@@ -264,7 +265,7 @@ export default function LoginPage() {
 
         {/* Tab toggle Accedi / Registrati (nascosto nella modalità reset) */}
         {!isReset && (
-          <div className="mb-6 grid grid-cols-2 gap-1 rounded-[11px] bg-base p-1">
+          <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1">
             <button type="button" onClick={() => switchMode("signin")} className={tabClass(isSignin)}>
               Accedi
             </button>
@@ -442,12 +443,12 @@ export default function LoginPage() {
           {/* Errore / notice — annunciati dagli screen reader */}
           <div aria-live="polite">
             {error && (
-              <div className="rounded-[9px] border-[0.5px] border-ready-skip-border bg-surface px-3 py-2 text-[13px] text-ready-skip">
+              <div className="rounded-lg border-[0.5px] border-ready-skip-border bg-surface px-3 py-2 text-[13px] text-ready-skip">
                 {error}
               </div>
             )}
             {notice && (
-              <div className="rounded-[9px] border-[0.5px] border-border bg-surface-2 px-3 py-2 text-[13px] text-secondary">
+              <div className="rounded-lg border-[0.5px] border-border bg-surface-2 px-3 py-2 text-[13px] text-secondary">
                 {notice}
               </div>
             )}
@@ -457,7 +458,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="h-10 w-full rounded-[9px] bg-brand text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:pointer-events-none disabled:opacity-50"
+            className="h-10 w-full rounded-lg bg-brand text-sm font-medium text-brand-on transition-colors hover:bg-brand-hover disabled:pointer-events-none disabled:opacity-50"
           >
             {loading
               ? "Attendere…"

@@ -56,14 +56,14 @@ export function InfoTooltip({
         aria-label={`Spiegazione: ${term}`}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] font-semibold leading-none text-muted transition-colors hover:border-amber hover:text-amber focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] font-semibold leading-none text-muted transition-colors hover:border-amber hover:text-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
       >
         ?
       </button>
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-[11px] border border-border bg-surface p-3 text-left text-xs font-normal leading-relaxed text-secondary"
+          className="absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-lg border border-border bg-surface p-3 text-left text-xs font-normal leading-relaxed text-secondary"
         >
           {text}
         </span>

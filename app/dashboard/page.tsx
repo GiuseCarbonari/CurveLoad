@@ -239,31 +239,10 @@ export default async function DashboardPage() {
 
   return (
     <CurveLoadShell>
-      {/* Header: wordmark + date + name */}
+      {/* Header pagina: data + saluto (il logo vive ora in AppHeader) */}
       <div className="flex items-start justify-between pt-2">
         <div>
-          <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 58 58" fill="none" aria-hidden>
-              <circle
-                cx="29" cy="29" r="22"
-                stroke="url(#dashLmk)"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeDasharray="104 34"
-                transform="rotate(-90 29 29)"
-              />
-              <defs>
-                <linearGradient id="dashLmk" x1="0" y1="0" x2="58" y2="58">
-                  <stop offset="0%" stopColor="#5b8def" />
-                  <stop offset="100%" stopColor="#7fc8c0" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className="font-serif text-[13px] tracking-[0.05em] text-secondary">
-              CurveLoad
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-muted">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
             {formatTodayIT()}
           </div>
           <h1 className="mt-1.5 font-serif text-[30px] font-medium leading-none text-foreground">
@@ -288,7 +267,7 @@ export default async function DashboardPage() {
 
       {/* No data state */}
       {!mirror && (
-        <div className="rounded-[18px] border border-border bg-surface px-6 py-10 text-center">
+        <div className="rounded-metric border border-border bg-surface px-6 py-10 text-center">
           <p className="font-serif text-lg text-foreground">
             Nessun dato ancora.
           </p>
@@ -300,7 +279,7 @@ export default async function DashboardPage() {
 
       {/* Strava warning */}
       {mirror?.data_quality_warning === "strava_source_detected" && (
-        <div className="rounded-xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-sm text-secondary">
+        <div className="rounded-lg border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-sm text-secondary">
           I dati arrivano via Strava: alcuni valori potrebbero essere incompleti.
         </div>
       )}

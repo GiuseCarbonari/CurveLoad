@@ -15,7 +15,7 @@ function checkPassword(pw: string): { score: number; label: string; color: strin
     { score: 0, label: "", color: "" },
     { score: 1, label: "Debole", color: "#e05252" },
     { score: 2, label: "Sufficiente", color: "#e0a052" },
-    { score: 3, label: "Buona", color: "#5b8def" },
+    { score: 3, label: "Buona", color: "var(--accent-2)" },
     { score: 4, label: "Ottima", color: "#4caf7d" },
   ];
   return levels[score];
@@ -100,19 +100,18 @@ export default function ResetPasswordPage() {
     setTimeout(() => router.push("/login"), 2000);
   }
 
-  const inputClass =
-    "h-10 w-full rounded-[9px] border-[0.5px] border-border bg-base px-3 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:ring-2 focus:ring-brand";
+  const inputClass = "form-control h-10 w-full";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-10">
-      <div className="w-full max-w-[420px] rounded-2xl border-[0.5px] border-border bg-surface p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[420px] rounded-metric border-[0.5px] border-border bg-surface p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <svg width="36" height="36" viewBox="0 0 58 58" fill="none" aria-label="CurveLoad logo" className="mb-3">
             <circle cx="29" cy="29" r="22" stroke="url(#lgReset)" strokeWidth="5" strokeLinecap="round" strokeDasharray="138 0" />
             <defs>
               <linearGradient id="lgReset" x1="0" y1="0" x2="58" y2="58">
-                <stop offset="0%" stopColor="#5b8def" />
-                <stop offset="100%" stopColor="#7fc8c0" />
+                <stop offset="0%" stopColor="var(--accent-2)" />
+                <stop offset="100%" stopColor="var(--lime)" />
               </linearGradient>
             </defs>
           </svg>
@@ -215,12 +214,12 @@ export default function ResetPasswordPage() {
             </div>
 
             {error && (
-              <div className="rounded-[9px] border-[0.5px] border-ready-skip-border bg-surface px-3 py-2 text-[13px] text-ready-skip">
+              <div className="rounded-lg border-[0.5px] border-ready-skip-border bg-surface px-3 py-2 text-[13px] text-ready-skip">
                 {error}
               </div>
             )}
             {notice && (
-              <div className="rounded-[9px] border-[0.5px] border-border bg-surface-2 px-3 py-2 text-[13px] text-secondary">
+              <div className="rounded-lg border-[0.5px] border-border bg-surface-2 px-3 py-2 text-[13px] text-secondary">
                 {notice}
               </div>
             )}
@@ -228,7 +227,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="h-10 w-full rounded-[9px] bg-brand text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:pointer-events-none disabled:opacity-50"
+              className="h-10 w-full rounded-lg bg-brand text-sm font-medium text-brand-on transition-colors hover:bg-brand-hover disabled:pointer-events-none disabled:opacity-50"
             >
               {loading ? "Attendere…" : "Salva nuova password"}
             </button>

@@ -30,7 +30,7 @@ import {
  */
 
 const INPUT_CLASS =
-  "rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand";
+  "rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand";
 
 async function saveRouteSettings(settings: RaceRouteSettings): Promise<string | null> {
   try {
@@ -116,7 +116,7 @@ export function BikeStrategyForm({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+    <section className="rounded-metric border border-border bg-surface p-5 sm:p-7">
       <h3 className="text-base font-medium text-foreground">
         Peso bici, posizione e strategia
       </h3>
@@ -253,7 +253,7 @@ export function RepeatabilityForm({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+    <section className="rounded-metric border border-border bg-surface p-5 sm:p-7">
       <h3 className="text-base font-medium text-foreground">
         Margine di ripetibilità
       </h3>

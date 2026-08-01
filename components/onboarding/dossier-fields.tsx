@@ -143,7 +143,7 @@ export function StepObiettivi({
         />
       </div>
 
-      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           Gara target principale (opzionale)
         </legend>
@@ -244,13 +244,13 @@ export function StepFisiologia({
 }) {
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-[11px] border border-l-[3px] border-border border-l-brand bg-surface p-4 text-sm leading-relaxed text-secondary">
+      <div className="rounded-lg border border-l-[3px] border-border border-l-brand bg-surface p-4 text-sm leading-relaxed text-secondary">
         Se hai Intervals.icu questi valori verranno sincronizzati automaticamente.
         Puoi inserirli qui se li conosci già — il piano li userà subito e li
         aggiornerà non appena la sync sarà attiva.
       </div>
 
-      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           FTP — Functional Threshold Power
         </legend>
@@ -273,7 +273,7 @@ export function StepFisiologia({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           Frequenza cardiaca
         </legend>
@@ -295,7 +295,7 @@ export function StepFisiologia({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           LT1 — Prima soglia (soglia aerobica)
         </legend>
@@ -317,7 +317,7 @@ export function StepFisiologia({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-[11px] border border-border bg-surface-2 p-4">
+      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
           LT2 — Seconda soglia (MLSS / soglia anaerobica)
         </legend>

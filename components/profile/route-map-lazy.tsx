@@ -13,7 +13,7 @@ import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
 
 function MapPlaceholder() {
   return (
-    <div className="flex h-64 w-full items-center justify-center rounded-[11px] bg-surface-2 text-sm text-muted sm:h-80">
+    <div className="flex h-64 w-full items-center justify-center rounded-lg bg-surface-2 text-sm text-muted sm:h-80">
       Caricamento mappa…
     </div>
   );

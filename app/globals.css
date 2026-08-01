@@ -3,8 +3,11 @@
 @tailwind utilities;
 
 /*
-  Coach IA — Design System "Limina" + Glassmorphism premium layer.
-  Ispirato a Oura/WHOOP: superfici traslucide, glow colorati, OLED dark.
+  CurveLoad — Design System "Command Center" (Passo 7).
+  Salvia + lime + vetro bianco latte, portato dai token di
+  `Giuse OS/command-center/src/style.css`. Il tema CHIARO è quello
+  originale del command center; il tema scuro è la stessa identità
+  invertita (fondo inchiostro, lime come accento).
 */
 @layer base {
   /*
@@ -13,35 +16,58 @@
     (Tailwind darkMode: ["class"]).
   */
   :root {
+    /* Colori grezzi dell'identità, gli unici hex "crudi" del sistema. */
+    --lime: #dff24b;
+    --sage: #9fab95;
+    --ink: #14150f;
+
     color-scheme: light;
 
     /* --- Sfondi --- */
-    --bg-base: #f0f3fa;
-    --bg-surface: rgba(255, 255, 255, 0.72);
-    --bg-surface-2: rgba(238, 243, 251, 0.8);
-    --bg-border: rgba(15, 23, 42, 0.09);
+    --bg-base: #c8ccc0;
+    --bg-surface: rgba(255, 255, 255, 0.66);
+    --bg-surface-2: rgba(255, 255, 255, 0.44);
+    --bg-border: rgba(20, 21, 15, 0.1);
+    /*
+      Aloni ambientali della pagina. In unità di viewport (non px) perché
+      CurveLoad ha una colonna centrale stretta: con misure fisse gli aloni
+      restavano confinati in alto a sinistra e il resto era salvia piatta.
+    */
+    --bg-glow:
+      radial-gradient(70vw 62vh at 6% -10%, #e8f28c 0%, rgba(232, 242, 140, 0) 62%),
+      radial-gradient(65vw 58vh at 96% 2%, #f6f7f0 0%, rgba(246, 247, 240, 0) 58%),
+      radial-gradient(85vw 70vh at 58% 112%, var(--sage) 0%, rgba(159, 171, 149, 0) 62%);
 
-    /* --- Glass light --- */
-    --glass-bg: rgba(255, 255, 255, 0.55);
-    --glass-border: rgba(255, 255, 255, 0.7);
-    --glass-shadow: 0 8px 32px -8px rgba(15, 23, 42, 0.12), 0 1px 0 0 rgba(255,255,255,0.9) inset;
+    /* --- Glass light: vetro bianco latte su salvia --- */
+    --glass-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34));
+    /* Riquadro annidato DENTRO una card di vetro: più bianco, non più scuro */
+    --glass-nest: rgba(255, 255, 255, 0.68);
+    --glass-border: rgba(255, 255, 255, 0.62);
+    --glass-shadow: 0 22px 44px -26px rgba(28, 33, 22, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.75);
 
     /* --- Testo --- */
-    --text-primary: #141925;
-    --text-secondary: #3f4856;
-    --text-muted: #6b7484;
-    --text-faint: #8a93a3;
+    --text-primary: #14150f;
+    --text-secondary: #414838;
+    --text-muted: #5f6558;
+    --text-faint: #7b8173;
 
-    /* --- Identita Limina (accento blu) --- */
-    --brand: #2f6bd8;
-    --brand-hover: #2257bd;
-    --brand-dim: rgba(47, 107, 216, 0.12);
-    --brand-on: #ffffff;
+    /*
+      --- Identità: lime pieno + inchiostro ---
+      `brand` è il LIME, così `bg-brand text-brand-on` è il blocco lime pieno
+      del command center (bottone primario, giorno attivo, gara target).
+      Il lime però è illeggibile come TESTO sul chiaro: per quello c'è
+      `--brand-ink`, l'oliva scuro. Sullo scuro i due coincidono.
+    */
+    --brand: var(--lime);
+    --brand-hover: #d3e63c;
+    --brand-dim: rgba(223, 242, 75, 0.34);
+    --brand-on: var(--ink);
+    --brand-ink: #4c5520;
 
-    /* --- Accento secondario (teal) --- */
-    --accent-2: #2f9b90;
-    --accent-2-hover: #267f76;
-    --accent-2-dim: rgba(47, 155, 144, 0.12);
+    /* --- Accento secondario: verde oliva del command center --- */
+    --accent-2: #55703a;
+    --accent-2-hover: #41582b;
+    --accent-2-dim: rgba(111, 143, 74, 0.16);
 
     /* --- Alias legacy mantenuti per i componenti non ancora ridisegnati --- */
     --amber: var(--brand);
@@ -50,21 +76,23 @@
     --amber-on: var(--brand-on);
     --accent-blue: var(--brand);
     --accent-blue-dim: var(--brand-dim);
-    --accent-gold: #b5811f;
-    --accent-gold-dim: rgba(181, 129, 31, 0.14);
-    --zone-z1: #6b7684;
-    --zone-z2: #2f7fc4;
-    --zone-z3: #1f9e63;
-    --zone-z4: #cf8f1e;
-    --zone-z5: #d23a23;
+    --accent-gold: #8d6a22;
+    --accent-gold-dim: rgba(185, 138, 46, 0.16);
+    --zone-z1: #6b7168;
+    --zone-z2: #4a6b8d;
+    --zone-z3: #55703a;
+    --zone-z4: #8d6a22;
+    --zone-z5: #8d4232;
 
-    /* --- Semaforico readiness (solo per stato) --- */
-    --ready-go: #1f9e6e;
-    --ready-go-border: rgba(31, 158, 110, 0.32);
-    --ready-modify: #c4881f;
-    --ready-modify-border: rgba(196, 136, 31, 0.34);
-    --ready-skip: #cc4435;
-    --ready-skip-border: rgba(204, 68, 53, 0.34);
+    /* --- Semaforico readiness: terroso, non semaforo (command center) --- */
+    --ready-go: #55703a;
+    --ready-go-border: rgba(111, 143, 74, 0.38);
+    --ready-modify: #8d6a22;
+    --ready-modify-border: rgba(185, 138, 46, 0.38);
+    --ready-skip: #8d4232;
+    --ready-skip-border: rgba(181, 83, 63, 0.38);
+    /* Testo sopra un riempimento pieno di readiness (stesso ruolo di --brand-on) */
+    --ready-on: #ffffff;
 
     /*
       Mapping dei token semantici shadcn/ui sulla palette del design system.
@@ -84,60 +112,73 @@
     --accent: var(--bg-surface-2);
     --accent-foreground: var(--text-primary);
     --destructive: var(--ready-skip);
-    --destructive-foreground: #ffffff;
+    --destructive-foreground: var(--ready-on);
     --border: var(--bg-border);
     --input: var(--bg-border);
-    --ring: var(--brand);
+    --ring: var(--brand-ink);
+    /*
+      Scala dei raggi del command center: 14 (annidati) · 20 (rounded-metric)
+      · 28 (rounded-card) · 999px (pill). Niente valori letterali nei
+      componenti.
+    */
     --radius: 14px;
   }
 
   .dark {
     color-scheme: dark;
 
-    /* --- Sfondi OLED --- */
-    --bg-base: #04060a;
-    --bg-surface: rgba(14, 18, 28, 0.75);
-    --bg-surface-2: rgba(20, 26, 40, 0.8);
-    --bg-border: rgba(255, 255, 255, 0.07);
+    /* --- Sfondi: inchiostro del command center, non nero piatto --- */
+    --bg-base: #0f120b;
+    --bg-surface: rgba(244, 245, 240, 0.06);
+    --bg-surface-2: rgba(244, 245, 240, 0.1);
+    --bg-border: rgba(255, 255, 255, 0.12);
+    --bg-glow:
+      radial-gradient(70vw 62vh at 6% -10%, rgba(223, 242, 75, 0.11) 0%, rgba(223, 242, 75, 0) 62%),
+      radial-gradient(65vw 58vh at 96% 2%, rgba(159, 171, 149, 0.09) 0%, rgba(159, 171, 149, 0) 58%),
+      radial-gradient(85vw 70vh at 58% 112%, rgba(223, 242, 75, 0.06) 0%, rgba(223, 242, 75, 0) 62%);
 
-    /* --- Glass dark (Oura/WHOOP style) --- */
-    --glass-bg: rgba(16, 20, 32, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 40px -12px rgba(0, 0, 0, 0.7), 0 1px 0 0 rgba(255,255,255,0.04) inset;
+    /* --- Glass dark: il `--dark-grad` del command center --- */
+    --glass-bg: linear-gradient(155deg, rgba(30, 34, 22, 0.88), rgba(18, 21, 13, 0.68));
+    --glass-nest: rgba(244, 245, 240, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 26px 50px -28px rgba(10, 12, 6, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 
     /* --- Testo --- */
-    --text-primary: #eaeef6;
-    --text-secondary: #aab3c2;
-    --text-muted: #707a8a;
-    --text-faint: #5c6470;
+    --text-primary: #f4f5f0;
+    --text-secondary: #c6cdba;
+    --text-muted: #9aa38a;
+    --text-faint: #767f68;
 
-    /* --- Identita Limina (accento blu) --- */
-    --brand: #5b8def;
-    --brand-hover: #7da4f2;
-    --brand-dim: rgba(91, 141, 239, 0.16);
-    --brand-on: #ffffff;
+    /* --- Identità: sullo scuro il lime è leggibile anche come testo --- */
+    --brand: var(--lime);
+    --brand-hover: #e9f77a;
+    --brand-dim: rgba(223, 242, 75, 0.16);
+    --brand-on: var(--ink);
+    --brand-ink: var(--lime);
 
-    /* --- Accento secondario (teal) --- */
-    --accent-2: #7fc8c0;
-    --accent-2-hover: #9fded6;
-    --accent-2-dim: rgba(127, 200, 192, 0.16);
+    /* --- Accento secondario: salvia --- */
+    --accent-2: var(--sage);
+    --accent-2-hover: #bcc7b2;
+    --accent-2-dim: rgba(159, 171, 149, 0.16);
 
     /* --- Alias legacy mantenuti per i componenti non ancora ridisegnati --- */
-    --accent-gold: #e0a83e;
-    --accent-gold-dim: rgba(224, 168, 62, 0.16);
+    --accent-gold: #d9a747;
+    --accent-gold-dim: rgba(217, 167, 71, 0.16);
     --zone-z1: #8c99a5;
-    --zone-z2: #4fa3e0;
-    --zone-z3: #36c77e;
-    --zone-z4: #f2b33d;
-    --zone-z5: #f2553d;
+    --zone-z2: #7fa8cf;
+    --zone-z3: #8fb562;
+    --zone-z4: #d9a747;
+    --zone-z5: #cf6a52;
 
-    /* --- Semaforico readiness (solo per stato) --- */
-    --ready-go: #46b88a;
-    --ready-go-border: rgba(70, 184, 138, 0.32);
-    --ready-modify: #e0a83e;
-    --ready-modify-border: rgba(224, 168, 62, 0.34);
-    --ready-skip: #d9665b;
-    --ready-skip-border: rgba(217, 102, 91, 0.34);
+    /* --- Semaforico readiness: terroso, non semaforo (command center) --- */
+    --ready-go: #8fb562;
+    --ready-go-border: rgba(143, 181, 98, 0.38);
+    --ready-modify: #d9a747;
+    --ready-modify-border: rgba(217, 167, 71, 0.38);
+    --ready-skip: #cf6a52;
+    --ready-skip-border: rgba(207, 106, 82, 0.38);
+    /* Sullo scuro i colori readiness sono chiari: sopra ci va l'inchiostro */
+    --ready-on: var(--ink);
 
     /* Popover su superficie più alta nel tema scuro */
     --popover: var(--bg-surface-2);
@@ -155,12 +196,9 @@
   }
   body {
     @apply bg-base text-sm leading-[1.6] text-foreground;
-    font-family: var(--font-syne), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    /* Sfondo cinematografico multi-glow stile Oura */
-    background-image:
-      radial-gradient(ellipse 800px 500px at 20% 0%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 70%),
-      radial-gradient(ellipse 600px 400px at 80% 10%, color-mix(in srgb, var(--accent-2) 7%, transparent), transparent 70%),
-      radial-gradient(ellipse 400px 300px at 50% 80%, color-mix(in srgb, var(--brand) 5%, transparent), transparent 60%);
+    font-family: var(--font-manrope), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* Aloni ambientali: definiti per tema in --bg-glow */
+    background-image: var(--bg-glow);
     background-attachment: fixed;
   }
   ::selection {
@@ -168,8 +206,15 @@
     color: var(--text-primary);
   }
   :focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--brand) 70%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--brand-ink) 70%, transparent);
     outline-offset: 2px;
+  }
+  /*
+    Label tecniche del command center: maiuscolo piccolo, spaziato, muto.
+    Applicata a <label> e alle micro-intestazioni via .panel-title/.eyebrow.
+  */
+  ::placeholder {
+    color: var(--text-faint);
   }
 }
 
@@ -199,7 +244,7 @@
   }
 
   .panel {
-    @apply rounded-2xl p-6;
+    @apply rounded-card p-6;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
@@ -207,10 +252,22 @@
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
   }
   .panel-title {
-    @apply text-[11px] font-medium uppercase tracking-[0.06em] text-muted;
+    @apply text-[11px] font-bold uppercase tracking-[0.07em] text-muted;
+  }
+  /* Riquadro annidato dentro una card di vetro: più bianco, mai più scuro. */
+  .nest {
+    @apply rounded-lg p-3;
+    background: var(--glass-nest);
+    border: 1px solid var(--glass-border);
+  }
+  /* Blocco pieno inchiostro con testo lime: il badge forte del command center. */
+  .chip-ink {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[11.5px] font-bold tracking-[0.02em];
+    background: var(--ink);
+    color: var(--lime);
   }
   .metric-card {
-    @apply rounded-[14px] p-[0.9rem] transition-all duration-200;
+    @apply rounded-metric p-[0.9rem] transition-all duration-200;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
@@ -222,7 +279,11 @@
     border-color: color-mix(in srgb, var(--brand) 22%, var(--glass-border));
   }
   .form-control {
-    @apply min-h-10 rounded-[9px] border-[0.5px] border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber;
+    @apply min-h-11 rounded-lg border border-border px-3.5 text-sm text-foreground placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink;
+    background: var(--glass-nest);
+    /* Legge come pozzetto incassato, non come un'altra superficie piatta
+       identica alla card che lo contiene. */
+    box-shadow: inset 0 1px 3px rgba(20, 21, 15, 0.08);
   }
   .aurora-glass {
     background: var(--glass-bg);
@@ -231,15 +292,22 @@
     backdrop-filter: blur(20px) saturate(1.6);
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
   }
+  /*
+    Un solo carattere (Manrope, come il command center). I numeri grossi
+    prendono crenatura stretta e cifre a larghezza fissa, così le colonne
+    di metriche non ballano quando il valore cambia.
+  */
   .font-data {
-    font-family: var(--font-newsreader), Georgia, serif;
+    font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
   .font-display {
-    font-family: var(--font-newsreader), Georgia, serif;
+    font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
   .font-body {
-    font-family: var(--font-syne), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -287,7 +355,7 @@
   border-radius: 18px !important;
   padding: 20px !important;
   box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.55) !important;
-  font-family: var(--font-syne), Inter, ui-sans-serif, system-ui, sans-serif !important;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif !important;
   max-width: 300px !important;
 }
 

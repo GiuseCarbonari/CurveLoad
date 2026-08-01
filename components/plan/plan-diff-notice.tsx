@@ -21,7 +21,7 @@ export function PlanDiffNotice({ changes }: { changes: PlanChange[] }) {
 
   const n = changes.length;
   return (
-    <div className="min-w-0 rounded-[16px] border border-ready-modify-border bg-surface px-4 py-3">
+    <div className="min-w-0 rounded-metric border border-ready-modify-border bg-surface px-4 py-3">
       <div className="mb-2 break-words text-[10px] uppercase tracking-[0.14em] text-ready-modify">
         Il piano è cambiato: {n} sedut{n === 1 ? "a" : "e"} modificat
         {n === 1 ? "a" : "e"}

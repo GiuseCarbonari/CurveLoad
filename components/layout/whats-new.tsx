@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { LATEST } from "@/lib/changelog";
 
 const TYPE_LABEL = {
-  new: { text: "Novità", bg: "bg-brand-dim", color: "text-brand-hover" },
+  new: { text: "Novità", bg: "bg-brand-dim", color: "text-brand-ink" },
   fix: { text: "Fix", bg: "bg-ready-go/[0.12]", color: "text-ready-go" },
   improve: { text: "Miglioramento", bg: "bg-accent2-dim", color: "text-accent2-hover" },
 } as const;
@@ -35,12 +35,12 @@ export function WhatsNew() {
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-base/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/45 backdrop-blur-sm"
         onClick={dismiss}
       />
 
       {/* Card */}
-      <div className="relative w-full max-w-sm rounded-[24px] border border-border bg-surface p-6 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.6)]">
+      <div className="relative w-full max-w-sm rounded-card border border-border bg-surface p-6 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.6)]">
         {/* Header */}
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -88,7 +88,7 @@ export function WhatsNew() {
         {/* CTA */}
         <button
           onClick={dismiss}
-          className="mt-5 w-full rounded-[12px] bg-brand py-2.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="mt-5 w-full rounded-lg bg-brand py-2.5 text-[13px] font-semibold text-brand-on transition-opacity hover:opacity-90"
         >
           Ho capito
         </button>

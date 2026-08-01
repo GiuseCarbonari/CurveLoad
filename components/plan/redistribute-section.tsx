@@ -228,13 +228,13 @@ export function RedistributeSection({
       )}
 
       {!preview && error && (
-        <p className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
+        <p className="rounded-lg border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
           {error}
         </p>
       )}
 
       {showReconnectNote && (
-        <p className="rounded-[11px] border border-border bg-amber-dim p-3 text-sm text-secondary">
+        <p className="rounded-lg border border-border bg-amber-dim p-3 text-sm text-secondary">
           La settimana è stata aggiornata. Ricorda di aggiornare su Intervals.icu
           con il bottone «Aggiorna su Intervals.icu».
         </p>
@@ -243,12 +243,12 @@ export function RedistributeSection({
       {/* Modale di anteprima / conferma */}
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="redistribute-modal-title"
         >
-          <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-border bg-surface shadow-2xl">
+          <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-metric border border-border bg-surface shadow-2xl">
             <div className="border-b p-5">
               <h2
                 id="redistribute-modal-title"
@@ -297,7 +297,7 @@ export function RedistributeSection({
                 return (
                   <p
                     key={i}
-                    className={`text-sm ${c.action === "dropped" && isHard ? "text-amber" : "text-foreground"}`}
+                    className={`text-sm ${c.action === "dropped" && isHard ? "text-brand-ink" : "text-foreground"}`}
                   >
                     {icon} {label}
                   </p>
@@ -305,7 +305,7 @@ export function RedistributeSection({
               })}
 
               {preview.volume_reduced && (
-                <div className="mt-3 rounded-[11px] border border-border bg-amber-dim p-3 text-sm text-secondary">
+                <div className="mt-3 rounded-lg border border-border bg-amber-dim p-3 text-sm text-secondary">
                   <p className="font-medium">
                     Attenzione: questa settimana avrà meno sedute dure del pianificato.
                   </p>
@@ -318,14 +318,14 @@ export function RedistributeSection({
               )}
 
               {preview.kind === "recover" && preview.risk_warning && (
-                <div className="mt-3 rounded-[11px] border border-amber/40 bg-amber-dim p-3 text-sm text-secondary">
-                  <p className="font-medium text-amber">⚠ Recuperarla oggi è rischioso</p>
+                <div className="mt-3 rounded-lg border border-amber/40 bg-amber-dim p-3 text-sm text-secondary">
+                  <p className="font-medium text-brand-ink">⚠ Recuperarla oggi è rischioso</p>
                   <p className="mt-1">{preview.risk_warning}</p>
                 </div>
               )}
 
               {error && (
-                <p className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
+                <p className="rounded-lg border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
                   {error}
                 </p>
               )}

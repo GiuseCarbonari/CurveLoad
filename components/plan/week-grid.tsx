@@ -42,7 +42,7 @@ const TONE_CONFIG: Record<Tone, {
     icon: "▲",
     kindLabel: "Duro",
     chipBg: "bg-ready-skip/[0.12]",
-    chipText: "text-[#eda7a0]",
+    chipText: "text-ready-skip",
     cardBg: "bg-surface",
   },
   medium: {
@@ -50,7 +50,7 @@ const TONE_CONFIG: Record<Tone, {
     icon: "◆",
     kindLabel: "Medio",
     chipBg: "bg-brand-dim",
-    chipText: "text-brand-hover",
+    chipText: "text-brand-ink",
     cardBg: "bg-surface",
   },
   easy: {
@@ -87,7 +87,7 @@ const READINESS_BADGE: Record<string, { label: string; classes: string }> = {
 
 const COMPLETION_STOPS = [
   { percent: 0, color: [112, 122, 138] },
-  { percent: 25, color: [91, 141, 239] },
+  { percent: 25, color: [85, 112, 58] },
   { percent: 50, color: [217, 102, 91] },
   { percent: 75, color: [224, 168, 62] },
   { percent: 100, color: [70, 184, 138] },
@@ -146,7 +146,7 @@ export function WeekGrid({
     <section className="min-w-0 space-y-2">
       {pushedAt && (
         <div className="flex min-w-0 justify-end">
-          <span className="max-w-full break-words rounded-[9px] border border-ready-go-border bg-surface px-3 py-1 text-right text-xs font-medium text-ready-go">
+          <span className="max-w-full break-words rounded-lg border border-ready-go-border bg-surface px-3 py-1 text-right text-xs font-medium text-ready-go">
             Inviata il{" "}
             {new Date(pushedAt).toLocaleDateString("it-IT", {
               timeZone: "Europe/Rome",
@@ -192,13 +192,13 @@ export function WeekGrid({
           return (
             <div
               key={day}
-              className={`overflow-hidden rounded-[15px] border border-l-[3px] ${cfg.accentBorder} ${
+              className={`overflow-hidden rounded-lg border border-l-[3px] ${cfg.accentBorder} ${
                 isCompleted
                   ? "bg-surface-2 opacity-[0.72]"
                   : cfg.cardBg
               } ${
                 isToday && !isCompleted
-                  ? "border-brand/55 shadow-[0_0_0_1px_rgba(91,141,239,0.2),0_12px_30px_rgba(91,141,239,0.14)]"
+                  ? "border-brand/55 shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand)_35%,transparent),0_12px_30px_-14px_color-mix(in_srgb,var(--brand)_45%,transparent)]"
                   : isOpen
                     ? "border-brand/30"
                     : tone === "rest"
@@ -228,7 +228,7 @@ export function WeekGrid({
                 {/* Session info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-start gap-1.5">
-                    <span className="mt-0.5 shrink-0 text-[12px]" style={{ color: tone === "rest" ? "#6b7585" : undefined }}>
+                    <span className={`mt-0.5 shrink-0 text-[12px] ${tone === "rest" ? "text-muted" : ""}`}>
                       {cfg.icon}
                     </span>
                     <span className={`min-w-0 break-words font-serif text-[15px] leading-snug sm:text-[16px] ${
@@ -295,8 +295,8 @@ export function WeekGrid({
                     <DetailRow label="Obiettivo" value={session.session_objective} />
                     <DetailRow label="Struttura" value={session.interval_structure} />
                     {session.coach_notes && (
-                      <div className="flex min-w-0 gap-2 rounded-xl border border-brand/[0.2] bg-brand/[0.08] px-3 py-2.5">
-                        <span className="text-[13px] text-brand-hover">✎</span>
+                      <div className="flex min-w-0 gap-2 rounded-lg border border-brand/[0.2] bg-brand/[0.08] px-3 py-2.5">
+                        <span className="text-[13px] text-brand-ink">✎</span>
                         <p className="min-w-0 break-words text-[12.5px] leading-relaxed text-secondary">
                           {session.coach_notes}
                         </p>
@@ -314,7 +314,7 @@ export function WeekGrid({
                     <button
                       type="button"
                       onClick={() => onBlockDay!(session.date, day)}
-                      className="mt-[13px] w-full rounded-xl border border-dashed border-ready-modify/50 bg-ready-modify/[0.06] px-3 py-2.5 text-[12.5px] font-semibold text-[#f0c878] transition-colors hover:bg-ready-modify/[0.10]"
+                      className="mt-[13px] w-full rounded-lg border border-dashed border-ready-modify/50 bg-ready-modify/[0.06] px-3 py-2.5 text-[12.5px] font-semibold text-ready-modify transition-colors hover:bg-ready-modify/[0.10]"
                     >
                       Non posso allenarmi questo giorno
                     </button>
@@ -324,7 +324,7 @@ export function WeekGrid({
                     <button
                       type="button"
                       onClick={() => onRecoverDay!(session.date, day)}
-                      className="mt-[13px] w-full rounded-xl border border-dashed border-brand/50 bg-brand/[0.08] px-3 py-2.5 text-[12.5px] font-semibold text-brand-hover transition-colors hover:bg-brand/[0.14]"
+                      className="mt-[13px] w-full rounded-lg border border-dashed border-brand/50 bg-brand/[0.08] px-3 py-2.5 text-[12.5px] font-semibold text-brand-ink transition-colors hover:bg-brand/[0.14]"
                     >
                       Recupera questa seduta oggi
                     </button>

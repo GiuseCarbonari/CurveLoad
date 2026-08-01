@@ -120,8 +120,8 @@ export function OnboardingWizard({
             />
             <defs>
               <linearGradient id="obLmk" x1="0" y1="0" x2="58" y2="58">
-                <stop offset="0%" stopColor="#5b8def" />
-                <stop offset="100%" stopColor="#7fc8c0" />
+                <stop offset="0%" stopColor="var(--accent-2)" />
+                <stop offset="100%" stopColor="var(--lime)" />
               </linearGradient>
             </defs>
           </svg>
@@ -155,7 +155,7 @@ export function OnboardingWizard({
             Tratteremo i tuoi dati di allenamento e benessere per generare piani
             personalizzati. Vedi la privacy policy.
           </p>
-          <label className="flex items-start gap-3 rounded-[18px] border border-border bg-surface p-4 text-sm text-secondary">
+          <label className="flex items-start gap-3 rounded-metric border border-border bg-surface p-4 text-sm text-secondary">
             <input
               type="checkbox"
               checked={consent}
@@ -184,10 +184,10 @@ export function OnboardingWizard({
           <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
             Come funziona
           </h1>
-          <div className="rounded-[18px] border border-l-[3px] border-border border-l-brand bg-surface p-5 text-sm leading-relaxed text-secondary">
+          <div className="rounded-metric border border-l-[3px] border-border border-l-brand bg-surface p-5 text-sm leading-relaxed text-secondary">
             {EDU_MESSAGE}
           </div>
-          <div className="rounded-[18px] border border-border bg-surface p-5 text-sm leading-relaxed text-secondary">
+          <div className="rounded-metric border border-border bg-surface p-5 text-sm leading-relaxed text-secondary">
             <p className="mb-2 font-medium text-foreground">Nota su DFA a1</p>
             <p>
               L&apos;analisi DFA a1 — usata da CurveLoad per stimare la tua soglia
@@ -372,8 +372,8 @@ export function OnboardingWizard({
           </h1>
 
           {/* Blocco 1: il loop quotidiano */}
-          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
               Ogni giorno
             </p>
             <p className="text-sm leading-relaxed text-secondary">
@@ -384,8 +384,8 @@ export function OnboardingWizard({
           </div>
 
           {/* Blocco 2: il piano settimanale */}
-          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
               Ogni settimana
             </p>
             <p className="text-sm leading-relaxed text-secondary">
@@ -397,8 +397,8 @@ export function OnboardingWizard({
           </div>
 
           {/* Blocco 3: Intervals fondamentale */}
-          <div className="flex flex-col gap-3 rounded-[18px] border border-l-[3px] border-border border-l-brand bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand">
+          <div className="flex flex-col gap-3 rounded-metric border border-l-[3px] border-border border-l-brand bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
               Perché Intervals.icu è fondamentale
             </p>
             <p className="text-sm leading-relaxed text-secondary">
@@ -409,7 +409,7 @@ export function OnboardingWizard({
             </p>
             <ul className="mt-1 flex flex-col gap-1.5 text-sm text-secondary">
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand">→</span>
+                <span className="mt-0.5 text-brand-ink">→</span>
                 <span>
                   Se non hai ancora un account, crealo su{" "}
                   <strong>intervals.icu</strong> (gratuito) e collegalo
@@ -417,14 +417,14 @@ export function OnboardingWizard({
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand">→</span>
+                <span className="mt-0.5 text-brand-ink">→</span>
                 <span>
                   Più dati storici hai su Intervals, più il piano sarà
                   preciso fin dal primo giorno.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand">→</span>
+                <span className="mt-0.5 text-brand-ink">→</span>
                 <span>
                   La connessione l&apos;hai già configurata nel primo passo —
                   se qualcosa non andava, torna nelle impostazioni prima di

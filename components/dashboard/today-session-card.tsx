@@ -52,7 +52,7 @@ export function TodaySessionCard({
   return (
     <div
       id="tour-session"
-      className={`rounded-[20px] p-[18px] ${copy.border}`}
+      className={`rounded-metric p-[18px] ${copy.border}`}
       style={{
         background: "var(--glass-bg)",
         border: `1px solid`,
@@ -63,7 +63,7 @@ export function TodaySessionCard({
       }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-[0.14em] text-brand-hover">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-brand-ink">
           Seduta di oggi
         </span>
         <span className={`rounded-full px-2.5 py-1 text-[11px] ${copy.chipBg} ${copy.chipText}`}>
@@ -86,7 +86,7 @@ export function TodaySessionCard({
       {!rest && (
         <Link
           href="/plan"
-          className="mt-4 block w-full rounded-xl border border-brand/40 bg-brand-dim/80 px-4 py-2.5 text-center text-[13px] font-semibold text-brand-hover transition-all duration-200 hover:bg-brand-dim hover:border-brand/60 hover:shadow-[0_0_16px_-4px_color-mix(in_srgb,var(--brand)_30%,transparent)]"
+          className="mt-4 block w-full rounded-lg border border-brand/40 bg-brand-dim/80 px-4 py-2.5 text-center text-[13px] font-semibold text-brand-ink transition-all duration-200 hover:bg-brand-dim hover:border-brand/60 hover:shadow-[0_0_16px_-4px_color-mix(in_srgb,var(--brand)_30%,transparent)]"
         >
           Vedi struttura completa
         </Link>

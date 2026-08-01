@@ -46,7 +46,7 @@ export default async function OnboardingPage() {
   const initialStep = Math.min(Math.max(savedStep, FIRST_STEP), LAST_STEP);
 
   return (
-    <div className="min-h-screen bg-base font-body">
+    <div className="min-h-screen font-body">
       <main
         style={{
           paddingLeft: "max(1.25rem, env(safe-area-inset-left))",

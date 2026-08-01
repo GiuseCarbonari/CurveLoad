@@ -21,7 +21,7 @@ export function DurabilityCard({ durability }: DurabilityCardProps) {
   const hasData = durability != null && durability.confidence != null;
 
   return (
-    <div className="rounded-[18px] border border-border bg-surface px-5 py-5">
+    <div className="rounded-metric border border-border bg-surface px-5 py-5">
       <div className="flex items-center gap-2">
         <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
           Durabilità
@@ -125,7 +125,7 @@ function DurabilityContent({
       </div>
 
       {durability.confidence === "low" && (
-        <div className="mt-4 rounded-[14px] border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
+        <div className="mt-4 rounded-lg border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
           {durability.meta.activities_used < 6
             ? "Confidenza bassa: servono più uscite lunghe (almeno 6 negli ultimi 90 giorni) per un dato affidabile."
             : "Confidenza bassa: le tue uscite lunghe non includono sforzi a ritmo sostenuto dopo l'accumulo di fatica, quindi il calo su 5 e 20 min non si può ancora misurare."}

@@ -15,7 +15,7 @@ export function OggiComment({
   commentAt: string | null;
 }) {
   return (
-    <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
+    <div className="rounded-metric border border-border bg-surface px-5 py-4">
       {comment && (
         <>
           <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">

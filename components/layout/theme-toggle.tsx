@@ -24,12 +24,12 @@ function applyTheme(theme: Theme) {
  * lo leggiamo dopo il mount per allineare l'icona.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+  // "light" = lo stesso default dello script anti-flash nel layout, così il
+  // primo render del client combacia con quello del server.
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-    setMounted(true);
   }, []);
 
   function toggle() {
@@ -49,8 +49,7 @@ export function ThemeToggle() {
       aria-label={label}
       className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
-      {/* Finché non è montato mostriamo un'icona stabile per evitare mismatch SSR */}
-      {!mounted || isDark ? (
+      {isDark ? (
         <Sun className="h-4 w-4" aria-hidden />
       ) : (
         <Moon className="h-4 w-4" aria-hidden />

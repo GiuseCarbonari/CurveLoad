@@ -390,7 +390,7 @@ export function RouteMap({
     return (
       <div
         className={cn(
-          "flex w-full items-center justify-center rounded-[11px] bg-surface-2 px-3 text-center text-sm text-muted",
+          "flex w-full items-center justify-center rounded-lg bg-surface-2 px-3 text-center text-sm text-muted",
           heightClass ?? "h-64 sm:h-80"
         )}
       >
@@ -401,7 +401,7 @@ export function RouteMap({
 
   return (
     <div className={cn("relative w-full", heightClass ?? "h-64 sm:h-80")}>
-      <div ref={containerRef} className="h-full w-full rounded-[11px]" />
+      <div ref={containerRef} className="h-full w-full rounded-lg" />
     </div>
   );
 }

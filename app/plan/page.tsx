@@ -160,7 +160,7 @@ export default async function PlanPage() {
         <div className="min-w-0 space-y-3">
           {/* Nessun piano */}
           {!plan && (
-            <div className="rounded-[18px] border border-border bg-surface px-6 py-10 text-center">
+            <div className="rounded-metric border border-border bg-surface px-6 py-10 text-center">
               <p className="font-serif text-lg text-foreground">
                 Nessun piano ancora.
               </p>
@@ -183,7 +183,7 @@ export default async function PlanPage() {
 
               {/* Narrativa — sopra la griglia */}
               {plan.narrative && (
-                <div className="min-w-0 rounded-[16px] border border-border bg-gradient-to-br from-[#222b3d]/40 to-[#0e121b]/40 p-4">
+                <div className="min-w-0 rounded-metric border border-border bg-surface-2 p-4">
                   <div className="mb-2 break-words text-[10px] uppercase tracking-[0.14em] text-accent2">
                     La logica della settimana
                   </div>
@@ -195,7 +195,7 @@ export default async function PlanPage() {
 
               {/* Fase reason */}
               {meta?.phase_reason && !plan.narrative && (
-                <div className="min-w-0 break-words rounded-[16px] border border-border bg-surface px-4 py-3 text-sm text-secondary">
+                <div className="min-w-0 break-words rounded-metric border border-border bg-surface px-4 py-3 text-sm text-secondary">
                   {meta.phase_reason}
                 </div>
               )}
@@ -295,7 +295,7 @@ function StepMarker({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-brand/45 bg-brand-dim text-[10px] font-bold tabular-nums text-brand-hover">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-brand/45 bg-brand-dim text-[10px] font-bold tabular-nums text-brand-ink">
         {number}
       </span>
       <span className="flex min-w-0 items-baseline gap-1.5">
@@ -312,7 +312,7 @@ function StepMarker({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-w-0 flex-col items-center rounded-[13px] border border-border bg-surface px-1.5 py-3">
+    <div className="flex min-w-0 flex-col items-center rounded-lg border border-border bg-surface px-1.5 py-3">
       <span className="max-w-full break-words text-center font-serif text-[18px] leading-none text-foreground sm:text-[21px]">
         {value}
       </span>

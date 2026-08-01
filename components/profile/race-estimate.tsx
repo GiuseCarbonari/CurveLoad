@@ -136,8 +136,8 @@ export function RaceEstimateView({
   );
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
-      <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
+    <section className="rounded-metric border border-border bg-surface p-5 sm:p-7">
+      <div className="grid gap-px overflow-hidden rounded-metric border border-border bg-border lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
         <Scenario
           label="Obiettivo realistico"
           subtitle="Il riferimento su cui costruire pacing e alimentazione."
@@ -165,7 +165,7 @@ export function RaceEstimateView({
       </p>
 
       {estimate.pacing.warning && (
-        <p className="mt-4 rounded-[11px] border border-border bg-amber-dim p-3 text-sm leading-6 text-secondary">
+        <p className="mt-4 rounded-lg border border-border bg-amber-dim p-3 text-sm leading-6 text-secondary">
           {estimate.pacing.warning}
         </p>
       )}
@@ -274,7 +274,7 @@ export function RaceEstimateView({
         <h3 className="text-base font-medium text-foreground">
           Velocità stimata sul percorso
         </h3>
-        <div className="mt-3 overflow-hidden rounded-[11px] border border-border bg-base px-2 pt-3">
+        <div className="mt-3 overflow-hidden rounded-lg border border-border bg-nest px-2 pt-3">
           <PacingChart terrain={terrain} estimate={estimate} />
           <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-border px-2 py-2 text-xs text-muted">
             <Legend color="bg-amber" label="veloce · oltre 18 km/h" />
@@ -366,7 +366,7 @@ function Scenario({
       <p
         className={`mt-2 font-semibold tracking-[-0.04em] ${
           highlight
-            ? "text-4xl text-amber sm:text-[42px]"
+            ? "text-4xl text-brand-ink sm:text-[42px]"
             : "text-2xl text-foreground"
         }`}
       >

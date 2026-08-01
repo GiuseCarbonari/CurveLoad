@@ -93,7 +93,7 @@ export function AutoUpdateOrchestrator({
       />
 
       {changedCount > 0 && (
-        <div className="mt-3 rounded-xl border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-sm text-secondary">
+        <div className="mt-3 rounded-lg border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-sm text-secondary">
           Il piano è cambiato: {changedCount} sedut
           {changedCount === 1 ? "a" : "e"} modificat
           {changedCount === 1 ? "a" : "e"} — rivedi in Piano e invia a Intervals.

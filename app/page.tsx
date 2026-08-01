@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
  */
 export default function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4 py-10">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
       <div className="flex max-w-2xl flex-col items-center gap-4 text-center">
         <svg width="56" height="56" viewBox="0 0 58 58" fill="none" aria-label="CurveLoad logo">
           <circle
@@ -18,8 +18,8 @@ export default function LandingPage() {
           />
           <defs>
             <linearGradient id="lgLmk" x1="0" y1="0" x2="58" y2="58">
-              <stop offset="0%" stopColor="#5b8def" />
-              <stop offset="100%" stopColor="#7fc8c0" />
+              <stop offset="0%" stopColor="var(--accent-2)" />
+              <stop offset="100%" stopColor="var(--lime)" />
             </linearGradient>
           </defs>
         </svg>

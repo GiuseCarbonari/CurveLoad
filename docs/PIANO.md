@@ -107,8 +107,20 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
         Passo 5) resta collegato solo al commento profilo — oggi/percorso
         non scrivono ancora in `athlete_memory`. Riaprire se Giuseppe lo
         chiede esplicitamente.)
-- [ ] **Passo 7 — Vestito nuovo** (PROSSIMO): design del command center
-      (colori, vetro, tipografia) dentro CurveLoad
+- [x] **Passo 7 — Vestito nuovo** (fatto 2026-08-01: palette, vetro e
+      tipografia del command center portati in CurveLoad. Token colore
+      rifatti in `app/globals.css` [salvia/lime chiaro, inchiostro/lime scuro],
+      carattere unico Manrope, scala raggi 14/20/28/999px, helper `token()`
+      in `tailwind.config.ts` [senza, i modificatori di opacità tipo
+      `bg-brand/40` non generavano NESSUNA regola CSS — bug trovato in
+      verifica], intestazione condivisa in `AppHeader` [badge cerchio pieno
+      inchiostro+lime, prima duplicata a mano in 2 pagine] e tab in basso
+      ridisegnata come dock a pillola di vetro [`bottom-tab-bar.tsx`, stesso
+      schema del selettore Panoramica/Carico/Coach del command center — voce
+      attiva = riquadro pieno sollevato, non più rettangolo tinto].
+      281 test verdi, tsc/lint/build puliti. Verificato da Giuseppe nel
+      browser su login, dashboard, piano, percorso, impostazioni e tema
+      chiaro/scuro.)
 - [ ] **Passo 8 — Il calendario della stagione (macrociclo)**: blocchi
       base→build→taper da oggi alla gara
 - [ ] **Passo 9 — Modulo Corsa, parte 1**: dati e motore (CS/D′ dalle curve

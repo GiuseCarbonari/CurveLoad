@@ -105,7 +105,7 @@ function HrvCard({
       }
       footer={
         <div className="mt-2.5">
-          <div className="grid grid-cols-2 rounded-lg border border-border bg-base p-0.5">
+          <div className="grid grid-cols-2 rounded-full border border-border bg-surface-2 p-0.5">
             {(["rmssd", "sdnn"] as const).map((option) => (
               <button
                 key={option}
@@ -114,7 +114,7 @@ function HrvCard({
                 disabled={saving}
                 onClick={() => void selectProtocol(option)}
                 className={cn(
-                  "rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
+                  "rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors",
                   protocol === option
                     ? "bg-surface-2 text-foreground"
                     : "text-muted hover:text-foreground",

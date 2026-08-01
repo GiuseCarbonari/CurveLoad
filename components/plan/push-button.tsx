@@ -129,7 +129,7 @@ export function PushButton({
       <div className="flex flex-1 flex-col gap-1">
         <a
           href="/api/auth/intervals/login"
-          className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-[#e40046]/45 bg-[#e40046]/[0.10] px-3 py-2.5 text-left text-[12px] font-semibold text-[#b0003a] dark:text-[#ff8fb1]"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#e40046]/45 bg-[#e40046]/[0.10] px-3 py-2.5 text-left text-[12px] font-semibold text-[#b0003a] dark:text-[#ff8fb1]"
         >
           <IntervalsMark className="h-7 w-7" />
           <span className="flex min-w-0 flex-col">
@@ -148,7 +148,7 @@ export function PushButton({
           type="button"
           onClick={() => void openPreview()}
           disabled={loadingPreview || committing}
-          className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-[#e40046]/55 bg-gradient-to-r from-[#e40046]/[0.24] to-[#7fc8c0]/[0.08] px-3 py-2.5 text-left text-[13.5px] font-bold text-[#8b0028] shadow-[0_14px_36px_-24px_rgba(228,0,70,0.72)] transition-opacity disabled:opacity-70 dark:text-[#ffd7e2]"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#e40046]/55 bg-gradient-to-r from-[#e40046]/[0.24] to-lime/[0.10] px-3 py-2.5 text-left text-[13.5px] font-bold text-[#8b0028] shadow-[0_14px_36px_-24px_rgba(228,0,70,0.72)] transition-opacity disabled:opacity-70 dark:text-[#ffd7e2]"
         >
           <IntervalsMark />
           <span className="flex min-w-0 flex-col">
@@ -176,12 +176,12 @@ export function PushButton({
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-base/90 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/55 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="push-modal-title"
         >
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-surface">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-metric border border-border bg-surface">
             <div className="border-b p-5">
               <h2 id="push-modal-title" className="text-lg font-semibold">
                 Conferma invio a Intervals.icu
@@ -195,7 +195,7 @@ export function PushButton({
 
             <div className="space-y-3 overflow-y-auto p-5">
               {events.map((event) => (
-                <article key={event.uid} className="rounded-[11px] border border-border bg-surface-2 p-4">
+                <article key={event.uid} className="rounded-lg border border-border bg-surface-2 p-4">
                   <h3 className="font-medium">
                     {formatEventDate(event.start_date_local)} · {event.name}
                   </h3>
@@ -209,7 +209,7 @@ export function PushButton({
               ))}
 
               {error && (
-                <div className="rounded-[11px] border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
+                <div className="rounded-lg border border-ready-skip-border bg-surface p-3 text-sm text-ready-skip">
                   <p>{error}</p>
                   {pushErrors.length > 0 && (
                     <ul className="mt-2 list-disc space-y-1 pl-5">

@@ -49,7 +49,7 @@ export function GroqKeyForm({ hasKey }: { hasKey: boolean }) {
 
   return (
     <div
-      className="mt-4 rounded-[18px] px-4 py-4"
+      className="mt-4 rounded-metric px-4 py-4"
       style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--glass-shadow)" }}
     >
       <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
@@ -78,7 +78,7 @@ export function GroqKeyForm({ hasKey }: { hasKey: boolean }) {
             placeholder="gsk_..."
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-brand"
+            className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-brand"
             aria-label="API key Groq"
           />
           <Button onClick={() => void save()} disabled={!value.trim() || saving}>

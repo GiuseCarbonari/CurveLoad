@@ -2,6 +2,30 @@ import type { Config } from "tailwindcss";
 
 // Configurazione Tailwind con il tema a CSS variables di shadcn/ui.
 // I token (--background, --primary, ecc.) sono definiti in app/globals.css.
+
+/**
+ * Colore preso da una CSS variable, con supporto ai modificatori di opacità.
+ *
+ * Serve perché una variabile scritta come stringa (`"var(--brand)"`) fa
+ * saltare a Tailwind TUTTE le classi con opacità: `bg-brand/40`,
+ * `border-ready-go/45`, `bg-ready-skip/[0.16]` non generavano nessuna regola
+ * e gli elementi restavano senza sfondo né bordo. Con la forma a funzione
+ * Tailwind ci passa l'opacità e possiamo comporla con `color-mix`.
+ *
+ * Senza modificatore l'output resta identico a prima: `var(--nome)`.
+ *
+ * Il cast finale c'è perché i tipi TS di Tailwind dichiarano i colori come
+ * sole stringhe, mentre a runtime la forma a funzione è supportata
+ * (https://tailwindcss.com/docs/customizing-colors#using-css-variables).
+ */
+function token(name: string): string {
+  const fn = ({ opacityValue }: { opacityValue?: string } = {}) =>
+    !opacityValue || opacityValue.startsWith("var(")
+      ? `var(${name})`
+      : `color-mix(in srgb, var(${name}) calc(${opacityValue} * 100%), transparent)`;
+  return fn as unknown as string;
+}
+
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -21,108 +45,123 @@ const config: Config = {
       colors: {
         // Token semantici shadcn/ui, mappati sulla palette del design system
         // (variabili definite in app/globals.css, valori raw hex/rgba).
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        border: token("--border"),
+        input: token("--input"),
+        ring: token("--ring"),
+        background: token("--background"),
+        foreground: token("--foreground"),
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: token("--primary"),
+          foreground: token("--primary-foreground"),
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: token("--secondary"),
+          foreground: token("--secondary-foreground"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: token("--destructive"),
+          foreground: token("--destructive-foreground"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: token("--muted"),
+          foreground: token("--muted-foreground"),
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: token("--accent"),
+          foreground: token("--accent-foreground"),
         },
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: token("--popover"),
+          foreground: token("--popover-foreground"),
         },
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: token("--card"),
+          foreground: token("--card-foreground"),
         },
 
         // --- Token espliciti del design system (docs/COACH_IA_DESIGN_SYSTEM.md) ---
         // Sfondi
-        base: "var(--bg-base)",
+        base: token("--bg-base"),
         surface: {
-          DEFAULT: "var(--bg-surface)",
-          2: "var(--bg-surface-2)",
+          DEFAULT: token("--bg-surface"),
+          2: token("--bg-surface-2"),
         },
+        // Riquadro annidato dentro una card: più BIANCO del contenitore.
+        // Prima qui si usava `bg-base` e i campi risultavano più scuri della
+        // card che li conteneva.
+        nest: token("--glass-nest"),
         // Livello di testo senza equivalente shadcn:
-        faint: "var(--text-faint)",
-        // Identità blu petrolio
+        faint: token("--text-faint"),
+        // Colori grezzi dell'identità, per i blocchi pieni (chip inchiostro,
+        // pulsante lime) — non usarli per il testo: usa i token semantici.
+        ink: token("--ink"),
+        lime: token("--lime"),
+        // Identità: lime pieno + inchiostro (command center).
+        // `brand` = superficie lime; `brand-ink` = la versione LEGGIBILE come
+        // testo (oliva sul chiaro, lime sullo scuro).
         brand: {
-          DEFAULT: "var(--brand)",
-          hover: "var(--brand-hover)",
-          dim: "var(--brand-dim)",
-          on: "var(--brand-on)",
+          DEFAULT: token("--brand"),
+          hover: token("--brand-hover"),
+          dim: token("--brand-dim"),
+          on: token("--brand-on"),
+          ink: token("--brand-ink"),
         },
         accent2: {
-          DEFAULT: "var(--accent-2)",
-          hover: "var(--accent-2-hover)",
-          dim: "var(--accent-2-dim)",
+          DEFAULT: token("--accent-2"),
+          hover: token("--accent-2-hover"),
+          dim: token("--accent-2-dim"),
         },
-        // Accento rame caldo (nome legacy mantenuto per compatibilità)
+        // Alias legacy dell'identità (nome mantenuto per compatibilità)
         amber: {
-          DEFAULT: "var(--amber)",
-          hover: "var(--amber-hover)",
-          dim: "var(--amber-dim)",
-          on: "var(--amber-on)",
+          DEFAULT: token("--amber"),
+          hover: token("--amber-hover"),
+          dim: token("--amber-dim"),
+          on: token("--amber-on"),
         },
         telemetry: {
-          blue: "var(--accent-blue)",
-          "blue-dim": "var(--accent-blue-dim)",
-          gold: "var(--accent-gold)",
-          "gold-dim": "var(--accent-gold-dim)",
+          blue: token("--accent-blue"),
+          "blue-dim": token("--accent-blue-dim"),
+          gold: token("--accent-gold"),
+          "gold-dim": token("--accent-gold-dim"),
         },
         zone: {
-          z1: "var(--zone-z1)",
-          z2: "var(--zone-z2)",
-          z3: "var(--zone-z3)",
-          z4: "var(--zone-z4)",
-          z5: "var(--zone-z5)",
+          z1: token("--zone-z1"),
+          z2: token("--zone-z2"),
+          z3: token("--zone-z3"),
+          z4: token("--zone-z4"),
+          z5: token("--zone-z5"),
         },
         // Semaforico readiness (solo per stato/readiness)
+        "ready-on": token("--ready-on"),
         "ready-go": {
-          DEFAULT: "var(--ready-go)",
-          border: "var(--ready-go-border)",
+          DEFAULT: token("--ready-go"),
+          border: token("--ready-go-border"),
         },
         "ready-modify": {
-          DEFAULT: "var(--ready-modify)",
-          border: "var(--ready-modify-border)",
+          DEFAULT: token("--ready-modify"),
+          border: token("--ready-modify-border"),
         },
         "ready-skip": {
-          DEFAULT: "var(--ready-skip)",
-          border: "var(--ready-skip-border)",
+          DEFAULT: token("--ready-skip"),
+          border: token("--ready-skip-border"),
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        card: "18px",
-        metric: "16px",
+        card: "28px",
+        metric: "20px",
       },
+      // Un solo carattere: Manrope (command center). I nomi `serif`/`display`/
+      // `data` restano per non toccare ~40 call site — indicano il ruolo
+      // (titoli, numeri), non più un graziato.
       fontFamily: {
-        display: ["var(--font-newsreader)", "Georgia", "serif"],
-        serif: ["var(--font-newsreader)", "Georgia", "serif"],
-        body: ["var(--font-syne)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        sans: ["var(--font-syne)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        data: ["var(--font-newsreader)", "Georgia", "serif"],
+        display: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
+        body: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
+        data: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
     },
   },

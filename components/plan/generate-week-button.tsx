@@ -41,8 +41,8 @@ export function GenerateWeekButton({ hasPlan }: { hasPlan: boolean }) {
         onClick={() => void handleGenerate()}
         disabled={loading}
         className={cn(
-          "flex w-full items-center justify-center gap-2 rounded-[14px] border px-3 py-3 text-[13.5px] font-bold transition-colors",
-          "border-brand/50 bg-brand-dim text-brand-hover",
+          "flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-3 text-[13.5px] font-bold transition-colors",
+          "border-brand/50 bg-brand-dim text-brand-ink",
           loading && "cursor-default opacity-70"
         )}
       >

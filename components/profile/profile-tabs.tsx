@@ -73,7 +73,7 @@ export function ProfileTabs({
       </div>
 
       {!profile && (
-        <div className="mt-6 rounded-[18px] border border-border bg-surface px-6 py-10 text-center">
+        <div className="mt-6 rounded-metric border border-border bg-surface px-6 py-10 text-center">
           <p className="font-serif text-lg text-foreground">
             Profilo non ancora costruito.
           </p>
@@ -90,14 +90,14 @@ export function ProfileTabs({
           <div className="space-y-4 pt-4">
               {/* Quality warnings */}
               {profile.meta.confidence === "low" && (
-                <div className="rounded-[14px] border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
+                <div className="rounded-lg border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
                   Confidenza bassa: mancano sforzi massimali recenti. Il profilo è
                   indicativo.
                 </div>
               )}
               {/* CP Hero */}
               {cpw ? (
-                <div id="tour-cp-hero" className="rounded-[20px] border border-border bg-gradient-to-br from-brand/[0.10] to-surface-2/60 px-6 py-7">
+                <div id="tour-cp-hero" className="rounded-metric border border-border bg-gradient-to-br from-brand/[0.10] to-surface-2/60 px-6 py-7">
                   <div className="flex items-center gap-2">
                     <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
                       Potenza critica
@@ -167,7 +167,7 @@ export function ProfileTabs({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[18px] border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
+                <div className="rounded-metric border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
                   Dati CP non disponibili — aggiorna il profilo.
                 </div>
               )}
@@ -195,7 +195,7 @@ export function ProfileTabs({
                   <div className="mb-3 text-[10.5px] uppercase tracking-[0.14em] text-muted">
                     Record Power Profile · {profile.meta.window_days}gg
                   </div>
-                  <div className="overflow-hidden rounded-[16px] border border-border">
+                  <div className="overflow-hidden rounded-metric border border-border">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border bg-surface-2">
@@ -330,7 +330,7 @@ function MiniCard({
   term?: string;
 }) {
   return (
-    <div className="rounded-[16px] border border-border bg-surface px-4 py-4">
+    <div className="rounded-metric border border-border bg-surface px-4 py-4">
       <div className="flex items-center gap-1.5">
         <span className="text-[10.5px] uppercase tracking-[0.12em] text-muted">
           {label}

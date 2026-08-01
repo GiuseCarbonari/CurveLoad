@@ -20,18 +20,20 @@ const STATUS_DOT: Record<DataStatus, string> = {
 const STATUS_TEXT: Record<DataStatus, string> = {
   fresh: "text-ready-go",
   stale: "text-ready-modify",
-  syncing: "text-brand",
+  syncing: "text-brand-ink",
   error: "text-ready-skip",
 };
 
 const BUTTON_CLASSES: Record<DataStatus, string> = {
+  // Riempimenti pieni: il colore del testo viene dal token *-on, che cambia
+  // fra chiaro e scuro (sul chiaro i colori sono scuri, sullo scuro chiari).
   fresh:
-    "border-transparent bg-gradient-to-r from-brand to-brand-hover text-white shadow-[0_10px_26px_rgba(91,141,239,0.3)]",
+    "border-transparent bg-brand text-brand-on shadow-[0_10px_26px_-10px_color-mix(in_srgb,var(--brand)_60%,transparent)]",
   stale:
-    "border-transparent bg-gradient-to-r from-ready-modify to-[#ecb957] text-[#1a1206] shadow-[0_10px_26px_rgba(224,168,62,0.3)]",
-  syncing: "border-brand/45 bg-brand-dim text-brand cursor-default",
+    "border-transparent bg-ready-modify text-ready-on shadow-[0_10px_26px_-10px_color-mix(in_srgb,var(--ready-modify)_60%,transparent)]",
+  syncing: "border-brand/45 bg-brand-dim text-brand-ink cursor-default",
   error:
-    "border-transparent bg-gradient-to-r from-ready-skip to-[#e07c72] text-white shadow-[0_10px_26px_rgba(217,102,91,0.32)]",
+    "border-transparent bg-ready-skip text-ready-on shadow-[0_10px_26px_-10px_color-mix(in_srgb,var(--ready-skip)_60%,transparent)]",
 };
 
 /** "1 g fa · ieri 09:10", "oggi 14:32", "adesso"… — solo lato client (fuso/locale). */
@@ -165,7 +167,7 @@ export function RefreshControl({
         onClick={handleClick}
         disabled={status === "syncing"}
         className={cn(
-          "mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[15px] border px-4 py-3.5 text-[14.5px] font-bold transition-opacity",
+          "mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-lg border px-4 py-3.5 text-[14.5px] font-bold transition-opacity",
           BUTTON_CLASSES[status]
         )}
       >

@@ -184,7 +184,7 @@ export function YesNoField({
             aria-pressed={value === v}
             onClick={() => onChange(v)}
             className={cn(
-              "flex-1 rounded-[9px] border px-3 py-2 text-sm transition-colors",
+              "flex-1 rounded-lg border px-3 py-2 text-sm transition-colors",
               value === v
                 ? "border-amber bg-amber text-amber-on"
                 : "border-border text-secondary hover:bg-surface-2"

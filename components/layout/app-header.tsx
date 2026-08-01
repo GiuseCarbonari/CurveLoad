@@ -19,25 +19,23 @@ export function AppHeader() {
     >
       <Link
         href="/dashboard"
-        className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+        className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink rounded-full"
       >
-        <svg width="16" height="16" viewBox="0 0 58 58" fill="none" aria-hidden>
-          <circle
-            cx="29" cy="29" r="22"
-            stroke="url(#curveloadMarkHdr)"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray="104 34"
-            transform="rotate(-90 29 29)"
-          />
-          <defs>
-            <linearGradient id="curveloadMarkHdr" x1="0" y1="0" x2="58" y2="58">
-              <stop offset="0%" stopColor="#5b8def" />
-              <stop offset="100%" stopColor="#7fc8c0" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <span className="font-serif text-[15px] tracking-[0.05em] text-secondary">
+        {/* Badge: cerchio pieno inchiostro col segno lime, come il
+            distintivo "G" del command center — non più un anello nudo. */}
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink">
+          <svg width="16" height="16" viewBox="0 0 58 58" fill="none" aria-hidden>
+            <circle
+              cx="29" cy="29" r="22"
+              stroke="var(--lime)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray="104 34"
+              transform="rotate(-90 29 29)"
+            />
+          </svg>
+        </span>
+        <span className="font-serif text-[16px] font-bold tracking-[-0.01em] text-foreground">
           CurveLoad
         </span>
       </Link>

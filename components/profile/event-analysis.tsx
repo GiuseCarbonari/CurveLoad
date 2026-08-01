@@ -78,7 +78,7 @@ function climbRowStyle(avgGradientPct: number) {
   if (avgGradientPct < 8) {
     return {
       rowBg: "bg-amber-950/10",
-      dot: "text-amber-300",
+      dot: "text-brand-ink-300",
       dotColor: "bg-amber-400",
     };
   }
@@ -166,8 +166,8 @@ function ElevationProfile({ terrain }: { terrain: TerrainSummary }) {
     >
       <defs>
         <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5b8def" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#5b8def" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="var(--brand)" stopOpacity="0.02" />
         </linearGradient>
       </defs>
 
@@ -259,7 +259,7 @@ export function EventAnalysis({
   );
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
+    <section className="rounded-metric border border-border bg-surface p-5 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-medium tracking-[-0.02em] text-foreground">
@@ -281,7 +281,7 @@ export function EventAnalysis({
         <p className="mt-3 text-sm leading-6 text-secondary">{analysis.note}</p>
       )}
 
-      <div className="mt-6 overflow-hidden rounded-[11px] border border-border bg-base px-2 pt-3">
+      <div className="mt-6 overflow-hidden rounded-lg border border-border bg-nest px-2 pt-3">
         <div className="mb-3">
           <RouteMapLazy terrain={terrain} />
         </div>

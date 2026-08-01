@@ -1,21 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Syne } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
+// Carattere unico del design system (command center, Passo 7).
+const manrope = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-syne",
+  variable: "--font-manrope",
   display: "swap",
-});
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
-  display: "swap",
-  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -31,8 +23,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#06080d" },
-    { media: "(prefers-color-scheme: light)", color: "#f4f6fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0f0a" },
+    { media: "(prefers-color-scheme: light)", color: "#c3c8bc" },
   ],
 };
 
@@ -45,17 +37,18 @@ export default function RootLayout({
     <html
       lang="it"
       suppressHydrationWarning
-      className={`${syne.variable} ${newsreader.variable}`}
+      className={manrope.variable}
     >
       <head>
         {/*
           Applica il tema salvato prima del primo paint per evitare il flash.
-          Default: scuro (tema storico dell'app) se l'utente non ha mai scelto.
+          Default: CHIARO (il command center è un tema chiaro — Passo 7); si
+          passa allo scuro solo se l'utente l'ha scelto con l'interruttore.
           La chiave deve restare allineata con components/layout/theme-toggle.tsx.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('curveload-theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`,
+            __html: `(function(){try{if(localStorage.getItem('curveload-theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
           }}
         />
       </head>

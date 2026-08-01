@@ -27,7 +27,7 @@ function climbRowStyle(avgGradientPct: number) {
     return { rowBg: "bg-blue-950/10", dot: "text-blue-300", dotColor: "bg-blue-400" };
   }
   if (avgGradientPct < 8) {
-    return { rowBg: "bg-amber-950/10", dot: "text-amber-300", dotColor: "bg-amber-400" };
+    return { rowBg: "bg-amber-950/10", dot: "text-brand-ink-300", dotColor: "bg-amber-400" };
   }
   return { rowBg: "bg-red-950/10", dot: "text-red-300", dotColor: "bg-red-400" };
 }
@@ -68,7 +68,7 @@ export function RouteMapCard({
   const hasClimbs = terrain.climbs.length > 0;
 
   return (
-    <div className="relative h-[calc(100dvh-13.5rem)] min-h-[320px] w-full overflow-hidden rounded-2xl border border-border bg-surface sm:h-[calc(100dvh-14.5rem)]">
+    <div className="relative h-[calc(100dvh-13.5rem)] min-h-[320px] w-full overflow-hidden rounded-metric border border-border bg-surface sm:h-[calc(100dvh-14.5rem)]">
       <RouteMapLazy
         terrain={terrain}
         selectedClimb={selectedClimb}
@@ -97,7 +97,7 @@ export function RouteMapCard({
             GPS
           </button>
           {locationError && (
-            <span className="max-w-[12rem] rounded-md bg-surface px-2 py-1 text-xs text-ready-skip shadow-sm">
+            <span className="max-w-[12rem] rounded-lg bg-surface px-2 py-1 text-xs text-ready-skip shadow-sm">
               {locationError}
             </span>
           )}
@@ -107,7 +107,7 @@ export function RouteMapCard({
       {/* Bottom sheet: peek (grab handle + riepilogo) oppure espanso (tabella scrollabile). */}
       <div
         className={cn(
-          "absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-border bg-surface shadow-[0_-4px_16px_rgba(0,0,0,0.18)] transition-[max-height]",
+          "absolute inset-x-0 bottom-0 rounded-t-[20px] border-t border-border bg-surface shadow-[0_-4px_16px_rgba(0,0,0,0.18)] transition-[max-height]",
           sheetExpanded ? "max-h-[65%]" : "max-h-[3.25rem]"
         )}
       >
