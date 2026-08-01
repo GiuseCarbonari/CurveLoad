@@ -4,6 +4,7 @@ import { ConditionTrendChart } from "@/components/dashboard/condition-trend-char
 import { EfficiencyTrendChart } from "@/components/dashboard/efficiency-trend-chart";
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { AutoUpdateOrchestrator } from "@/components/dashboard/auto-update-orchestrator";
+import { OggiComment } from "@/components/dashboard/oggi-comment";
 import { ReadinessRing } from "@/components/dashboard/readiness-ring";
 import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
@@ -71,12 +72,12 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("users")
-      .select("intervals_athlete_name")
+      .select("intervals_athlete_name, groq_key_encrypted")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
       .from("athlete_profiles")
-      .select("nome, preferences")
+      .select("nome, preferences, ai_comment_oggi, ai_comment_oggi_at")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -99,6 +100,8 @@ export default async function DashboardPage() {
     (typeof preferenceRow?.nome === "string" && preferenceRow.nome.trim()) ||
     userRow?.intervals_athlete_name ||
     "atleta";
+  // Chiave propria (mai esposta) OPPURE fallback del server (Passo 2 — BYOK).
+  const aiEnabled = userRow?.groq_key_encrypted != null || !!process.env.GROQ_API_KEY;
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
@@ -302,8 +305,17 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Readiness ring */}
-      {readiness && <ReadinessRing readiness={readiness} />}
+      {/* Readiness ring + commento AI "Spiega la mia giornata" (Passo 6) */}
+      {readiness && (
+        <>
+          <ReadinessRing readiness={readiness} />
+          <OggiComment
+            enabled={aiEnabled}
+            comment={preferenceRow?.ai_comment_oggi ?? null}
+            commentAt={preferenceRow?.ai_comment_oggi_at ?? null}
+          />
+        </>
+      )}
 
       {/* Seduta di oggi */}
       {todaySession && (

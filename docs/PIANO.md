@@ -78,10 +78,37 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       coach" in /profile. 273 test verdi. Verificato da Giuseppe nel browser:
       prima nota reale «tenere d'occhio i carichi di allenamento per evitare
       di esacerbare i fastidi alla schiena»)
-- [ ] **Passo 6 — Le altre due narrative**: commento readiness del giorno
-      (`ai_comment_oggi`) e commento percorso (`ai_comment_percorso`)
-- [ ] **Passo 7 — Vestito nuovo**: design del command center (colori, vetro,
-      tipografia) dentro CurveLoad
+- [x] **Passo 6 — Le altre due narrative** (fatto 2026-08-01: stesso pattern
+      di explain-io/Passo 0, due copie — prompt builder puro + orchestratore
+      I/O + route sottile + bottone manuale ciascuno (come il commento
+      profilo: si generano solo su click, non in automatico):
+      - **Oggi** (`ai_comment_oggi`): `lib/ai/oggi-explain-prompt.ts` legge
+        `mirror.readiness_today` (decisione, segnali, motivi) già calcolato
+        dal sync — non ricalcola nulla; `lib/dashboard/explain-oggi-io.ts`;
+        `/api/dashboard/explain-oggi`; bottone "💬 Spiega la mia giornata"
+        sotto il ReadinessRing in `/dashboard`.
+      - **Percorso** (`ai_comment_percorso`): `lib/ai/percorso-explain-prompt.ts`
+        legge `gap_analysis` + `event_terrain` + `race_estimate` (limitatori,
+        salite, pacing) già salvati da `/api/profile/gap-analysis`;
+        `lib/profile/explain-percorso-io.ts`; `/api/profile/explain-percorso`;
+        bottone "💬 Spiega il percorso" in `/terrain` (route-card-stack.tsx).
+      - Entrambi i prompt builder estendono la raccolta `allowedNumbers` del
+        check anti-invenzione anche ai numeri dentro le stringhe (non solo i
+        campi numerici strutturati), perché qui l'input contiene prosa già
+        scritta dal motore (es. "HRV ↓12% vs baseline").
+      - **Bug preso in verifica**: il commento percorso si tagliava a metà
+        frase — `maxTokens: 500` non bastava per due paragrafi densi in
+        italiano (più token per parola dell'inglese). Alzato a 800 (stesso
+        budget del commento profilo).
+      - 281 test verdi (+8: tests/oggi-explain-prompt.test.ts,
+        tests/percorso-explain-prompt.test.ts), tsc/lint/build puliti.
+        Verificato da Giuseppe nel browser su entrambi.
+      - **Deliberatamente fuori scope**: il taccuino del coach (NOTE_COACH,
+        Passo 5) resta collegato solo al commento profilo — oggi/percorso
+        non scrivono ancora in `athlete_memory`. Riaprire se Giuseppe lo
+        chiede esplicitamente.)
+- [ ] **Passo 7 — Vestito nuovo** (PROSSIMO): design del command center
+      (colori, vetro, tipografia) dentro CurveLoad
 - [ ] **Passo 8 — Il calendario della stagione (macrociclo)**: blocchi
       base→build→taper da oggi alla gara
 - [ ] **Passo 9 — Modulo Corsa, parte 1**: dati e motore (CS/D′ dalle curve

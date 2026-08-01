@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { CalibrateButton } from "@/components/profile/calibrate-button";
 import { CalibrationHelp } from "@/components/profile/calibration-help";
+import { ExplainPercorsoButton } from "@/components/profile/explain-percorso-button";
 import { GapAnalysisButton } from "@/components/profile/gap-analysis-button";
 import { InfoTooltip } from "@/components/profile/info-tooltip";
 import { RaceEstimateView } from "@/components/profile/race-estimate";
@@ -111,6 +112,9 @@ export function RouteCardStack({
   estimateGeneratedAt,
   signatureLevel,
   routeSettings,
+  aiEnabled,
+  aiComment,
+  aiCommentAt,
 }: {
   terrain: TerrainSummary | null;
   analysis: SavedGapAnalysis | null;
@@ -119,6 +123,10 @@ export function RouteCardStack({
   estimateGeneratedAt: string | null;
   signatureLevel: 1 | 2 | null;
   routeSettings: RaceRouteSettings;
+  /** Chiave Groq disponibile: propria o fallback server (Passo 6). */
+  aiEnabled: boolean;
+  aiComment: string | null;
+  aiCommentAt: string | null;
 }) {
   const [tab, setTab] = useState<Tab>("map");
 
@@ -144,6 +152,23 @@ export function RouteCardStack({
   return (
     <div className="flex flex-col gap-3">
       <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
+
+      {/* Commento AI "Spiega il percorso" (Passo 6) */}
+      <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
+        {aiComment && (
+          <>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
+              {aiComment}
+            </p>
+            {aiCommentAt && (
+              <p className="mb-2 mt-1.5 text-[11px] text-faint">
+                Commento AI · {new Date(aiCommentAt).toLocaleDateString("it-IT")}
+              </p>
+            )}
+          </>
+        )}
+        <ExplainPercorsoButton enabled={aiEnabled} hasComment={aiComment != null} />
+      </div>
 
       <div className="flex gap-1 rounded-[11px] bg-base p-1 text-sm">
         {TABS.map((t) => (

@@ -17,13 +17,20 @@ export default async function TerrainPage() {
 
   if (!user) redirect("/login");
 
-  const { data: row } = await supabase
-    .from("athlete_profiles")
-    .select(
-      "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level, profile_data"
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: row }, { data: userRow }] = await Promise.all([
+    supabase
+      .from("athlete_profiles")
+      .select(
+        "gap_analysis, gap_analysis_at, event_terrain, race_estimate, race_estimate_at, signature_level, profile_data, ai_comment_percorso, ai_comment_percorso_at"
+      )
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("users")
+      .select("groq_key_encrypted")
+      .eq("id", user.id)
+      .maybeSingle<{ groq_key_encrypted: string | null }>(),
+  ]);
 
   const gapAnalysis = (row?.gap_analysis ?? null) as SavedGapAnalysis | null;
   const eventTerrain = (row?.event_terrain ?? null) as TerrainSummary | null;
@@ -32,6 +39,8 @@ export default async function TerrainPage() {
   const raceEstimate = (row?.race_estimate ?? null) as RaceEstimateV2 | null;
   const profileData = (row?.profile_data ?? null) as AthleteProfileData | null;
   const routeSettings = sanitizeRouteSettings(profileData?.route_settings);
+  // Chiave propria (mai esposta) OPPURE fallback del server (Passo 2 — BYOK).
+  const aiEnabled = userRow?.groq_key_encrypted != null || !!process.env.GROQ_API_KEY;
 
   return (
     <CurveLoadShell>
@@ -43,6 +52,9 @@ export default async function TerrainPage() {
         estimateGeneratedAt={(row?.race_estimate_at ?? null) as string | null}
         signatureLevel={signatureLevel}
         routeSettings={routeSettings}
+        aiEnabled={aiEnabled}
+        aiComment={(row?.ai_comment_percorso ?? null) as string | null}
+        aiCommentAt={(row?.ai_comment_percorso_at ?? null) as string | null}
       />
     </CurveLoadShell>
   );
