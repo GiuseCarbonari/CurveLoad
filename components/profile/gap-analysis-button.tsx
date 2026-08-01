@@ -135,7 +135,11 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    // Niente wrapper con larghezza propria: il pannello è `absolute`,
+    // ancorato all'header (relative) che lo contiene, non più stretto alla
+    // larghezza del solo bottone — prima "w-full max-w-md" dentro una riga
+    // orizzontale stretta faceva sfondare la pagina lateralmente.
+    <>
       <Button
         variant={hasAnalysis ? "outline" : "default"}
         size="sm"
@@ -145,7 +149,7 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
       </Button>
 
       {open && (
-        <div className="w-full max-w-md rounded-metric border border-border bg-surface p-4 text-left">
+        <div className="absolute inset-x-0 top-full z-20 mt-2 rounded-metric border border-border bg-surface p-4 text-left shadow-[var(--glass-shadow)]">
           {/* Tab */}
           <div className="mb-3 flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
             <button
@@ -248,6 +252,6 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
           {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -39,7 +39,7 @@ export interface SavedGapAnalysis extends GapAnalysisResult {
   };
 }
 
-type Tab = "map" | "limiters" | "estimate";
+type Tab = "limiters" | "estimate";
 type EstimateStep = "strategy" | "repeatability" | "results";
 
 const SEVERITY_BADGE: Record<Severity, { label: string; classes: string }> = {
@@ -63,7 +63,6 @@ const LEVER_LABELS: Record<string, string> = {
 };
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "map", label: "Mappa" },
   { key: "limiters", label: "Limitatori" },
   { key: "estimate", label: "Stima" },
 ];
@@ -128,7 +127,7 @@ export function RouteCardStack({
   aiComment: string | null;
   aiCommentAt: string | null;
 }) {
-  const [tab, setTab] = useState<Tab>("map");
+  const [tab, setTab] = useState<Tab>("limiters");
 
   const hasAnalysis = terrain != null && analysis != null;
 
@@ -153,22 +152,9 @@ export function RouteCardStack({
     <div className="flex flex-col gap-3">
       <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
 
-      {/* Commento AI "Spiega il percorso" (Passo 6) */}
-      <div className="rounded-metric border border-border bg-surface px-5 py-4">
-        {aiComment && (
-          <>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
-              {aiComment}
-            </p>
-            {aiCommentAt && (
-              <p className="mb-2 mt-1.5 text-[11px] text-faint">
-                Commento AI · {new Date(aiCommentAt).toLocaleDateString("it-IT")}
-              </p>
-            )}
-          </>
-        )}
-        <ExplainPercorsoButton enabled={aiEnabled} hasComment={aiComment != null} />
-      </div>
+      {/* La mappa resta sempre visibile qui, non è più una tab: le tab sotto
+          scelgono solo cosa mostrare accanto/sotto di lei. */}
+      <RouteMapCard terrain={terrain} demands={demands} />
 
       <div className="flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
         {TABS.map((t) => (
@@ -188,8 +174,6 @@ export function RouteCardStack({
         ))}
       </div>
 
-      {tab === "map" && <RouteMapCard terrain={terrain} demands={demands} />}
-
       {tab === "limiters" && (
         <LimitersCard analysis={analysis} generatedAt={gapGeneratedAt} />
       )}
@@ -201,6 +185,9 @@ export function RouteCardStack({
           estimateGeneratedAt={estimateGeneratedAt}
           signatureLevel={signatureLevel}
           routeSettings={routeSettings}
+          aiEnabled={aiEnabled}
+          aiComment={aiComment}
+          aiCommentAt={aiCommentAt}
         />
       )}
     </div>
@@ -219,15 +206,18 @@ function Header({
   hasAnalysis: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between gap-3 pb-1 pt-1">
-      <div className="min-w-0">
+    // `relative` ancora il pannello a comparsa di GapAnalysisButton
+    // (position: absolute) a tutta la larghezza di questo header, non più
+    // alla larghezza minuscola del solo bottone che lo apre.
+    <div className="relative flex flex-col gap-2.5 pb-1 pt-1">
+      <div>
         <div className="text-[10.5px] uppercase tracking-[0.14em] text-accent2">
           Analisi evento
         </div>
         {hasAnalysis && analysis && terrain ? (
-          <h2 className="mt-0.5 truncate font-serif text-base text-foreground sm:text-lg">
+          <h2 className="mt-0.5 font-serif text-lg leading-snug text-foreground">
             {analysis.event.name ?? "Gara target"}
-            <span className="ml-2 text-xs font-sans font-normal text-secondary">
+            <span className="mt-0.5 block text-xs font-sans font-normal text-secondary">
               {analysis.event.distance_km ?? terrain.total_distance_km} km ·{" "}
               {terrain.total_elevation_m} m D+
             </span>
@@ -238,7 +228,7 @@ function Header({
           </h2>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {hasAnalysis && analysis && terrain && estimate && (
           <RouteTubePdfButton terrain={terrain} estimate={estimate} event={analysis.event} />
         )}
@@ -337,12 +327,18 @@ function EstimateCard({
   estimateGeneratedAt,
   signatureLevel,
   routeSettings,
+  aiEnabled,
+  aiComment,
+  aiCommentAt,
 }: {
   terrain: TerrainSummary;
   estimate: RaceEstimateV2 | null;
   estimateGeneratedAt: string | null;
   signatureLevel: 1 | 2 | null;
   routeSettings: RaceRouteSettings;
+  aiEnabled: boolean;
+  aiComment: string | null;
+  aiCommentAt: string | null;
 }) {
   const [step, setStep] = useState<EstimateStep>("strategy");
 
@@ -436,6 +432,24 @@ function EstimateCard({
               Firma pronta. Rianalizza l&apos;evento per generare la stima.
             </p>
           )}
+
+          {/* Commento AI "Spiega il percorso" (Passo 6): dopo i numeri, non
+              più sempre in cima — qui la narrativa ha la stima da spiegare. */}
+          <div className="rounded-metric border border-border bg-surface px-5 py-4">
+            {aiComment && (
+              <>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
+                  {aiComment}
+                </p>
+                {aiCommentAt && (
+                  <p className="mb-2 mt-1.5 text-[11px] text-faint">
+                    Commento AI · {new Date(aiCommentAt).toLocaleDateString("it-IT")}
+                  </p>
+                )}
+              </>
+            )}
+            <ExplainPercorsoButton enabled={aiEnabled} hasComment={aiComment != null} />
+          </div>
         </div>
       )}
     </section>

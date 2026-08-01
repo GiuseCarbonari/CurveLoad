@@ -33,6 +33,28 @@ const SATELLITE_TILES =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const SATELLITE_ATTRIB = "Tiles © Esri";
 
+// "Mappa": stile topografico Esri (stesso provider, stesso ordine assi) —
+// niente foto satellitare, ma strade e centri abitati etichettati (Fiuminata,
+// Sefro, Pioraco...): sul satellitare puro non c'è NESSUN nome, serve questo
+// per orientarsi. Nessuna chiave nuova, stesso servizio REST già in uso.
+const TOPO_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}";
+const TOPO_ATTRIB = "Tiles © Esri";
+
+// "Ibrida": overlay trasparente Esri con SOLO etichette/confini (nessuna
+// texture), drappeggiato sopra il satellitare — la ricetta standard per un
+// hybrid Sat+Labels, stesso provider.
+const HYBRID_LABELS_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
+
+type MapView = "satellite" | "topo" | "hybrid";
+
+const MAP_VIEWS: { key: MapView; label: string }[] = [
+  { key: "satellite", label: "Satellite" },
+  { key: "topo", label: "Mappa" },
+  { key: "hybrid", label: "Ibrida" },
+];
+
 // DEM per il rilievo 3D: Mapterhorn (encoding Terrarium), nessuna chiave.
 // Sostituisce il bucket S3 AWS Terrarium: quel bucket non invia header CORS
 // (Access-Control-Allow-Origin assente anche con Origin esplicito, verificato
@@ -45,7 +67,18 @@ const TERRAIN_DEM_TILES = "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp";
 const DEM_ENCODING = "terrarium" as const; // encoding nativo supportato da MapLibre raster-dem
 const TERRAIN_EXAGGERATION = 1.4; // knob estetico (vedi OPEN QUESTION 3 della spec)
 
-function mapStyle(): maplibregl.StyleSpecification {
+/**
+ * Tutti e tre gli stili base vivono nella stessa mappa come layer sempre
+ * presenti: cambiare vista alterna solo `visibility` (vedi effect dedicato
+ * più sotto), non ricrea la mappa — stesso principio dell'effect
+ * `selectedClimb` già in questo file (mai distruggere l'istanza per un
+ * cambio di stato che non lo richiede).
+ */
+function mapStyle(initialView: MapView): maplibregl.StyleSpecification {
+  const vis = (view: MapView): "visible" | "none" =>
+    initialView === view || (initialView === "hybrid" && view === "satellite")
+      ? "visible"
+      : "none";
   return {
     version: 8,
     sources: {
@@ -54,6 +87,19 @@ function mapStyle(): maplibregl.StyleSpecification {
         tiles: [SATELLITE_TILES],
         tileSize: 256,
         attribution: SATELLITE_ATTRIB,
+        maxzoom: 19,
+      },
+      topo: {
+        type: "raster",
+        tiles: [TOPO_TILES],
+        tileSize: 256,
+        attribution: TOPO_ATTRIB,
+        maxzoom: 19,
+      },
+      "hybrid-labels": {
+        type: "raster",
+        tiles: [HYBRID_LABELS_TILES],
+        tileSize: 256,
         maxzoom: 19,
       },
       "terrain-dem": {
@@ -71,8 +117,23 @@ function mapStyle(): maplibregl.StyleSpecification {
     // quindi l'intera mappa restava vuota, non solo il cielo). Puramente
     // estetico, si può reintrodurre se un giorno si aggiorna maplibre-gl a una
     // versione che lo supporta davvero.
-    layers: [{ id: "satellite", type: "raster", source: "satellite" }],
-    terrain: { source: "terrain-dem", exaggeration: TERRAIN_EXAGGERATION },
+    layers: [
+      { id: "satellite", type: "raster", source: "satellite", layout: { visibility: vis("satellite") } },
+      { id: "topo", type: "raster", source: "topo", layout: { visibility: vis("topo") } },
+      {
+        id: "hybrid-labels",
+        type: "raster",
+        source: "hybrid-labels",
+        layout: { visibility: vis("hybrid") },
+      },
+    ],
+    // "Mappa" (topo) parte piatta: vedi il cambio pitch/terrain in RouteMap
+    // quando si passa vista — un rilievo 3D inclinato rende le etichette
+    // (nomi di paesi, strade) storte e difficili da leggere, l'opposto di
+    // quello che questa vista deve risolvere.
+    ...(initialView !== "topo" && {
+      terrain: { source: "terrain-dem", exaggeration: TERRAIN_EXAGGERATION },
+    }),
   };
 }
 
@@ -153,6 +214,7 @@ export function RouteMap({
   const locationMarkerRef = useRef<maplibregl.Marker | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const [webglError, setWebglError] = useState(false);
+  const [mapView, setMapView] = useState<MapView>("satellite");
 
   const polyline = terrain.polyline.filter(
     (p) => Number.isFinite(p[1]) && Number.isFinite(p[2])
@@ -177,9 +239,9 @@ export function RouteMap({
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: mapStyle(),
-        pitch: 60,
-        bearing: -15,
+        style: mapStyle(mapView),
+        pitch: mapView === "topo" ? 0 : 60,
+        bearing: mapView === "topo" ? 0 : -15,
         interactive: true,
         attributionControl: false, // riaggiunta sotto in top-right: quella di default in bottom-left copre il bottom sheet
       });
@@ -325,6 +387,28 @@ export function RouteMap({
     }
   }, [selectedClimb, terrain.climbs]);
 
+  // Cambio vista (Satellite/Mappa/Ibrida) -> alterna solo `visibility` dei
+  // tre layer base, sempre presenti (vedi mapStyle). Stesso vincolo degli
+  // altri effect: mai ricreare la mappa per un cambio di stato che non lo
+  // richiede. "Mappa" (topo) va anche piatta: un rilievo inclinato rende le
+  // etichette storte, l'opposto di quello che questa vista deve risolvere.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("satellite")) return;
+
+    map.setLayoutProperty("satellite", "visibility", mapView !== "topo" ? "visible" : "none");
+    map.setLayoutProperty("topo", "visibility", mapView === "topo" ? "visible" : "none");
+    map.setLayoutProperty("hybrid-labels", "visibility", mapView === "hybrid" ? "visible" : "none");
+
+    if (mapView === "topo") {
+      map.setTerrain(null);
+      map.easeTo({ pitch: 0, bearing: 0, duration: 400 });
+    } else {
+      map.setTerrain({ source: "terrain-dem", exaggeration: TERRAIN_EXAGGERATION });
+      map.easeTo({ pitch: 60, bearing: -15, duration: 400 });
+    }
+  }, [mapView]);
+
   // Marker GPS live "tu sei qui". Effect separato, dep solo su
   // `showMyLocation`: NON deve ricreare/distruggere la mappa (stesso vincolo
   // dell'effect di selezione sopra), lavora su mapRef.current esistente. Mai
@@ -402,6 +486,25 @@ export function RouteMap({
   return (
     <div className={cn("relative w-full", heightClass ?? "h-64 sm:h-80")}>
       <div ref={containerRef} className="h-full w-full rounded-lg" />
+
+      {/* Satellite/Mappa/Ibrida — in alto al centro: libero da GPS (top-left)
+          e dai controlli nativi zoom/attribuzione (top-right). */}
+      <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 gap-0.5 rounded-full border border-border bg-surface p-0.5 text-xs shadow-sm">
+        {MAP_VIEWS.map((v) => (
+          <button
+            key={v.key}
+            type="button"
+            onClick={() => setMapView(v.key)}
+            aria-pressed={mapView === v.key}
+            className={cn(
+              "min-h-8 rounded-full px-2.5 font-medium transition-colors",
+              mapView === v.key ? "bg-brand text-brand-on" : "text-muted hover:text-foreground"
+            )}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
