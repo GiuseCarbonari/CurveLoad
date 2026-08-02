@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.0";
+export const APP_VERSION = "1.9.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.9.1",
+    date: "2 ago 2026",
+    title: "Mappa del percorso più leggibile",
+    items: [
+      { type: "fix", text: "La finestra «Analizza/Rianalizza evento» non si sovrappone più ai controlli della mappa (satellite/mappa/ibrida, GPS): ora si apre come pannello centrato e ben distinto" },
+      { type: "improve", text: "Controlli sopra la mappa (satellite/mappa/ibrida, GPS) più leggibili: sfondo davvero opaco invece che quasi trasparente" },
+    ],
+  },
   {
     version: "1.9.0",
     date: "18 lug 2026",
