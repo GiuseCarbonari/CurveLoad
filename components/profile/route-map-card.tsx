@@ -90,14 +90,16 @@ export function RouteMapCard({
             }}
             aria-pressed={showMyLocation}
             className={cn(
-              "flex min-h-10 min-w-10 items-center justify-center rounded-full text-xs font-medium shadow-sm transition-colors",
-              showMyLocation ? "bg-brand text-brand-on" : "bg-surface text-muted"
+              "flex min-h-10 min-w-10 items-center justify-center rounded-full text-xs font-medium transition-colors",
+              // `.glass` invece di `bg-surface`: sopra il satellitare quest'ultimo
+              // (6% alpha in dark) è quasi invisibile (vedi route-map.tsx).
+              showMyLocation ? "bg-brand text-brand-on shadow-sm" : "glass text-muted"
             )}
           >
             GPS
           </button>
           {locationError && (
-            <span className="max-w-[12rem] rounded-lg bg-surface px-2 py-1 text-xs text-ready-skip shadow-sm">
+            <span className="glass max-w-[12rem] rounded-lg px-2 py-1 text-xs text-ready-skip">
               {locationError}
             </span>
           )}

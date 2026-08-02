@@ -206,10 +206,7 @@ function Header({
   hasAnalysis: boolean;
 }) {
   return (
-    // `relative` ancora il pannello a comparsa di GapAnalysisButton
-    // (position: absolute) a tutta la larghezza di questo header, non più
-    // alla larghezza minuscola del solo bottone che lo apre.
-    <div className="relative flex flex-col gap-2.5 pb-1 pt-1">
+    <div className="flex flex-col gap-2.5 pb-1 pt-1">
       <div>
         <div className="text-[10.5px] uppercase tracking-[0.14em] text-accent2">
           Analisi evento

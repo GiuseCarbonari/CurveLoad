@@ -135,10 +135,6 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
   }
 
   return (
-    // Niente wrapper con larghezza propria: il pannello è `absolute`,
-    // ancorato all'header (relative) che lo contiene, non più stretto alla
-    // larghezza del solo bottone — prima "w-full max-w-md" dentro una riga
-    // orizzontale stretta faceva sfondare la pagina lateralmente.
     <>
       <Button
         variant={hasAnalysis ? "outline" : "default"}
@@ -149,107 +145,131 @@ export function GapAnalysisButton({ hasAnalysis }: { hasAnalysis: boolean }) {
       </Button>
 
       {open && (
-        <div className="absolute inset-x-0 top-full z-20 mt-2 rounded-metric border border-border bg-surface p-4 text-left shadow-[var(--glass-shadow)]">
-          {/* Tab */}
-          <div className="mb-3 flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
-            <button
-              type="button"
-              onClick={() => setTab("intervals")}
-              className={cn(
-                "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
-                tab === "intervals" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
-              )}
-            >
-              Da Intervals
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("upload")}
-              className={cn(
-                "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
-                tab === "upload" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
-              )}
-            >
-              Carica GPX
-            </button>
-          </div>
-
-          {tab === "intervals" ? (
-            <div className="flex flex-col gap-3">
-              {loadingEvents ? (
-                <p className="text-sm text-muted">Carico le gare…</p>
-              ) : events && events.length > 0 ? (
-                <>
-                  <label className="text-sm font-medium">Gara da analizzare</label>
-                  <select
-                    value={selectedId}
-                    onChange={(e) => setSelectedId(e.target.value)}
-                    className="form-control"
-                  >
-                    {events.map((e) => (
-                      <option key={String(e.id)} value={String(e.id)}>
-                        {e.name ?? "Gara"}
-                        {e.start_date_local ? ` · ${formatDate(e.start_date_local)}` : ""}
-                        {e.distance_km != null ? ` · ${e.distance_km} km` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    size="sm"
-                    onClick={analyzeEvent}
-                    disabled={analyzing || !selectedId}
-                  >
-                    {analyzing ? "Scarico e analizzo il percorso…" : "Analizza questa gara"}
-                  </Button>
-                </>
-              ) : (
-                <p className="text-sm text-muted">
-                  {eventsError ??
-                    "Nessuna gara RACE_A con GPX trovata su Intervals. Usa il caricamento file."}
-                </p>
-              )}
+        // Modale con scrim (stesso pattern di push-button.tsx/redistribute-section.tsx):
+        // prima era `absolute` sotto l'header, che non spinge giù il contenuto seguente
+        // nel flusso (RouteMapCard) — il pannello galleggiava semi-trasparente SOPRA la
+        // mappa, illeggibile. Fixed + scrim lo isola davvero dal contenuto sotto.
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gap-analysis-modal-title"
+        >
+          <div className="w-full max-w-sm rounded-metric border border-border bg-surface p-4 text-left shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 id="gap-analysis-modal-title" className="text-sm font-medium text-foreground">
+                {hasAnalysis ? "Rianalizza evento" : "Analizza evento"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Chiudi"
+                className="min-h-8 min-w-8 rounded-full text-muted hover:text-foreground"
+              >
+                ✕
+              </button>
             </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  acceptFile(e.dataTransfer.files?.[0]);
-                }}
+            {/* Tab */}
+            <div className="mb-3 flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setTab("intervals")}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm transition-colors",
-                  dragOver ? "border-amber bg-amber-dim" : "border-border"
+                  "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
+                  tab === "intervals" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
                 )}
               >
-                <p className="text-muted">
-                  Trascina qui un file <span className="font-medium">.gpx</span>
-                </p>
-                <label className="cursor-pointer text-xs text-brand-ink underline">
-                  oppure scegli un file
-                  <input
-                    type="file"
-                    accept=".gpx"
-                    className="hidden"
-                    onChange={(e) => acceptFile(e.target.files?.[0])}
-                  />
-                </label>
-                {file && (
-                  <p className="mt-1 text-xs font-medium">{file.name}</p>
+                Da Intervals
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("upload")}
+                className={cn(
+                  "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
+                  tab === "upload" ? "bg-surface-2 font-medium text-foreground" : "text-muted"
+                )}
+              >
+                Carica GPX
+              </button>
+            </div>
+
+            {tab === "intervals" ? (
+              <div className="flex flex-col gap-3">
+                {loadingEvents ? (
+                  <p className="text-sm text-muted">Carico le gare…</p>
+                ) : events && events.length > 0 ? (
+                  <>
+                    <label className="text-sm font-medium">Gara da analizzare</label>
+                    <select
+                      value={selectedId}
+                      onChange={(e) => setSelectedId(e.target.value)}
+                      className="form-control"
+                    >
+                      {events.map((e) => (
+                        <option key={String(e.id)} value={String(e.id)}>
+                          {e.name ?? "Gara"}
+                          {e.start_date_local ? ` · ${formatDate(e.start_date_local)}` : ""}
+                          {e.distance_km != null ? ` · ${e.distance_km} km` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={analyzeEvent}
+                      disabled={analyzing || !selectedId}
+                    >
+                      {analyzing ? "Scarico e analizzo il percorso…" : "Analizza questa gara"}
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted">
+                    {eventsError ??
+                      "Nessuna gara RACE_A con GPX trovata su Intervals. Usa il caricamento file."}
+                  </p>
                 )}
               </div>
-              <Button size="sm" onClick={analyzeFile} disabled={analyzing || !file}>
-                {analyzing ? "Analizzo il percorso…" : "Analizza file"}
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    acceptFile(e.dataTransfer.files?.[0]);
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm transition-colors",
+                    dragOver ? "border-amber bg-amber-dim" : "border-border"
+                  )}
+                >
+                  <p className="text-muted">
+                    Trascina qui un file <span className="font-medium">.gpx</span>
+                  </p>
+                  <label className="cursor-pointer text-xs text-brand-ink underline">
+                    oppure scegli un file
+                    <input
+                      type="file"
+                      accept=".gpx"
+                      className="hidden"
+                      onChange={(e) => acceptFile(e.target.files?.[0])}
+                    />
+                  </label>
+                  {file && (
+                    <p className="mt-1 text-xs font-medium">{file.name}</p>
+                  )}
+                </div>
+                <Button size="sm" onClick={analyzeFile} disabled={analyzing || !file}>
+                  {analyzing ? "Analizzo il percorso…" : "Analizza file"}
+                </Button>
+              </div>
+            )}
 
-          {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
+            {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
+          </div>
         </div>
       )}
     </>

@@ -488,8 +488,12 @@ export function RouteMap({
       <div ref={containerRef} className="h-full w-full rounded-lg" />
 
       {/* Satellite/Mappa/Ibrida — in alto al centro: libero da GPS (top-left)
-          e dai controlli nativi zoom/attribuzione (top-right). */}
-      <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 gap-0.5 rounded-full border border-border bg-surface p-0.5 text-xs shadow-sm">
+          e dai controlli nativi zoom/attribuzione (top-right).
+          `.glass` invece di `bg-surface`: quest'ultimo è tarato per stare
+          sopra il fondo pagina (quasi trasparente, --bg-surface è 6% alpha
+          in dark), sopra il satellitare diventava illeggibile. `.glass` ha
+          un fondo davvero opaco (68-88% alpha, vedi --glass-bg). */}
+      <div className="glass absolute left-1/2 top-3 z-10 flex -translate-x-1/2 gap-0.5 rounded-full p-0.5 text-xs">
         {MAP_VIEWS.map((v) => (
           <button
             key={v.key}
