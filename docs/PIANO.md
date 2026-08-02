@@ -121,8 +121,22 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       281 test verdi, tsc/lint/build puliti. Verificato da Giuseppe nel
       browser su login, dashboard, piano, percorso, impostazioni e tema
       chiaro/scuro.)
-- [ ] **Passo 8 — Il calendario della stagione (macrociclo)**: blocchi
-      base→build→taper da oggi alla gara
+- [x] **Passo 8 — Il calendario della stagione (macrociclo)** (fatto
+      2026-08-02: `lib/planner/macrocycle.ts` puro — `computeMacrocycle`
+      alloca all'indietro dalla gara i blocchi base→build→peak→taper
+      (taper 14gg, picco 29gg, build 8 sett., confini identici a quelli
+      di `detectPhase` per costruzione). `phase-detector.ts` aggiunge
+      `alignPhase`: riconcilia fase pianificata (macrociclo) e rilevata
+      (dati) — recovery e finestra di gara (taper/peak) vincono sempre
+      sul calendario, il macrociclo decide solo base↔build. Cablato in
+      `/api/planner/generate` (fase allineata in tutta la pipeline +
+      campi di allineamento in `validation_metadata`) e in `/plan` con
+      la nuova card «La stagione» (`season-card.tsx`, Server Component,
+      stati vuoto/gara passata/blocchi, date con anno solo se diverso da
+      quello corrente). 296 test verdi (+15: `tests/macrocycle.test.ts`),
+      tsc/lint/build puliti. Verificato da Giuseppe nel browser su `/plan`:
+      card coi blocchi reali, stato vuoto/gara passata cambiando la data in
+      `/settings/profile`, riga di confronto dopo «Rigenera».)
 - [ ] **Passo 9 — Modulo Corsa, parte 1**: dati e motore (CS/D′ dalle curve
       di passo)
 - [ ] **Passo 10 — Modulo Corsa, parte 2**: libreria sedute corsa + planner

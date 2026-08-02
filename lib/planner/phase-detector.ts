@@ -32,8 +32,8 @@ const ACWR_OVERLOAD = 1.5;
 /** Recovery Index sotto cui scatta il recupero (safety, Section 11 A). */
 const RI_RECOVERY = 0.6;
 /** Finestre calendario (giorni all'evento). */
-const TAPER_MAX_DAYS = 14;
-const PEAK_MAX_DAYS = 42;
+export const TAPER_MAX_DAYS = 14;
+export const PEAK_MAX_DAYS = 42;
 
 /**
  * Slope CTL in punti/settimana dalla storia 30g (primo vs ultimo valore
@@ -129,5 +129,108 @@ export function detectPhase(
     reason: `ACWR ${acwr != null ? acwr.toFixed(2) : "n/d"} < ${ACWR_BUILD_LOW}: fase di base aerobica.${slopeNote}`,
     reason_code: "BASE_ACWR_STABLE",
     ...base,
+  };
+}
+
+/** Etichette IT per i messaggi di allineamento fase (§4 spec Passo 8). */
+const ALIGN_PHASE_LABEL: Record<Phase, string> = {
+  base: "base",
+  build: "build",
+  peak: "picco",
+  taper: "taper",
+  recovery: "recupero",
+};
+
+/**
+ * Riconciliazione fase pianificata (macrociclo, prospettica) ↔ fase rilevata
+ * (phase-detector, reattiva): «il check "sei dove dovresti essere"»
+ * (docs/PIANO.md P4). Il macrociclo decide SOLO base↔build; il rilevatore
+ * reattivo mantiene il veto su recovery (sicurezza) e sulle finestre di gara
+ * (taper/peak) — vedi docs/WORKOUT_REFERENCE.md §4 (block sketches non
+ * sovrascrivono la fase rilevata sulle fasi di sicurezza).
+ */
+export interface PhaseAlignment {
+  /** Fase da usare per costruire la settimana. */
+  phase: Phase;
+  /** Fase rilevata dai dati (reattiva). */
+  detected: Phase;
+  /** Fase prevista dal macrociclo (prospettica); null se non c'è gara target. */
+  planned: Phase | null;
+  /** null se non c'è macrociclo con cui confrontarsi. */
+  on_track: boolean | null;
+  reason: string;
+  reason_code:
+    | "NO_MACROCYCLE"
+    | "SAFETY_OVERRIDE"
+    | "RACE_WINDOW"
+    | "ON_TRACK"
+    | "OFF_TRACK";
+}
+
+export function alignPhase(detected: PhaseResult, planned: Phase | null): PhaseAlignment {
+  // 1) Nessun macrociclo (nessuna gara target): si usa la fase rilevata.
+  if (planned == null) {
+    return {
+      phase: detected.phase,
+      detected: detected.phase,
+      planned: null,
+      on_track: null,
+      reason: `Nessuna gara target impostata: si usa la fase rilevata dai dati (${ALIGN_PHASE_LABEL[detected.phase]}).`,
+      reason_code: "NO_MACROCYCLE",
+    };
+  }
+
+  // 2) Recovery — la sicurezza vince sempre sul calendario.
+  if (detected.phase === "recovery") {
+    return {
+      phase: "recovery",
+      detected: detected.phase,
+      planned,
+      on_track: false,
+      reason: `I dati chiedono recupero: la sicurezza vince sempre sul calendario (il piano prevedeva ${ALIGN_PHASE_LABEL[planned]}).`,
+      reason_code: "SAFETY_OVERRIDE",
+    };
+  }
+
+  // 3) Finestra di gara (taper/peak) — ancorata ai dati, non al calendario.
+  if (detected.phase === "taper" || detected.phase === "peak") {
+    const onTrack = detected.phase === planned;
+    return {
+      phase: detected.phase,
+      detected: detected.phase,
+      planned,
+      on_track: onTrack,
+      reason: onTrack
+        ? `Finestra di gara (${ALIGN_PHASE_LABEL[detected.phase]}): calendario e dati concordano.`
+        : `Finestra di gara (${ALIGN_PHASE_LABEL[detected.phase]}): il calendario prevedeva ${ALIGN_PHASE_LABEL[planned]}, ma la finestra di gara ha priorità.`,
+      reason_code: "RACE_WINDOW",
+    };
+  }
+
+  // 4) Calendario e dati concordano.
+  if (planned === detected.phase) {
+    return {
+      phase: planned,
+      detected: detected.phase,
+      planned,
+      on_track: true,
+      reason: `Calendario e dati concordano: fase ${ALIGN_PHASE_LABEL[planned]}, sei nella fase giusta.`,
+      reason_code: "ON_TRACK",
+    };
+  }
+
+  // 5) Fuori rotta: si segue il calendario, non i dati.
+  const PHASE_ORDER: Record<Phase, number> = { base: 0, build: 1, peak: 2, taper: 3, recovery: -1 };
+  const direction =
+    PHASE_ORDER[planned] > PHASE_ORDER[detected.phase]
+      ? "sei indietro rispetto al piano"
+      : "sei avanti rispetto al piano";
+  return {
+    phase: planned,
+    detected: detected.phase,
+    planned,
+    on_track: false,
+    reason: `Il calendario dice ${ALIGN_PHASE_LABEL[planned]}, i dati dicono ${ALIGN_PHASE_LABEL[detected.phase]}: si allena secondo il calendario (${direction}).`,
+    reason_code: "OFF_TRACK",
   };
 }

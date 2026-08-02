@@ -5,7 +5,8 @@ import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import { isInjured } from "@/lib/planner/injury";
 import { hasHealthNote } from "@/lib/planner/health-flag";
-import { detectPhase, type Phase } from "@/lib/planner/phase-detector";
+import { alignPhase, detectPhase, type Phase } from "@/lib/planner/phase-detector";
+import { computeMacrocycle } from "@/lib/planner/macrocycle";
 import { computeProgressionStateByFormat } from "@/lib/planner/progression";
 import {
   computeMesocyclePosition,
@@ -226,6 +227,10 @@ export async function POST() {
   // --- Fase -----------------------------------------------------------------
   const phaseResult = detectPhase(ctlToday, ctlHistory, daysToEvent, acwr, ri);
 
+  // --- Macrociclo (Passo 8): allinea la fase rilevata con quella pianificata -
+  const macro = computeMacrocycle(new Date().toLocaleDateString("en-CA"), eventDate);
+  const alignment = alignPhase(phaseResult, macro.planned_phase);
+
   // --- Dossier per il selector ----------------------------------------------
   const dossier: PlannerDossier = {
     disponibilita_ore_sett: row?.disponibilita_ore_sett ?? null,
@@ -268,13 +273,13 @@ export async function POST() {
       phase: p.phase,
       is_deload: p.validation_metadata?.is_deload ?? false,
     })),
-    phaseResult.phase
+    alignment.phase
   );
-  const mesocycle = computeMesocyclePosition(loadingWeeks, phaseResult.phase);
+  const mesocycle = computeMesocyclePosition(loadingWeeks, alignment.phase);
 
   // --- Selezione + costruzione ----------------------------------------------
   const selected = selectWeekSessions(
-    phaseResult.phase,
+    alignment.phase,
     dossier,
     { decision: readinessDecision, dayKey: todayKey, tsb, ri },
     { levers },
@@ -283,7 +288,7 @@ export async function POST() {
     { volume_factor: mesocycle.volume_factor, is_deload: mesocycle.is_deload }
   );
 
-  const week = buildWeek(weekStart, selected, dossier, profile, phaseResult.phase, {
+  const week = buildWeek(weekStart, selected, dossier, profile, alignment.phase, {
     tsb,
     ri,
     data_age_hours: dataAgeHours,
@@ -342,7 +347,7 @@ export async function POST() {
       {
         user_id: user.id,
         week_start: weekStart,
-        phase: phaseResult.phase,
+        phase: alignment.phase,
         sessions: week.sessions,
         narrative,
         validation_metadata: {
@@ -356,6 +361,12 @@ export async function POST() {
           volume_factor: mesocycle.volume_factor,
           mesocycle_reason: mesocycle.reason,
           generated_at: generatedAt,
+          // Macrociclo (Passo 8): fase pianificata vs rilevata (§4 spec).
+          detected_phase: alignment.detected,
+          macrocycle_planned_phase: alignment.planned,
+          phase_on_track: alignment.on_track,
+          phase_alignment_reason: alignment.reason,
+          phase_alignment_code: alignment.reason_code,
         },
         generated_at: generatedAt,
       },
@@ -381,7 +392,7 @@ export async function POST() {
       recommendation: `${s.library_id} — ${s.session_objective}`,
       input_snapshot_id: snapshot?.id ?? null,
       rules_triggered: {
-        phase: phaseResult.phase,
+        phase: alignment.phase,
         phase_reason_code: phaseResult.reason_code,
         slot_rationale: s.session_rationale,
         frameworks_cited: s.frameworks_cited,
@@ -409,7 +420,7 @@ export async function POST() {
     source: "planner",
     payload: {
       week_start: weekStart,
-      phase: phaseResult.phase,
+      phase: alignment.phase,
       hard_sessions: week.audit.hard_sessions,
       hard_spacing_ok: week.audit.hard_spacing_ok,
       narrative: narrative != null,
@@ -433,8 +444,10 @@ export async function POST() {
 
   return NextResponse.json({
     success: true,
-    phase: phaseResult.phase,
+    phase: alignment.phase,
     phase_reason: phaseResult.reason,
+    planned_phase: alignment.planned,
+    on_track: alignment.on_track,
     days_to_event: daysToEvent,
     week_start: weekStart,
     week_sessions: week.sessions,

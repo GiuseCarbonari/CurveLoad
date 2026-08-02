@@ -4,8 +4,10 @@ import { GenerateWeekButton } from "@/components/plan/generate-week-button";
 import { PlanDiffNotice } from "@/components/plan/plan-diff-notice";
 import { PushButton } from "@/components/plan/push-button";
 import { RedistributeSection } from "@/components/plan/redistribute-section";
+import { SeasonCard } from "@/components/plan/season-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import type { BuiltSession } from "@/lib/planner/build-week";
+import { computeMacrocycle } from "@/lib/planner/macrocycle";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import type { Phase } from "@/lib/planner/phase-detector";
 import type { DayKey } from "@/lib/planner/session-selector";
@@ -33,6 +35,9 @@ interface PlanRow {
     hard_spacing_ok?: boolean;
     volume_hours_estimate?: number;
     phase_reason?: string;
+    detected_phase?: Phase;
+    phase_on_track?: boolean | null;
+    phase_alignment_reason?: string;
   } | null;
   generated_at: string;
   pushed_at: string | null;
@@ -88,7 +93,7 @@ export default async function PlanPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: planRow }, { data: connection }, { data: snapshot }] =
+  const [{ data: planRow }, { data: connection }, { data: snapshot }, { data: profileRow }] =
     await Promise.all([
       supabase
         .from("weekly_plans")
@@ -111,6 +116,11 @@ export default async function PlanPage() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("athlete_profiles")
+        .select("data_obiettivo, gare_target")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
 
   const plan = (planRow ?? null) as PlanRow | null;
@@ -122,10 +132,13 @@ export default async function PlanPage() {
   const todayKey = JS_DAY_TO_KEY[new Date().getDay()];
   const todayDate = new Date().toISOString().slice(0, 10);
 
+  const gara = (profileRow?.gare_target ?? null) as { nome?: string; data?: string } | null;
+  const raceDate = profileRow?.data_obiettivo ?? gara?.data ?? null;
+  const macro = computeMacrocycle(new Date().toLocaleDateString("en-CA"), raceDate);
+
   const weekStats = plan ? computeWeekStats(plan.sessions) : null;
   const planChanges = diffPlan(plan?.pushed_snapshot ?? null, plan?.sessions ?? []);
   const meta = plan?.validation_metadata ?? null;
-  const daysToEvent = meta?.days_to_event ?? null;
   const completionByDate = plan
     ? buildCompletionByDate(plan.sessions, mirror?.activities_90d ?? [])
     : {};
@@ -139,7 +152,6 @@ export default async function PlanPage() {
             <div className="break-words text-[11px] uppercase leading-relaxed tracking-[0.16em] text-muted">
               {formatWeekRange(plan.week_start)} · sett.{" "}
               {getWeekNumber(plan.week_start)}
-              {daysToEvent != null && ` · ${daysToEvent}gg all'evento`}
             </div>
           )}
           <h1 className="mt-1.5 font-serif text-[30px] font-medium leading-none text-foreground">
@@ -147,6 +159,14 @@ export default async function PlanPage() {
           </h1>
         </div>
       </div>
+
+      <SeasonCard
+        macro={macro}
+        raceName={gara?.nome ?? null}
+        detectedPhase={meta?.detected_phase ?? null}
+        onTrack={meta?.phase_on_track ?? null}
+        alignmentReason={meta?.phase_alignment_reason ?? null}
+      />
 
       {/* 01 — Rigenera */}
       <div className="space-y-2">
