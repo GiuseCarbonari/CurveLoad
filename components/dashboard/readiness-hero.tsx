@@ -105,12 +105,17 @@ export function ReadinessHero({
     <>
       {/* Fascia a piena larghezza: -mx-5 buca il px-5 di CurveLoadShell
           (vedi components/layout/curveload-shell.tsx) per sfumare da bordo
-          a bordo, poi px-5 sul contenuto lo riallinea al resto della pagina. */}
+          a bordo, poi px-5 sul contenuto lo riallinea al resto della pagina.
+          Il lavaggio di colore sfuma verso trasparente, non verso --bg-base:
+          --bg-base è piatto, ma <body> ci disegna sopra anche --bg-glow (gli
+          aloni ambientali della pagina, vedi globals.css) — sfumare verso un
+          colore piatto lo copriva creando una cucitura visibile sopra e sotto
+          la fascia invece di lasciarlo trasparire. */}
       <section
         id="tour-readiness"
         className="-mx-5 px-5 pb-6 pt-2"
         style={{
-          background: `linear-gradient(165deg, color-mix(in srgb, ${color} 20%, var(--bg-base)), var(--bg-base) 60%)`,
+          background: `linear-gradient(165deg, color-mix(in srgb, ${color} 18%, transparent), transparent 65%)`,
         }}
       >
         <div className="flex items-start justify-between">
