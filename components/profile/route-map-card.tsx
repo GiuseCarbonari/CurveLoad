@@ -68,7 +68,11 @@ export function RouteMapCard({
   const hasClimbs = terrain.climbs.length > 0;
 
   return (
-    <div className="relative h-[calc(100dvh-13.5rem)] min-h-[320px] w-full overflow-hidden rounded-metric border border-border bg-surface sm:h-[calc(100dvh-14.5rem)]">
+    // Altezza ~metà schermo (non quasi-piena come prima): una mappa a piena
+    // altezza cattura come pan/drag lo scroll che il pollice fa istintivamente
+    // al centro schermo, rendendo Limitatori/Stima sotto irraggiungibili senza
+    // scrollare bordo-bordo.
+    <div className="relative h-[52dvh] min-h-[320px] w-full overflow-hidden rounded-metric border border-border bg-surface sm:h-[56dvh]">
       <RouteMapLazy
         terrain={terrain}
         selectedClimb={selectedClimb}
