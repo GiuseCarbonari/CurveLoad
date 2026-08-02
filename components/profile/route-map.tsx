@@ -41,28 +41,33 @@ const TOPO_TILES =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}";
 const TOPO_ATTRIB = "Tiles © Esri";
 
-// "Ibrida": strade + etichette OpenStreetMap (vettoriali, via OpenFreeMap)
-// drappeggiate sopra il satellitare — la stessa ricetta di Mapbox Satellite
-// Streets che usa Strava, ma con fonti gratuite. OpenFreeMap è senza chiave,
-// senza registrazione e dichiarato senza limiti di richieste (verificato:
+// Strade + etichette OpenStreetMap (vettoriali, via OpenFreeMap) drappeggiate
+// SEMPRE sopra il satellitare — la stessa ricetta di Mapbox Satellite Streets
+// che usa Strava, ma con fonti gratuite. OpenFreeMap è senza chiave, senza
+// registrazione e dichiarato senza limiti di richieste (verificato:
 // `Access-Control-Allow-Origin: *` sullo stile e sui tile reali).
+//
+// Non esiste più una vista "Ibrida" separata: il satellitare nudo non ha
+// NESSUN nome sopra, quindi era inutilizzabile per orientarsi e teneva un
+// bottone in più senza dare nulla in cambio. Ora "Satellite" è già la
+// versione con le etichette.
 //
 // Perché non l'overlay Esri di prima: quello aveva SOLO confini e comuni
 // principali — su una zona di montagna compariva sì e no un nome. Da OSM
 // arrivano frazioni, località e nomi delle strade (verificato sui Sibillini).
 //
 // ATTENZIONE: non ha SLA (progetto a donazioni). Per questo resta il vecchio
-// overlay Esri come fallback: se il fetch fallisce l'Ibrida torna a
-// comportarsi esattamente come prima, invece di restare senza etichette.
+// overlay Esri come fallback: se il fetch fallisce le etichette tornano a
+// essere quelle scarse di prima, invece di sparire del tutto.
 const OFM_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 /** Prefisso dei layer presi da OpenFreeMap: serve per accenderli/spegnerli in blocco. */
 const OFM_LAYER_PREFIX = "ofm-";
 
-const HYBRID_LABELS_TILES =
+const ESRI_LABELS_TILES =
   "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 
-/** Pezzi dello stile OpenFreeMap che ci servono per l'overlay sull'Ibrida. */
-interface HybridOverlay {
+/** Pezzi dello stile OpenFreeMap che servono per le etichette sul satellitare. */
+interface LabelsOverlay {
   sprite: string;
   glyphs: string;
   source: maplibregl.SourceSpecification;
@@ -76,7 +81,7 @@ interface HybridOverlay {
  * pensato per fondo chiaro e su satellite risulterebbe poco leggibile.
  * Ritorna null su qualunque errore: il chiamante ripiega sull'overlay Esri.
  */
-async function loadHybridOverlay(): Promise<HybridOverlay | null> {
+async function loadLabelsOverlay(): Promise<LabelsOverlay | null> {
   try {
     const response = await fetch(OFM_STYLE_URL);
     if (!response.ok) return null;
@@ -126,12 +131,11 @@ async function loadHybridOverlay(): Promise<HybridOverlay | null> {
   }
 }
 
-type MapView = "satellite" | "topo" | "hybrid";
+type MapView = "satellite" | "topo";
 
 const MAP_VIEWS: { key: MapView; label: string }[] = [
   { key: "satellite", label: "Satellite" },
   { key: "topo", label: "Mappa" },
-  { key: "hybrid", label: "Ibrida" },
 ];
 
 // DEM per il rilievo 3D: Mapterhorn (encoding Terrarium), nessuna chiave.
@@ -147,7 +151,7 @@ const DEM_ENCODING = "terrarium" as const; // encoding nativo supportato da MapL
 const TERRAIN_EXAGGERATION = 1.4; // knob estetico (vedi OPEN QUESTION 3 della spec)
 
 /**
- * Tutti e tre gli stili base vivono nella stessa mappa come layer sempre
+ * Entrambi gli stili base vivono nella stessa mappa come layer sempre
  * presenti: cambiare vista alterna solo `visibility` (vedi effect dedicato
  * più sotto), non ricrea la mappa — stesso principio dell'effect
  * `selectedClimb` già in questo file (mai distruggere l'istanza per un
@@ -155,13 +159,11 @@ const TERRAIN_EXAGGERATION = 1.4; // knob estetico (vedi OPEN QUESTION 3 della s
  */
 function mapStyle(
   initialView: MapView,
-  /** Overlay OSM per l'Ibrida; null = ripiego sull'overlay raster Esri. */
-  overlay: HybridOverlay | null
+  /** Etichette OSM sul satellitare; null = ripiego sull'overlay raster Esri. */
+  overlay: LabelsOverlay | null
 ): maplibregl.StyleSpecification {
   const vis = (view: MapView): "visible" | "none" =>
-    initialView === view || (initialView === "hybrid" && view === "satellite")
-      ? "visible"
-      : "none";
+    initialView === view ? "visible" : "none";
   return {
     version: 8,
     // sprite/glyphs servono ai layer symbol di OpenFreeMap per disegnare
@@ -185,9 +187,9 @@ function mapStyle(
       ...(overlay
         ? { openmaptiles: overlay.source }
         : {
-            "hybrid-labels": {
+            "esri-labels": {
               type: "raster" as const,
-              tiles: [HYBRID_LABELS_TILES],
+              tiles: [ESRI_LABELS_TILES],
               tileSize: 256,
               maxzoom: 19,
             },
@@ -210,21 +212,21 @@ function mapStyle(
     layers: [
       { id: "satellite", type: "raster", source: "satellite", layout: { visibility: vis("satellite") } },
       { id: "topo", type: "raster", source: "topo", layout: { visibility: vis("topo") } },
-      // Etichette dell'Ibrida: i molti layer vettoriali OSM, oppure il singolo
-      // raster Esri di ripiego. Restano nascosti finché non si sceglie "Ibrida"
-      // — a layer invisibili MapLibre non scarica i tile, quindi chi non apre
-      // mai questa vista non paga nessun traffico in più.
+      // Etichette sopra il satellitare: i molti layer vettoriali OSM, oppure
+      // il singolo raster Esri di ripiego. Seguono la visibilità del
+      // satellitare — in "Mappa" restano spenti perché lì i nomi li porta già
+      // il tile topografico, e a layer invisibili MapLibre non scarica tile.
       ...(overlay
         ? overlay.layers.map((layer) => ({
             ...layer,
-            layout: { ...layer.layout, visibility: vis("hybrid") },
+            layout: { ...layer.layout, visibility: vis("satellite") },
           }))
         : [
             {
-              id: "hybrid-labels",
+              id: "esri-labels",
               type: "raster" as const,
-              source: "hybrid-labels",
-              layout: { visibility: vis("hybrid") },
+              source: "esri-labels",
+              layout: { visibility: vis("satellite") },
             },
           ]),
     ],
@@ -333,27 +335,26 @@ export function RouteMap({
   const onLocationErrorRef = useRef(onLocationError);
   onLocationErrorRef.current = onLocationError;
 
-  // Id dei layer che fanno da etichette all'Ibrida: quelli OSM se il fetch è
-  // andato a buon fine, altrimenti il singolo raster Esri di ripiego. Serve
-  // all'effect di cambio vista, che deve accenderli/spegnerli in blocco.
-  const hybridLayerIdsRef = useRef<string[]>(["hybrid-labels"]);
+  // Id dei layer che fanno da etichette sul satellitare: quelli OSM se il
+  // fetch è andato a buon fine, altrimenti il singolo raster Esri di ripiego.
+  // Serve all'effect di cambio vista, che deve accenderli/spegnerli in blocco.
+  const labelLayerIdsRef = useRef<string[]>(["esri-labels"]);
 
   useEffect(() => {
     if (polyline.length < 2 || !containerRef.current) return;
 
     let map: maplibregl.Map | null = null;
-    // L'overlay dell'Ibrida arriva da una fetch: se il componente viene
-    // smontato prima che finisca, non bisogna creare la mappa.
+    // Le etichette arrivano da una fetch: se il componente viene smontato
+    // prima che finisca, non bisogna creare la mappa.
     let disposed = false;
 
     void (async () => {
       // sprite/glyphs sono proprietà dello stile e non si possono aggiungere
-      // dopo: l'overlay va risolto PRIMA di creare la mappa, non alla prima
-      // apertura dell'Ibrida.
-      const overlay = await loadHybridOverlay();
+      // dopo: l'overlay va risolto PRIMA di creare la mappa.
+      const overlay = await loadLabelsOverlay();
       if (disposed || !containerRef.current) return;
 
-      if (overlay) hybridLayerIdsRef.current = overlay.layers.map((l) => l.id);
+      if (overlay) labelLayerIdsRef.current = overlay.layers.map((l) => l.id);
 
       try {
         map = new maplibregl.Map({
@@ -514,7 +515,7 @@ export function RouteMap({
     }
   }, [selectedClimb, terrain.climbs]);
 
-  // Cambio vista (Satellite/Mappa/Ibrida) -> alterna solo `visibility` dei
+  // Cambio vista (Satellite/Mappa) -> alterna solo `visibility` dei
   // tre layer base, sempre presenti (vedi mapStyle). Stesso vincolo degli
   // altri effect: mai ricreare la mappa per un cambio di stato che non lo
   // richiede. "Mappa" (topo) va anche piatta: un rilievo inclinato rende le
@@ -523,15 +524,15 @@ export function RouteMap({
     const map = mapRef.current;
     if (!map || !map.getLayer("satellite")) return;
 
-    map.setLayoutProperty("satellite", "visibility", mapView !== "topo" ? "visible" : "none");
+    const satelliteVisibility = mapView === "satellite" ? "visible" : "none";
+    map.setLayoutProperty("satellite", "visibility", satelliteVisibility);
     map.setLayoutProperty("topo", "visibility", mapView === "topo" ? "visible" : "none");
-    // Etichette dell'Ibrida: uno solo (raster Esri di ripiego) oppure molti
+    // Etichette del satellitare: uno solo (raster Esri di ripiego) oppure molti
     // (i layer OSM di OpenFreeMap) — il guard su getLayer copre il caso in cui
     // lo stile in uso non contenga quell'id.
-    const hybridVisibility = mapView === "hybrid" ? "visible" : "none";
-    for (const layerId of hybridLayerIdsRef.current) {
+    for (const layerId of labelLayerIdsRef.current) {
       if (map.getLayer(layerId)) {
-        map.setLayoutProperty(layerId, "visibility", hybridVisibility);
+        map.setLayoutProperty(layerId, "visibility", satelliteVisibility);
       }
     }
 
@@ -622,7 +623,7 @@ export function RouteMap({
     <div className={cn("relative w-full", heightClass ?? "h-64 sm:h-80")}>
       <div ref={containerRef} className="h-full w-full rounded-lg" />
 
-      {/* Satellite/Mappa/Ibrida — in alto al centro: libero da GPS (top-left)
+      {/* Satellite/Mappa — in alto al centro: libero da GPS (top-left)
           e dai controlli nativi zoom/attribuzione (top-right).
           `.glass` invece di `bg-surface`: quest'ultimo è tarato per stare
           sopra il fondo pagina (quasi trasparente, --bg-surface è 6% alpha
