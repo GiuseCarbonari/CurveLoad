@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.1";
+export const APP_VERSION = "1.10.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.10.0",
+    date: "2 ago 2026",
+    title: "Il calendario della stagione",
+    items: [
+      { type: "new", text: "Nuova card «La stagione» nella pagina Piano: divide il tempo che ti separa dalla gara in blocchi Base, Build, Picco e Taper, con le date di ciascuno e il blocco in cui ti trovi oggi evidenziato" },
+      { type: "new", text: "Il piano ti dice anche se sei in linea con il calendario della stagione o in ritardo, confrontando la fase prevista con quella che i tuoi dati reali indicano" },
+    ],
+  },
   {
     version: "1.9.1",
     date: "2 ago 2026",
