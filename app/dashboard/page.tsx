@@ -5,7 +5,7 @@ import { EfficiencyTrendChart } from "@/components/dashboard/efficiency-trend-ch
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
 import { AutoUpdateOrchestrator } from "@/components/dashboard/auto-update-orchestrator";
 import { OggiComment } from "@/components/dashboard/oggi-comment";
-import { ReadinessRing } from "@/components/dashboard/readiness-ring";
+import { ReadinessHero } from "@/components/dashboard/readiness-hero";
 import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
@@ -239,26 +239,32 @@ export default async function DashboardPage() {
 
   return (
     <CurveLoadShell>
-      {/* Header pagina: data + saluto (il logo vive ora in AppHeader) */}
-      <div className="flex items-start justify-between pt-2">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
-            {formatTodayIT()}
+      {/* La readiness apre la pagina (Passo 8): il saluto vive nel suo
+          sottotitolo, non più in un header separato sopra. Fallback al
+          vecchio header semplice quando non c'è ancora un readiness da
+          mostrare (nessuna sync fatta). */}
+      {readiness ? (
+        <ReadinessHero readiness={readiness} name={name} dateLabel={formatTodayIT()} />
+      ) : (
+        <div className="flex items-start justify-between pt-2">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
+              {formatTodayIT()}
+            </div>
+            <h1 className="mt-1.5 font-serif text-[30px] font-medium leading-none text-foreground">
+              Ciao, {name}
+            </h1>
           </div>
-          <h1 className="mt-1.5 font-serif text-[30px] font-medium leading-none text-foreground">
-            Ciao, {name}
-          </h1>
+          <a
+            href="/settings/profile"
+            className="mt-1 text-[11px] text-faint hover:text-secondary transition-colors"
+          >
+            profilo ↗
+          </a>
         </div>
-        {/* Quick profile link */}
-        <a
-          href="/settings/profile"
-          className="mt-1 text-[11px] text-faint hover:text-secondary transition-colors"
-        >
-          profilo ↗
-        </a>
-      </div>
+      )}
 
-      {/* Auto-aggiornamento (sync + commenti + piano + profilo) — sempre in cima */}
+      {/* Auto-aggiornamento (sync + commenti + piano + profilo) */}
       <AutoUpdateOrchestrator
         lastFetchedAt={lastFetchedAt}
         initialStatus={initialStatus}
@@ -284,16 +290,13 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Readiness ring + commento AI "Spiega la mia giornata" (Passo 6) */}
+      {/* Commento AI "Spiega la mia giornata" (Passo 6) */}
       {readiness && (
-        <>
-          <ReadinessRing readiness={readiness} />
-          <OggiComment
-            enabled={aiEnabled}
-            comment={preferenceRow?.ai_comment_oggi ?? null}
-            commentAt={preferenceRow?.ai_comment_oggi_at ?? null}
-          />
-        </>
+        <OggiComment
+          enabled={aiEnabled}
+          comment={preferenceRow?.ai_comment_oggi ?? null}
+          commentAt={preferenceRow?.ai_comment_oggi_at ?? null}
+        />
       )}
 
       {/* Seduta di oggi */}

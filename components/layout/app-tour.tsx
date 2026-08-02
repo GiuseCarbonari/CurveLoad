@@ -136,7 +136,7 @@ export function AppTour() {
               popover: {
                 title: "Readiness — sei pronto?",
                 description:
-                  "Il punteggio da 0 a 100 combina tutti i segnali biologici e di carico. Verde = vai, giallo = riduci l'intensità, rosso = riposa.",
+                  "La frase in alto ti dice subito cosa fare oggi: combina tutti i segnali biologici e di carico. Verde = via libera, giallo = riduci l'intensità, rosso = riposa. Sotto trovi il motivo nel dettaglio.",
                 side: "bottom",
                 align: "center",
               },

@@ -4,8 +4,10 @@ import { test, describe } from "node:test";
 import type { ReadinessSignal } from "../lib/readiness";
 
 /**
- * Test del contratto "lista segnali visibili" di ReadinessRing
- * (components/dashboard/readiness-ring.tsx).
+ * Test del contratto "lista segnali visibili" di ReadinessHero
+ * (components/dashboard/readiness-hero.tsx — prima ReadinessRing, rinominato
+ * nel redesign "Apertura del giorno" del Passo 8: stesso contratto di
+ * selezione, invariato).
  *
  * La logica di selezione non è esportata dal componente (è JSX), quindi qui
  * la replichiamo esattamente come implementata nel componente e verifichiamo
@@ -19,7 +21,7 @@ import type { ReadinessSignal } from "../lib/readiness";
  * fissare il comportamento osservabile — non i dettagli implementativi.
  */
 
-/** Replica esatta della selezione fatta in readiness-ring.tsx. */
+/** Replica esatta della selezione fatta in readiness-hero.tsx. */
 function selectVisibleSignals(signals: ReadinessSignal[]): ReadinessSignal[] {
   const warningSignals = signals.filter(
     (s) => s.status === "amber" || s.status === "red"
@@ -36,7 +38,7 @@ function sig(
   return { name, value: null, status, detail };
 }
 
-describe("ReadinessRing — selezione segnali visibili", () => {
+describe("ReadinessHero — selezione segnali visibili", () => {
   test("happy path: tutti verdi → nessuna voce visibile", () => {
     const signals: ReadinessSignal[] = [
       sig("hrv", "green"),

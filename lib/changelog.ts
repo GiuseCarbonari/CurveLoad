@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.10.0";
+export const APP_VERSION = "1.11.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.11.0",
+    date: "2 ago 2026",
+    title: "La readiness apre la giornata",
+    items: [
+      { type: "new", text: "La schermata Oggi ora si apre con la readiness: una frase diretta ti dice subito cosa fare («Oggi è meglio fermarsi», «Esegui la seduta prevista»...), il saluto è integrato, i motivi restano sempre leggibili sotto — niente più numeri o anelli da interpretare" },
+    ],
+  },
   {
     version: "1.10.0",
     date: "2 ago 2026",

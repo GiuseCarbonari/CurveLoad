@@ -1,7 +1,7 @@
 import { ExplainOggiButton } from "@/components/dashboard/explain-oggi-button";
 
 /**
- * Commento AI "Spiega la mia giornata" (Passo 6) sotto il ReadinessRing.
+ * Commento AI "Spiega la mia giornata" (Passo 6) sotto il ReadinessHero.
  * Server Component: il bottone (client) è l'unico confine interattivo,
  * stesso schema del blocco commento in components/profile/profile-tabs.tsx.
  */

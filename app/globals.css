@@ -336,6 +336,19 @@
   }
 }
 
+/* Ingresso hero readiness (Passo 8): testo/icona che entrano con un lieve
+   movimento all'apertura di /dashboard. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .skel {
   background: linear-gradient(
     90deg,

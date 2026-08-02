@@ -86,7 +86,7 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
         `mirror.readiness_today` (decisione, segnali, motivi) già calcolato
         dal sync — non ricalcola nulla; `lib/dashboard/explain-oggi-io.ts`;
         `/api/dashboard/explain-oggi`; bottone "💬 Spiega la mia giornata"
-        sotto il ReadinessRing in `/dashboard`.
+        sotto il ReadinessHero in `/dashboard`.
       - **Percorso** (`ai_comment_percorso`): `lib/ai/percorso-explain-prompt.ts`
         legge `gap_analysis` + `event_terrain` + `race_estimate` (limitatori,
         salite, pacing) già salvati da `/api/profile/gap-analysis`;
