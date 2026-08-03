@@ -1,3 +1,5 @@
+import { prevailingAxis } from "@/lib/coaching/schools";
+
 /**
  * Dossier atleta (PRD §12.2) — tipi, costanti e mappatura form ⇄ DB.
  *
@@ -12,6 +14,26 @@ export interface GaraTarget {
   data: string; // YYYY-MM-DD
   distanza_km: number | null;
   dislivello_m: number | null;
+}
+
+/**
+ * Risposte dell'intervista sulla filosofia di coaching (migration 023,
+ * athlete_profiles.filosofia_risposte JSONB). Tutti i campi sono stringhe o
+ * liste di stringhe: la forma del form e quella del DB coincidono, non serve
+ * conversione. Le domande che il dossier fa già altrove (gara, obiettivi,
+ * infortuni, ore disponibili) NON si ripetono qui.
+ */
+export interface FilosofiaForm {
+  /** id di lib/coaching/schools.ts. Vuoto = "non ne conosco". */
+  scuole: string[];
+  /** Cosa ha funzionato e cosa è fallito negli anni passati. */
+  storia: string;
+  blocchi_duri: string; // "" | "mi_caricano" | "reggo_poi_crollo" | "li_evito"
+  struttura: string; // "" | "struttura" | "flessibilita" | "misto"
+  dati_sensazioni: string; // "" | "dati" | "sensazioni" | "misto"
+  tono: string; // "" | "duro" | "diretto" | "incoraggiante"
+  piace: string[];
+  detesta: string[];
 }
 
 /**
@@ -64,6 +86,8 @@ export interface DossierForm {
   preferenze_allenamento: string;
   limiti_principali: string;
   note_personali: string;
+  // Step 11 — La tua filosofia
+  filosofia: FilosofiaForm;
 }
 
 /** Periodo di infortunio dichiarato dall'atleta. */
@@ -129,6 +153,46 @@ export const STILE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "mixed", label: "Misto / non lo so ancora" },
 ];
 
+// --- Opzioni dell'intervista sulla filosofia (step 11) -----------------------
+// I `value` sono chiavi stabili: alcuni li legge traitsFromAnswers() in
+// lib/coaching/schools.ts per suggerire le scuole a chi non ne conosce nessuna.
+
+export const BLOCCHI_DURI_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "mi_caricano", label: "Mi caricano: più è dura, più mi diverto" },
+  { value: "reggo_poi_crollo", label: "Li reggo, ma dopo qualche settimana crollo" },
+  { value: "li_evito", label: "Li evito: preferisco la costanza ai picchi di fatica" },
+];
+
+export const STRUTTURA_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "struttura", label: "Struttura: dimmi esattamente cosa fare e quando" },
+  { value: "flessibilita", label: "Flessibilità: dammi la direzione, il giorno lo scelgo io" },
+  { value: "misto", label: "Un po' e un po'" },
+];
+
+export const DATI_SENSAZIONI_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "dati", label: "Dati: watt, zone, numeri" },
+  { value: "sensazioni", label: "Sensazioni: come mi sento quel giorno" },
+  { value: "misto", label: "Guardo i numeri ma decido a sensazione" },
+];
+
+export const TONO_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "duro", label: "Duro: dimmi quando sbaglio, senza giri di parole" },
+  { value: "diretto", label: "Diretto: i fatti, niente pacche sulle spalle" },
+  { value: "incoraggiante", label: "Incoraggiante: motivami, spingimi col positivo" },
+];
+
+/** Tipi di seduta, per le due liste "cosa ti piace" / "cosa detesti". */
+export const ALLENAMENTI_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "lungo", label: "Uscite lunghe" },
+  { value: "salite", label: "Salite" },
+  { value: "intervalli_brevi", label: "Intervalli brevi" },
+  { value: "intervalli_lunghi", label: "Intervalli lunghi" },
+  { value: "soglia", label: "Soglia / sweet spot" },
+  { value: "indoor", label: "Rulli / indoor" },
+  { value: "gruppo", label: "Uscite in gruppo" },
+  { value: "recupero", label: "Sedute di recupero" },
+];
+
 export const PIATTAFORMA_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "zwift", label: "Zwift" },
   { value: "trainerroad", label: "TrainerRoad" },
@@ -152,7 +216,7 @@ export const GIORNI: Array<{ value: string; label: string }> = [
 
 /** Step coperti dal wizard (1-2 fatti prima: account + Intervals). */
 export const FIRST_STEP = 3;
-export const LAST_STEP = 12;
+export const LAST_STEP = 13;
 
 export const STEP_LABELS: Record<number, string> = {
   3: "Consenso privacy",
@@ -163,8 +227,9 @@ export const STEP_LABELS: Record<number, string> = {
   8: "Parametri fisiologici",
   9: "Attrezzatura",
   10: "Salute e note",
-  11: "Inizia con CurveLoad",
-  12: "Prima analisi",
+  11: "La tua filosofia",
+  12: "Inizia con CurveLoad",
+  13: "Prima analisi",
 };
 
 // --- Mappatura DB ⇄ form -----------------------------------------------------
@@ -212,6 +277,7 @@ export const DOSSIER_COLUMNS = [
   "preferenze_allenamento",
   "limiti_principali",
   "note_personali",
+  "filosofia_risposte",
 ] as const;
 
 export type DossierColumn = (typeof DOSSIER_COLUMNS)[number];
@@ -224,6 +290,17 @@ const EMPTY_GARA: GaraTargetForm = {
   data: "",
   distanza_km: "",
   dislivello_m: "",
+};
+
+const EMPTY_FILOSOFIA: FilosofiaForm = {
+  scuole: [],
+  storia: "",
+  blocchi_duri: "",
+  struttura: "",
+  dati_sensazioni: "",
+  tono: "",
+  piace: [],
+  detesta: [],
 };
 
 export function emptyDossierForm(): DossierForm {
@@ -267,6 +344,7 @@ export function emptyDossierForm(): DossierForm {
     preferenze_allenamento: "",
     limiti_principali: "",
     note_personali: "",
+    filosofia: { ...EMPTY_FILOSOFIA },
   };
 }
 
@@ -339,6 +417,20 @@ export function rowToForm(row: DossierRow | null | undefined): DossierForm {
   form.limiti_principali = str(row.limiti_principali);
   form.note_personali = str(row.note_personali);
 
+  const filosofia = (row.filosofia_risposte ?? null) as Partial<FilosofiaForm> | null;
+  if (filosofia) {
+    form.filosofia = {
+      scuole: strArray(filosofia.scuole),
+      storia: str(filosofia.storia),
+      blocchi_duri: str(filosofia.blocchi_duri),
+      struttura: str(filosofia.struttura),
+      dati_sensazioni: str(filosofia.dati_sensazioni),
+      tono: str(filosofia.tono),
+      piace: strArray(filosofia.piace),
+      detesta: strArray(filosofia.detesta),
+    };
+  }
+
   return form;
 }
 
@@ -383,6 +475,20 @@ export function formToPatch(form: DossierForm): Record<DossierColumn, unknown> {
       }
     : null;
 
+  const f = form.filosofia;
+  const filosofiaCompilata =
+    f.scuole.length > 0 ||
+    f.piace.length > 0 ||
+    f.detesta.length > 0 ||
+    [f.storia, f.blocchi_duri, f.struttura, f.dati_sensazioni, f.tono].some(
+      (v) => v.trim() !== ""
+    );
+
+  // Le scuole scelte hanno l'ultima parola sullo stile: è il valore che poi
+  // pilota la seduta dura in lib/planner/session-selector.ts. Senza scuole
+  // resta quello dichiarato allo step Obiettivi.
+  const stileDalleScuole = f.scuole.length > 0 ? prevailingAxis(f.scuole) : null;
+
   return {
     nome: nullableText(form.nome),
     eta: nullableInt(form.eta),
@@ -394,7 +500,7 @@ export function formToPatch(form: DossierForm): Record<DossierColumn, unknown> {
     livello_esperienza: nullableText(form.livello_esperienza),
     obiettivi: nullableText(form.obiettivi),
     fase_corrente: nullableText(form.fase_corrente),
-    stile_allenamento: nullableText(form.stile_allenamento),
+    stile_allenamento: stileDalleScuole ?? nullableText(form.stile_allenamento),
     gare_target: gara,
     data_obiettivo: gara && gara.data !== "" ? gara.data : null,
     disponibilita_ore_sett: nullableNum(form.disponibilita_ore_sett),
@@ -425,5 +531,8 @@ export function formToPatch(form: DossierForm): Record<DossierColumn, unknown> {
     preferenze_allenamento: nullableText(form.preferenze_allenamento),
     limiti_principali: nullableText(form.limiti_principali),
     note_personali: nullableText(form.note_personali),
+    filosofia_risposte: filosofiaCompilata
+      ? { ...f, storia: f.storia.trim() }
+      : null,
   };
 }

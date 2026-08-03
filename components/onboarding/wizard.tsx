@@ -15,6 +15,7 @@ import {
 import {
   StepAttrezzatura,
   StepChiSei,
+  StepFilosofia,
   StepFisiologia,
   StepObiettivi,
   StepSalute,
@@ -71,20 +72,20 @@ export function OnboardingWizard({
     if (ok) setStep(nextStep);
   }
 
-  // --- Step 12: prima analisi (auto) -----------------------------------------
+  // --- Step 13: prima analisi (auto) -----------------------------------------
   const analysisStarted = useRef(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (step !== 12 || analysisStarted.current) return;
+    if (step !== LAST_STEP || analysisStarted.current) return;
     analysisStarted.current = true;
 
     (async () => {
       await fetch("/api/sync/intervals", { method: "POST" }).catch(() => null);
       await fetch("/api/profile/build", { method: "POST" }).catch(() => null);
 
-      const ok = await persist({ complete: true, step: 12 });
+      const ok = await persist({ complete: true, step: LAST_STEP });
       if (!ok) {
         setAnalysisError("Non sono riuscito a completare l'onboarding, riprova.");
         analysisStarted.current = false;
@@ -364,8 +365,34 @@ export function OnboardingWizard({
         </section>
       )}
 
-      {/* Step 11 — Inizia con CurveLoad */}
+      {/* Step 11 — La tua filosofia */}
       {step === 11 && (
+        <section className="flex flex-col gap-6">
+          <div>
+            <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
+              La tua filosofia
+            </h1>
+            <p className="mt-2 text-sm text-muted">
+              Che tipo di coach vuoi accanto. Tutto opzionale: quello che
+              rispondi qui cambia il tono con cui il coach ti parla e la scelta
+              delle sedute dure del piano.
+            </p>
+          </div>
+          <StepFilosofia form={form} update={update} />
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => goBack(10)}>Indietro</Button>
+            <Button
+              disabled={saving}
+              onClick={() => void advance({ profile: formToPatch(form) }, 12)}
+            >
+              {saving ? "Salvo…" : "Avanti"}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {/* Step 12 — Inizia con CurveLoad */}
+      {step === 12 && (
         <section className="flex flex-col gap-6">
           <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
             Ecco come funziona CurveLoad
@@ -435,10 +462,10 @@ export function OnboardingWizard({
           </div>
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(10)}>Indietro</Button>
+            <Button variant="outline" onClick={() => goBack(11)}>Indietro</Button>
             <Button
               disabled={saving}
-              onClick={() => void advance({}, 12)}
+              onClick={() => void advance({}, 13)}
             >
               {saving ? "Salvo…" : "Tutto chiaro, inizia l'analisi"}
             </Button>
@@ -446,8 +473,8 @@ export function OnboardingWizard({
         </section>
       )}
 
-      {/* Step 12 — Prima analisi */}
-      {step === 12 && (
+      {/* Step 13 — Prima analisi */}
+      {step === 13 && (
         <section className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
           {analysisError ? (
             <>

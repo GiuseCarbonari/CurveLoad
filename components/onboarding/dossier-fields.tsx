@@ -1,7 +1,11 @@
 "use client";
 
+import { COACHING_SCHOOLS } from "@/lib/coaching/schools";
 import {
+  ALLENAMENTI_OPTIONS,
+  BLOCCHI_DURI_OPTIONS,
   CICLOCOMPUTER_OPTIONS,
+  DATI_SENSAZIONI_OPTIONS,
   FASE_OPTIONS,
   GIORNI,
   INDOOR_OUTDOOR_OPTIONS,
@@ -9,7 +13,10 @@ import {
   PIATTAFORMA_OPTIONS,
   SESSO_OPTIONS,
   STILE_OPTIONS,
+  STRUTTURA_OPTIONS,
+  TONO_OPTIONS,
   type DossierForm,
+  type FilosofiaForm,
   type GaraTargetForm,
 } from "@/lib/onboarding/dossier";
 
@@ -26,6 +33,12 @@ export type DossierUpdater = <K extends keyof DossierForm>(
   key: K,
   value: DossierForm[K]
 ) => void;
+
+/** Chip delle scuole: etichetta = solo il nome, senza il sottotitolo dopo "—". */
+const SCUOLE_OPTIONS = COACHING_SCHOOLS.map((s) => ({
+  value: s.id,
+  label: s.nome.split("—")[0].trim(),
+}));
 
 function toggle(list: string[], value: string): string[] {
   return list.includes(value)
@@ -464,6 +477,87 @@ export function StepSalute({
         placeholder="Qualsiasi altra cosa vuoi che il coach sappia"
         hint="Opzionale"
         rows={2}
+      />
+    </div>
+  );
+}
+
+// --- Step 11: La tua filosofia -----------------------------------------------
+
+/**
+ * Intervista sulla filosofia di coaching. Solo le domande che il dossier non
+ * fa già altrove: gara, obiettivi, infortuni e ore disponibili stanno negli
+ * step precedenti e non si ripetono.
+ *
+ * Le scuole scelte qui decidono `stile_allenamento` (vedi formToPatch), che a
+ * sua volta cambia la seduta dura del piano. Tutto il resto resta prosa per il
+ * commento AI.
+ */
+export function StepFilosofia({
+  form,
+  update,
+}: {
+  form: DossierForm;
+  update: DossierUpdater;
+}) {
+  const f = form.filosofia;
+  function set<K extends keyof FilosofiaForm>(key: K, value: FilosofiaForm[K]) {
+    update("filosofia", { ...f, [key]: value });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ChipMultiSelect
+        label="Ci sono allenatori o scuole che ti convincono?"
+        values={f.scuole}
+        options={SCUOLE_OPTIONS}
+        onToggle={(v) => set("scuole", toggle(f.scuole, v))}
+        hint="Opzionale — se non ne conosci nessuna, lascia vuoto: le sceglie il coach dalle tue risposte qui sotto"
+      />
+      <TextAreaField
+        label="Cosa ha funzionato e cosa è fallito, negli anni passati?"
+        value={f.storia}
+        onChange={(v) => set("storia", v)}
+        placeholder="es. Con tre uscite a settimana costanti sono andato meglio che con sei sporadiche; ogni volta che ho alzato il volume di colpo mi sono infortunato"
+        rows={3}
+        hint="Opzionale"
+      />
+      <SelectField
+        label="Come reagisci ai blocchi duri?"
+        value={f.blocchi_duri}
+        onChange={(v) => set("blocchi_duri", v)}
+        options={BLOCCHI_DURI_OPTIONS}
+      />
+      <SelectField
+        label="Struttura o flessibilità?"
+        value={f.struttura}
+        onChange={(v) => set("struttura", v)}
+        options={STRUTTURA_OPTIONS}
+      />
+      <SelectField
+        label="Ti fidi più dei dati o delle sensazioni?"
+        value={f.dati_sensazioni}
+        onChange={(v) => set("dati_sensazioni", v)}
+        options={DATI_SENSAZIONI_OPTIONS}
+      />
+      <SelectField
+        label="Come vuoi che il coach ti parli?"
+        value={f.tono}
+        onChange={(v) => set("tono", v)}
+        options={TONO_OPTIONS}
+      />
+      <ChipMultiSelect
+        label="Cosa ti piace davvero fare?"
+        values={f.piace}
+        options={ALLENAMENTI_OPTIONS}
+        onToggle={(v) => set("piace", toggle(f.piace, v))}
+      />
+      <ChipMultiSelect
+        label="E cosa detesti?"
+        values={f.detesta}
+        options={ALLENAMENTI_OPTIONS}
+        onToggle={(v) => set("detesta", toggle(f.detesta, v))}
+        hint="Sapere cosa eviti conta quanto sapere cosa ti piace"
       />
     </div>
   );

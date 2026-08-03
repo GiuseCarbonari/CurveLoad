@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   StepAttrezzatura,
   StepChiSei,
+  StepFilosofia,
   StepFisiologia,
   StepObiettivi,
   StepSalute,
@@ -13,8 +14,12 @@ import {
 } from "@/components/onboarding/dossier-fields";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { COACHING_SCHOOLS } from "@/lib/coaching/schools";
 import {
+  ALLENAMENTI_OPTIONS,
+  BLOCCHI_DURI_OPTIONS,
   CICLOCOMPUTER_OPTIONS,
+  DATI_SENSAZIONI_OPTIONS,
   FASE_OPTIONS,
   formToPatch,
   GIORNI,
@@ -23,6 +28,8 @@ import {
   PIATTAFORMA_OPTIONS,
   SESSO_OPTIONS,
   STILE_OPTIONS,
+  STRUTTURA_OPTIONS,
+  TONO_OPTIONS,
   type DossierForm,
   type InjuryPeriod,
 } from "@/lib/onboarding/dossier";
@@ -34,6 +41,7 @@ import {
   Bike,
   HeartPulse,
   ChevronRight,
+  Compass,
   ShieldAlert,
   LogOut,
 } from "lucide-react";
@@ -45,7 +53,14 @@ import {
  * Annulla ripristina l'ultimo valore salvato.
  */
 
-type GroupKey = "chi_sei" | "obiettivi" | "settimana" | "fisiologia" | "attrezzatura" | "salute";
+type GroupKey =
+  | "chi_sei"
+  | "obiettivi"
+  | "settimana"
+  | "fisiologia"
+  | "attrezzatura"
+  | "salute"
+  | "filosofia";
 
 function optLabel(
   options: ReadonlyArray<{ value: string; label: string }>,
@@ -65,6 +80,17 @@ function num(v: string, unit = ""): string {
 
 function list(values: string[]): string {
   return values.length > 0 ? values.join(", ") : "—";
+}
+
+/** Come list(), ma traducendo i value nelle etichette leggibili. */
+function labels(
+  options: ReadonlyArray<{ value: string; label: string }>,
+  values: string[]
+): string {
+  if (values.length === 0) return "—";
+  return values
+    .map((v) => options.find((o) => o.value === v)?.label ?? v)
+    .join(", ");
 }
 
 function days(values: string[]): string {
@@ -98,8 +124,15 @@ const GROUPS: { key: GroupKey | "infortuni"; label: string; icon: React.ElementT
   { key: "fisiologia",   label: "Parametri fisiologici",  icon: Activity },
   { key: "attrezzatura", label: "Attrezzatura",           icon: Bike },
   { key: "salute",       label: "Salute e note",          icon: HeartPulse },
+  { key: "filosofia",    label: "La tua filosofia",       icon: Compass },
   { key: "infortuni",    label: "Periodi infortunio",     icon: ShieldAlert },
 ];
+
+/** Etichette delle scuole per la vista in sola lettura. */
+const SCUOLE_LABELS = COACHING_SCHOOLS.map((s) => ({
+  value: s.id,
+  label: s.nome.split("—")[0].trim(),
+}));
 
 export function SettingsDossierForm({
   initialForm,
@@ -325,6 +358,18 @@ export function SettingsDossierForm({
                               <Row label="Note personali" value={text(saved.note_personali)} />
                             </>
                           )}
+                          {g.key === "filosofia" && (
+                            <>
+                              <Row label="Scuole scelte" value={labels(SCUOLE_LABELS, saved.filosofia.scuole)} />
+                              <Row label="Cosa ha funzionato" value={text(saved.filosofia.storia)} />
+                              <Row label="Blocchi duri" value={optLabel(BLOCCHI_DURI_OPTIONS, saved.filosofia.blocchi_duri)} />
+                              <Row label="Struttura o flessibilità" value={optLabel(STRUTTURA_OPTIONS, saved.filosofia.struttura)} />
+                              <Row label="Dati o sensazioni" value={optLabel(DATI_SENSAZIONI_OPTIONS, saved.filosofia.dati_sensazioni)} />
+                              <Row label="Tono del coach" value={optLabel(TONO_OPTIONS, saved.filosofia.tono)} />
+                              <Row label="Cosa ti piace" value={labels(ALLENAMENTI_OPTIONS, saved.filosofia.piace)} />
+                              <Row label="Cosa detesti" value={labels(ALLENAMENTI_OPTIONS, saved.filosofia.detesta)} />
+                            </>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -347,6 +392,7 @@ export function SettingsDossierForm({
                         {g.key === "fisiologia" && <StepFisiologia form={form} update={update} />}
                         {g.key === "attrezzatura" && <StepAttrezzatura form={form} update={update} />}
                         {g.key === "salute" && <StepSalute form={form} update={update} />}
+                        {g.key === "filosofia" && <StepFilosofia form={form} update={update} />}
                       </>
                     )}
 
