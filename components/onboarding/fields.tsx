@@ -120,19 +120,25 @@ export function SelectField({
   );
 }
 
-/** Selezione multipla a "chip" (sport, giorni). */
+/**
+ * Selezione a "chip" (giorni, scuole, sport…). Con `single` si comporta come
+ * una scelta esclusiva: onToggle riceve comunque solo il value cliccato, sta
+ * al chiamante sostituire invece di accodare (vedi update("sport_principali", [v])).
+ */
 export function ChipMultiSelect({
   label,
   values,
   options,
   onToggle,
   hint,
+  single = false,
 }: {
   label: string;
   values: string[];
   options: Array<{ value: string; label: string }>;
   onToggle: (value: string) => void;
   hint?: string;
+  single?: boolean;
 }) {
   return (
     <Field label={label} hint={hint}>
@@ -144,7 +150,12 @@ export function ChipMultiSelect({
               key={o.value}
               type="button"
               aria-pressed={active}
-              onClick={() => onToggle(o.value)}
+              onClick={() => {
+                // single: cliccare la chip già attiva non deve svuotare la
+                // scelta (sport è un campo obbligatorio esclusivo).
+                if (single && active) return;
+                onToggle(o.value);
+              }}
               className={cn(
                 "rounded-full border px-3 py-1 text-sm transition-colors",
                 active

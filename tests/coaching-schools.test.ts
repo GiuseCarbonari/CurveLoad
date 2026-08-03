@@ -125,7 +125,7 @@ test("formToPatch: intervista non compilata -> filosofia null, stile invariato",
 
 test("formToPatch: le scuole scelte sovrascrivono lo stile dichiarato", () => {
   const form = emptyDossierForm();
-  form.stile_allenamento = "threshold"; // dichiarato allo step Obiettivi
+  form.stile_allenamento = "threshold"; // dichiarato allo step Filosofia
   form.filosofia.scuole = ["seiler", "san_millan"]; // entrambe polarized
   const patch = formToPatch(form);
 

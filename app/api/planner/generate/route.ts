@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { MirrorData } from "@/lib/intervals/sync";
-import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
+import { buildWeek, isRunningOnlyDossier, type BuiltSession } from "@/lib/planner/build-week";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import { isInjured } from "@/lib/planner/injury";
 import { hasHealthNote } from "@/lib/planner/health-flag";
@@ -244,6 +244,22 @@ export async function POST() {
     sport_principali: row?.sport_principali ?? [],
     stile_allenamento: row?.stile_allenamento ?? null,
   };
+
+  // Blocco onesto: il planner ha solo la libreria ciclismo (il modulo Corsa
+  // parte 2 — libreria sedute + routing — è ancora da fare, PIANO.md P5). A
+  // un runner non si spacciano sedute di bici.
+  if (isRunningOnlyDossier(dossier.sport_principali)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "sport_not_supported",
+        message:
+          "Il piano automatico per la corsa non è ancora disponibile: profilo, CS/D′ e readiness funzionano già, la libreria sedute corsa arriva col modulo Corsa parte 2.",
+      },
+      { status: 409 }
+    );
+  }
+
   const availableDays = computeAvailableDays(dossier);
 
   const levers = (row?.gap_analysis?.limiters ?? [])

@@ -1,7 +1,12 @@
 "use client";
 
 import { InfoTooltip } from "./info-tooltip";
-import { formatPace, type RunnerProfileData } from "@/lib/profile/pace-profile";
+import {
+  formatPace,
+  paceZones,
+  predictRaceTimes,
+  type RunnerProfileData,
+} from "@/lib/profile/pace-profile";
 
 /** Le stesse 5 durate della tabellina RPP bici, per la corsa (§6). */
 const RPP_DISPLAY: Array<{ secs: number; label: string }> = [
@@ -29,6 +34,8 @@ export function RunnerCard({ runner }: RunnerCardProps) {
   if (runner == null) return null;
 
   const csd = runner.cs_dprime;
+  const zones = paceZones(csd);
+  const predictions = predictRaceTimes(csd);
 
   return (
     <div className="rounded-metric border border-border bg-surface px-5 py-5">
@@ -134,6 +141,107 @@ export function RunnerCard({ runner }: RunnerCardProps) {
           ● sforzo massimale · ◐ valore approssimato
         </p>
       </div>
+
+      {/* Zone di passo (Q5, v0) */}
+      {zones.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-3 text-[10.5px] uppercase tracking-[0.14em] text-muted">
+            Zone di passo
+          </div>
+          <div className="overflow-hidden rounded-metric border border-border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-surface-2">
+                  <th className="px-4 py-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-muted">
+                    Zona
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-[10px] uppercase tracking-[0.1em] text-muted">
+                    Passo da–a
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-[10px] uppercase tracking-[0.1em] text-muted">
+                    % CS
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {zones.map((zone) => (
+                  <tr
+                    key={zone.key}
+                    className="border-b border-border bg-surface last:border-0"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {zone.key} · {zone.label}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-foreground">
+                      {formatPace(zone.pace_s_per_km_slow)}–{formatPace(zone.pace_s_per_km_fast)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-secondary">
+                      {zone.pct_cs_min === 0
+                        ? `< ${zone.pct_cs_max}%`
+                        : `${zone.pct_cs_min}–${zone.pct_cs_max}%`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Predizioni di gara (Q6): stima onesta, entro/oltre la finestra di fit */}
+      {predictions.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-3 text-[10.5px] uppercase tracking-[0.14em] text-muted">
+            Predizioni
+          </div>
+          <div className="overflow-hidden rounded-metric border border-border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-surface-2">
+                  <th className="px-4 py-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-muted">
+                    Distanza
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-[10px] uppercase tracking-[0.1em] text-muted">
+                    Tempo
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-[10px] uppercase tracking-[0.1em] text-muted">
+                    Passo
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {predictions.map((prediction) => (
+                  <tr
+                    key={prediction.distance_m}
+                    className="border-b border-border bg-surface last:border-0"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {prediction.label}
+                      {!prediction.in_model_window && (
+                        <span
+                          className="ml-1.5 text-ready-modify"
+                          title="Stima ottimista: oltre la finestra del modello"
+                        >
+                          ◐
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-foreground">
+                      {formatPace(prediction.time_s)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-secondary">
+                      {formatPace(prediction.pace_s_per_km)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[11px] text-faint">
+            ◐ stima ottimista, fuori dal modello
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,25 +1,38 @@
 /**
- * Trend di efficienza aerobica (W/battito) — ciclismo, v1.
+ * Trend di efficienza aerobica — ciclismo (W/battito) e corsa (m/battito).
  *
  * computeEfficiencyTrend() è una FUNZIONE PURA e deterministica: stessi
  * input → stesso output, nessuna chiamata API, nessun accesso a clock o DB.
  * Segue lo stile di lib/readiness.ts (funzioni pure + tipi esportati).
  *
- * Scope v1 = SOLO CICLISMO. La corsa è fuori scope: le attività sincronizzate
- * non hanno un passo medio affidabile per seduta (vedi spec).
- *
- * Formula: efficiency = icu_weighted_avg_watts / average_heartrate (W per
+ * Bici: efficiency = icu_weighted_avg_watts / average_heartrate (W per
  * battito). Un valore più alto = più watt per battito = più efficiente.
+ *
+ * Corsa: efficiency = (distance/moving_time)*60/average_heartrate (metri per
+ * battito, stessa scala 1.0-1.6 dei W/bpm bici). `IntervalsActivity` ha
+ * `distance` e `moving_time` (lib/intervals-client.ts, ACTIVITY_FIELDS) da
+ * sempre: il passo medio per seduta esiste già nei mirror salvati, nessuna
+ * migrazione o nuova sync richiesta. Quello che NON esiste è il dislivello
+ * per attività, quindi qui è un passo grezzo, non un GAP.
  */
 
 import type { IntervalsActivity } from "@/lib/intervals-client";
 
 const RIDE_TYPES = new Set(["Ride", "VirtualRide", "GravelRide", "MountainBikeRide"]);
+const RUN_TYPES = new Set(["Run", "TrailRun", "VirtualRun"]);
 const MIN_MOVING_TIME_S = 1800; // 30 min, coerente con lib/terrain/velocity-signature.ts
+const MIN_RUN_MOVING_TIME_S = 1200; // 20 min: il fondo lento di un corridore spesso sta sotto i 30 min
 const WEEKS_WINDOW = 8;
 const MIN_WEEKS_FOR_TREND = 3;
 const TREND_THRESHOLD_PCT = 1.5;
 const OUTLIER_MULTIPLIER = 2;
+
+// Guard di plausibilità velocità MEDIA di seduta per la corsa: più stretto
+// del range 0.5-12 m/s di pace-profile.ts (quello vale per i PICCHI della
+// curva di passo, non per una media di un'intera uscita). Una media sopra
+// 8 m/s non è corsa umana su una seduta intera.
+const MIN_RUN_SPEED_MPS = 0.5;
+const MAX_RUN_SPEED_MPS = 8;
 
 /** Punto settimanale del trend di efficienza. */
 export interface WeeklyEfficiencyPoint {
@@ -46,7 +59,35 @@ export interface EfficiencyTrend {
   interpretation: EfficiencyInterpretation;
   /** Frase completa in italiano semplice, pronta da mostrare. */
   summary: string;
+  /** "Watt per battito" | "Metri per battito" — titolo pronto da mostrare. */
+  title: string;
+  /** "W/bpm" | "m/battito" — unità accanto al valore. */
+  unit: string;
 }
+
+export type EfficiencySport = "bike" | "run";
+
+const SPORT_LABELS: Record<
+  EfficiencySport,
+  { title: string; unit: string; insufficientSummary: string; declineSummary: string }
+> = {
+  bike: {
+    title: "Watt per battito",
+    unit: "W/bpm",
+    insufficientSummary:
+      "Servono più uscite in bici con potenza e frequenza cardiaca per calcolare la tendenza.",
+    declineSummary:
+      "Ultimamente servono più battiti per gli stessi watt: efficienza in calo. Può dipendere da fatica, caldo o poche uscite lunghe.",
+  },
+  run: {
+    title: "Metri per battito",
+    unit: "m/battito",
+    insufficientSummary:
+      "Servono più corse con frequenza cardiaca per calcolare la tendenza.",
+    declineSummary:
+      "Ultimamente servono più battiti per la stessa andatura: efficienza in calo. Può dipendere da fatica, caldo o poche uscite lunghe.",
+  },
+};
 
 /** Media aritmetica dei valori non-null; null se non ce ne sono. */
 function meanOf(values: Array<number | null>): number | null {
@@ -108,16 +149,56 @@ export function filterEnduranceRides(
   return candidates.filter((a) => activityEfficiency(a)! <= cutoff);
 }
 
-/** Calcola il trend completo dalle attività grezze del mirror. */
-export function computeEfficiencyTrend(
+/** Metri per battito di una singola attività di corsa, o null se non valida.
+ *  (distance/moving_time)*60/average_heartrate. Esportata per i test. */
+export function activityPaceEfficiency(a: IntervalsActivity): number | null {
+  const distance = a.distance;
+  const movingTime = a.moving_time;
+  const hr = a.average_heartrate;
+  if (distance == null || distance <= 0) return null;
+  if (movingTime == null || movingTime <= 0) return null;
+  if (hr == null || hr <= 0) return null;
+  const speedMps = distance / movingTime;
+  if (speedMps < MIN_RUN_SPEED_MPS || speedMps > MAX_RUN_SPEED_MPS) return null;
+  return Math.round(((speedMps * 60) / hr) * 1000) / 1000;
+}
+
+/** Filtra le attività di corsa endurance valide (stessi criteri della bici:
+ *  tipo, durata minima, outlier — vedi Q3 per MIN_RUN_MOVING_TIME_S). */
+export function filterEnduranceRuns(
   activities: IntervalsActivity[]
+): IntervalsActivity[] {
+  const candidates = activities.filter((a) => {
+    if (a.type == null || !RUN_TYPES.has(a.type)) return false;
+    if (a.moving_time == null || a.moving_time < MIN_RUN_MOVING_TIME_S) return false;
+    return activityPaceEfficiency(a) != null;
+  });
+
+  if (candidates.length === 0) return [];
+
+  const efficiencies = candidates.map((a) => activityPaceEfficiency(a)!);
+  const median = medianOf(efficiencies);
+  const cutoff = median * OUTLIER_MULTIPLIER;
+
+  return candidates.filter((a) => activityPaceEfficiency(a)! <= cutoff);
+}
+
+/** Calcola il trend completo dalle attività grezze del mirror.
+ *  sport di default "bike": comportamento identico a prima dell'aggiunta
+ *  della corsa, nessuna regressione. */
+export function computeEfficiencyTrend(
+  activities: IntervalsActivity[],
+  sport: EfficiencySport = "bike"
 ): EfficiencyTrend {
-  const valid = filterEnduranceRides(activities);
+  const labels = SPORT_LABELS[sport];
+  const valid =
+    sport === "run" ? filterEnduranceRuns(activities) : filterEnduranceRides(activities);
+  const efficiencyOf = sport === "run" ? activityPaceEfficiency : activityEfficiency;
 
   const byWeek = new Map<string, number[]>();
   for (const activity of valid) {
     const weekStart = isoWeekStart(activity.start_date_local);
-    const efficiency = activityEfficiency(activity)!;
+    const efficiency = efficiencyOf(activity)!;
     const bucket = byWeek.get(weekStart);
     if (bucket) bucket.push(efficiency);
     else byWeek.set(weekStart, [efficiency]);
@@ -137,8 +218,9 @@ export function computeEfficiencyTrend(
     points,
     slopePct: null,
     interpretation: "dati insufficienti",
-    summary:
-      "Servono più uscite in bici con potenza e frequenza cardiaca per calcolare la tendenza.",
+    summary: labels.insufficientSummary,
+    title: labels.title,
+    unit: labels.unit,
   });
 
   if (points.length < MIN_WEEKS_FOR_TREND) return insufficient();
@@ -170,12 +252,18 @@ export function computeEfficiencyTrend(
       "Stai andando più forte a parità di sforzo del cuore: efficienza in miglioramento nelle ultime settimane.";
   } else if (slopePct <= -TREND_THRESHOLD_PCT) {
     interpretation = "in calo";
-    summary =
-      "Ultimamente servono più battiti per gli stessi watt: efficienza in calo. Può dipendere da fatica, caldo o poche uscite lunghe.";
+    summary = labels.declineSummary;
   } else {
     interpretation = "stabile";
     summary = "La tua efficienza aerobica è stabile nelle ultime settimane.";
   }
 
-  return { points, slopePct: Math.round(slopePct * 100) / 100, interpretation, summary };
+  return {
+    points,
+    slopePct: Math.round(slopePct * 100) / 100,
+    interpretation,
+    summary,
+    title: labels.title,
+    unit: labels.unit,
+  };
 }

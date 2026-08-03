@@ -3,15 +3,17 @@ import { test } from "node:test";
 
 import {
   activityEfficiency,
+  activityPaceEfficiency,
   computeEfficiencyTrend,
   filterEnduranceRides,
+  filterEnduranceRuns,
 } from "../lib/efficiency-trend";
 import type { IntervalsActivity } from "../lib/intervals-client";
 
 /**
- * Test del trend di efficienza aerobica (W/battito, solo ciclismo).
- * computeEfficiencyTrend è pura: questi test fissano formula, filtro e
- * interpretazione attesi.
+ * Test del trend di efficienza aerobica: ciclismo (W/battito) e corsa
+ * (m/battito). computeEfficiencyTrend è pura: questi test fissano formula,
+ * filtro e interpretazione attesi per entrambi gli sport.
  */
 
 let idCounter = 0;
@@ -112,6 +114,67 @@ test("filterEnduranceRides: efficienza esattamente = 2x mediana è inclusa (bord
   const result = filterEnduranceRides(rides);
   assert.equal(result.length, 4);
   assert.ok(result.some((a) => a.icu_weighted_avg_watts === 280));
+});
+
+// --- activityPaceEfficiency (corsa) --------------------------------------------
+
+/** Corsa "sana" di default: 3600m in 1200s (3.0 m/s) a 140bpm → 1.286 m/battito. */
+function run(overrides: Partial<IntervalsActivity> = {}): IntervalsActivity {
+  return activity({
+    type: "Run",
+    distance: 3600,
+    moving_time: 1200,
+    average_heartrate: 140,
+    ...overrides,
+  });
+}
+
+test("activityPaceEfficiency: 3.0 m/s a 140 bpm → 1.286 (verifica la formula)", () => {
+  assert.equal(activityPaceEfficiency(run()), 1.286);
+});
+
+test("activityPaceEfficiency: null se distance manca o è 0", () => {
+  assert.equal(activityPaceEfficiency(run({ distance: null })), null);
+  assert.equal(activityPaceEfficiency(run({ distance: 0 })), null);
+});
+
+test("activityPaceEfficiency: null se moving_time manca o è 0", () => {
+  assert.equal(activityPaceEfficiency(run({ moving_time: null })), null);
+  assert.equal(activityPaceEfficiency(run({ moving_time: 0 })), null);
+});
+
+test("activityPaceEfficiency: null se average_heartrate manca (corsa senza fascia)", () => {
+  assert.equal(activityPaceEfficiency(run({ average_heartrate: null })), null);
+});
+
+test("activityPaceEfficiency: guard di plausibilità velocità media 0.5-8 m/s (più stretto del range 0.5-12 di pace-profile.ts)", () => {
+  // 8000m/1200s = 6.67 m/s, plausibile: passa.
+  assert.ok(activityPaceEfficiency(run({ distance: 8000, moving_time: 1200 })) != null);
+  // Sopra 8 m/s: nessuna media di seduta umana è così veloce -> null, non un numero inventato.
+  assert.equal(activityPaceEfficiency(run({ distance: 10000, moving_time: 1200 })), null);
+  // Sotto 0.5 m/s: cammino/dati sporchi -> null.
+  assert.equal(activityPaceEfficiency(run({ distance: 500, moving_time: 1200 })), null);
+  // Bordi inclusi: esattamente 0.5 e 8 m/s sono plausibili.
+  assert.ok(activityPaceEfficiency(run({ distance: 600, moving_time: 1200 })) != null); // 0.5 m/s
+  assert.ok(activityPaceEfficiency(run({ distance: 9600, moving_time: 1200 })) != null); // 8.0 m/s
+});
+
+// --- filterEnduranceRuns ---------------------------------------------------------
+
+test("filterEnduranceRuns: esclude i Ride", () => {
+  const activities = [run(), activity()];
+  const result = filterEnduranceRuns(activities);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].type, "Run");
+});
+
+test("filterEnduranceRuns: esclude le corse sotto i 20 min (1200s)", () => {
+  const activities = [run(), run({ moving_time: 1199 })];
+  assert.equal(filterEnduranceRuns(activities).length, 1);
+});
+
+test("filterEnduranceRuns: moving_time esattamente 1200 è incluso (bordo)", () => {
+  assert.equal(filterEnduranceRuns([run({ moving_time: 1200 })]).length, 1);
 });
 
 // --- computeEfficiencyTrend ----------------------------------------------------
@@ -258,4 +321,48 @@ test("computeEfficiencyTrend: più attività nella stessa settimana → media de
   const firstWeek = trend.points[0];
   assert.equal(firstWeek.count, 2);
   assert.equal(firstWeek.efficiency, 1.3);
+});
+
+// --- computeEfficiencyTrend(..., "run") -----------------------------------------
+
+/** Costruisce una corsa per una data settimana con efficienza data (140bpm fisso, 20 min). */
+function weekRunActivity(weekOffset: number, efficiency: number): IntervalsActivity {
+  const base = new Date("2026-06-01T08:00:00"); // lunedì
+  base.setDate(base.getDate() + weekOffset * 7);
+  const hr = 140;
+  const movingTime = 1200; // 20 min, sopra la soglia Q3
+  const speedMps = (efficiency * hr) / 60;
+  return run({
+    start_date_local: base.toISOString().slice(0, 19),
+    moving_time: movingTime,
+    distance: speedMps * movingTime,
+    average_heartrate: hr,
+  });
+}
+
+test('computeEfficiencyTrend(..., "run"): default resta "bike" (nessuna regressione)', () => {
+  const trend = computeEfficiencyTrend([activity()]);
+  assert.equal(trend.title, "Watt per battito");
+  assert.equal(trend.unit, "W/bpm");
+});
+
+test('computeEfficiencyTrend(..., "run"): 4 settimane in miglioramento → "in miglioramento", unit "m/battito"', () => {
+  const activities = [
+    weekRunActivity(0, 1.2),
+    weekRunActivity(1, 1.3),
+    weekRunActivity(2, 1.4),
+    weekRunActivity(3, 1.5),
+  ];
+  const trend = computeEfficiencyTrend(activities, "run");
+  assert.equal(trend.interpretation, "in miglioramento");
+  assert.equal(trend.unit, "m/battito");
+  assert.equal(trend.title, "Metri per battito");
+});
+
+test('computeEfficiencyTrend(..., "run"): un Ride dentro una lista corsa non entra nel trend', () => {
+  const runs = [weekRunActivity(0, 1.2), weekRunActivity(1, 1.3), weekRunActivity(2, 1.4)];
+  const ride = activity({ type: "Ride", start_date_local: runs[0].start_date_local });
+  const trend = computeEfficiencyTrend([...runs, ride], "run");
+  const totalCount = trend.points.reduce((sum, p) => sum + p.count, 0);
+  assert.equal(totalCount, 3);
 });

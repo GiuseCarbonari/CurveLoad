@@ -44,6 +44,15 @@ interface ProfileTabsProps {
     memory_type: string;
     nota: string;
   }>;
+  /** Chi corre e basta: nasconde tutta la parte bici (hero CP, power-law,
+   * W′/Pmax, tabella RPP) — quella corsa vive in <RunnerCard/>. Default
+   * false = comportamento odierno. */
+  isRunner?: boolean;
+  /** true se athlete_profiles.runner_profile_data non è null. Un corridore
+   * puro non ha mai profile_data (bici): senza questo flag lo stato vuoto e
+   * il commento AI/taccuino resterebbero gated solo su `profile` e
+   * sparirebbero per lui anche a build riuscita. Default false. */
+  hasRunnerProfile?: boolean;
 }
 
 export function ProfileTabs({
@@ -54,6 +63,8 @@ export function ProfileTabs({
   aiComment,
   aiCommentAt,
   coachNotes,
+  isRunner = false,
+  hasRunnerProfile = false,
 }: ProfileTabsProps) {
   return (
     <>
@@ -72,22 +83,25 @@ export function ProfileTabs({
         </div>
       </div>
 
-      {!profile && (
+      {!profile && !hasRunnerProfile && (
         <div className="mt-6 rounded-metric border border-border bg-surface px-6 py-10 text-center">
           <p className="font-serif text-lg text-foreground">
             Profilo non ancora costruito.
           </p>
           <p className="mt-2 text-sm text-muted">
-            Premi «Aggiorna profilo» per leggere la curva di potenza da
+            Premi «Aggiorna profilo» per leggere{" "}
+            {isRunner ? "le curve di passo" : "la curva di potenza"} da
             Intervals.icu e creare la prima firma atleta.
           </p>
         </div>
       )}
 
-      {profile && (
+      {(profile || hasRunnerProfile) && (
         <>
           {/* Profile content */}
           <div className="space-y-4 pt-4">
+            {profile && (
+              <>
               {/* Quality warnings */}
               {profile.meta.confidence === "low" && (
                 <div className="rounded-lg border border-l-[3px] border-ready-modify-border border-l-ready-modify bg-surface px-4 py-3 text-[13px] text-secondary">
@@ -95,85 +109,97 @@ export function ProfileTabs({
                   indicativo.
                 </div>
               )}
-              {/* CP Hero */}
-              {cpw ? (
-                <div id="tour-cp-hero" className="rounded-metric border border-border bg-gradient-to-br from-brand/[0.10] to-surface-2/60 px-6 py-7">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
-                      Potenza critica
-                    </span>
-                    <InfoTooltip term="cp" />
-                  </div>
-                  <div className="mt-1.5 flex items-end gap-2.5">
-                    <span className="font-serif text-[58px] font-medium leading-none tabular-nums text-foreground">
-                      {Math.round(cpw.cp_w)}
-                    </span>
-                    <span className="mb-2 font-serif text-[22px] text-secondary">W</span>
-                    {cpw.cp_wkg != null && (
-                      <span className="mb-2 text-[14px] text-muted">
-                        {cpw.cp_wkg.toFixed(2)} W/kg
+              {/* CP Hero — solo bici, un corridore vede la sua Corsa · Velocità
+                  critica in <RunnerCard/> invece. */}
+              {!isRunner &&
+                (cpw ? (
+                  <div id="tour-cp-hero" className="rounded-metric border border-border bg-gradient-to-br from-brand/[0.10] to-surface-2/60 px-6 py-7">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
+                        Potenza critica
                       </span>
-                    )}
+                      <InfoTooltip term="cp" />
+                    </div>
+                    <div className="mt-1.5 flex items-end gap-2.5">
+                      <span className="font-serif text-[58px] font-medium leading-none tabular-nums text-foreground">
+                        {Math.round(cpw.cp_w)}
+                      </span>
+                      <span className="mb-2 font-serif text-[22px] text-secondary">W</span>
+                      {cpw.cp_wkg != null && (
+                        <span className="mb-2 text-[14px] text-muted">
+                          {cpw.cp_wkg.toFixed(2)} W/kg
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 font-serif text-[14px] italic text-secondary">
+                      {PHENOTYPE_LABEL[profile.phenotype.primary] ??
+                        profile.phenotype.primary}
+                    </p>
+                    <PowerLawCompare cpw={cpw} powerLaw={profile.cp_power_law} />
                   </div>
-                  <p className="mt-2 font-serif text-[14px] italic text-secondary">
-                    {PHENOTYPE_LABEL[profile.phenotype.primary] ??
-                      profile.phenotype.primary}
-                  </p>
-                  <PowerLawCompare cpw={cpw} powerLaw={profile.cp_power_law} />
+                ) : (
+                  <div className="rounded-metric border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
+                    Dati CP non disponibili — aggiorna il profilo.
+                  </div>
+                ))}
+              </>
+            )}
 
-                  {/* Commento AI (spec docs/scheda_atleta_tooltip_e_commento.md §3) */}
+              {/* Commento AI + taccuino del coach (spec
+                  docs/scheda_atleta_tooltip_e_commento.md §3): FRATELLI
+                  dell'hero, non figli — per un corridore cpw è sempre null,
+                  quindi vivere dentro il ramo cpw li farebbe sparire. Fuori
+                  anche da `{profile && ...}`: un corridore puro non ha mai
+                  profile_data, ma commento AI e taccuino devono comparire lo
+                  stesso (gate esterno è `profile || hasRunnerProfile`). */}
+              <div className="rounded-metric border border-border bg-surface px-6 py-5">
+                {aiComment && (
+                  <>
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
+                      {aiComment}
+                    </p>
+                    {aiCommentAt && (
+                      <p className="mb-2 mt-1.5 text-[11px] text-faint">
+                        Commento AI ·{" "}
+                        {new Date(aiCommentAt).toLocaleDateString("it-IT")}
+                      </p>
+                    )}
+                  </>
+                )}
+                <ExplainProfileButton
+                  enabled={aiEnabled}
+                  hasComment={aiComment != null}
+                />
+
+                {/* Taccuino del coach (Passo 5): le note che l'AI si è
+                    segnata su di te — si accumulano nel tempo. */}
+                {coachNotes.length > 0 && (
                   <div className="mt-3 border-t border-border/60 pt-3">
-                    {aiComment && (
-                      <>
-                        <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">
-                          {aiComment}
-                        </p>
-                        {aiCommentAt && (
-                          <p className="mb-2 mt-1.5 text-[11px] text-faint">
-                            Commento AI ·{" "}
-                            {new Date(aiCommentAt).toLocaleDateString("it-IT")}
-                          </p>
-                        )}
-                      </>
-                    )}
-                    <ExplainProfileButton
-                      enabled={aiEnabled}
-                      hasComment={aiComment != null}
-                    />
-
-                    {/* Taccuino del coach (Passo 5): le note che l'AI si è
-                        segnata su di te — si accumulano nel tempo. */}
-                    {coachNotes.length > 0 && (
-                      <div className="mt-3 border-t border-border/60 pt-3">
-                        <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
-                          📝 Taccuino del coach
-                        </div>
-                        <ul className="mt-2 space-y-1.5">
-                          {coachNotes.map((note) => (
-                            <li
-                              key={note.id}
-                              className="text-[13px] leading-snug text-secondary"
-                            >
-                              <span className="text-faint">
-                                {new Date(note.created_at).toLocaleDateString("it-IT")}{" "}
-                                · {note.memory_type} ·
-                              </span>{" "}
-                              {note.nota}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted">
+                      📝 Taccuino del coach
+                    </div>
+                    <ul className="mt-2 space-y-1.5">
+                      {coachNotes.map((note) => (
+                        <li
+                          key={note.id}
+                          className="text-[13px] leading-snug text-secondary"
+                        >
+                          <span className="text-faint">
+                            {new Date(note.created_at).toLocaleDateString("it-IT")}{" "}
+                            · {note.memory_type} ·
+                          </span>{" "}
+                          {note.nota}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-metric border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
-                  Dati CP non disponibili — aggiorna il profilo.
-                </div>
-              )}
+                )}
+              </div>
 
+            {profile && (
+              <>
               {/* W' + Pmax mini-cards */}
-              {cpw && (
+              {!isRunner && cpw && (
                 <div className="grid grid-cols-2 gap-3">
                   <MiniCard
                     label="W′"
@@ -190,7 +216,7 @@ export function ProfileTabs({
               )}
 
               {/* RPP table */}
-              {profile.rpp.length > 0 && (
+              {!isRunner && profile.rpp.length > 0 && (
                 <div>
                   <div className="mb-3 text-[10.5px] uppercase tracking-[0.14em] text-muted">
                     Record Power Profile · {profile.meta.window_days}gg
@@ -266,6 +292,8 @@ export function ProfileTabs({
                   </p>
                 </div>
               )}
+              </>
+            )}
 
             </div>
 

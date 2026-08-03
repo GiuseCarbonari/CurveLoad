@@ -321,3 +321,104 @@ export function buildRunnerProfile(
     cs_dprime: csd,
   };
 }
+
+// --- e) paceZones ------------------------------------------------------------
+
+/**
+ * Zone di passo v0 (Q5): euristica NOSTRA in % della velocità critica, non
+ * copiata dal Running Modeler di AnalyzeMe (le sue soglie esatte non sono
+ * verificabili — vedi spec). Tabella dichiarata thresholds_version "v0" in
+ * RunnerProfileData.meta, da ricalibrare nel tempo.
+ */
+const PACE_ZONE_TABLE: ReadonlyArray<{
+  key: PaceZone["key"];
+  label: string;
+  pct_cs_min: number;
+  pct_cs_max: number;
+}> = [
+  { key: "Z1", label: "Recupero", pct_cs_min: 0, pct_cs_max: 80 },
+  { key: "Z2", label: "Fondo lento", pct_cs_min: 80, pct_cs_max: 88 },
+  { key: "Z3", label: "Fondo medio", pct_cs_min: 88, pct_cs_max: 95 },
+  { key: "Z4", label: "Soglia", pct_cs_min: 95, pct_cs_max: 102 },
+  { key: "Z5", label: "VO2max", pct_cs_min: 102, pct_cs_max: 115 },
+];
+
+export interface PaceZone {
+  key: "Z1" | "Z2" | "Z3" | "Z4" | "Z5";
+  label: string;
+  /** Estremo LENTO in % di CS (es. 80). */
+  pct_cs_min: number;
+  /** Estremo VELOCE in % di CS (es. 88). */
+  pct_cs_max: number;
+  /** Passo del limite lento (numero PIÙ ALTO: % più bassa = più lento). */
+  pace_s_per_km_slow: number;
+  /** Passo del limite veloce (numero PIÙ BASSO: % più alta = più veloce). */
+  pace_s_per_km_fast: number;
+}
+
+/**
+ * Zone v0 da % di CS (tabella Q5). [] se csd è null. Z1 è aperta verso il
+ * basso (pct_cs_min 0): il passo al suo estremo lento è per costruzione
+ * Infinity (nessun limite di quanto lentamente si possa "recuperare"), che
+ * formatPace già rende come "—" senza bisogno di un caso speciale qui.
+ */
+export function paceZones(csd: CSDResult | null): PaceZone[] {
+  if (csd == null) return [];
+  return PACE_ZONE_TABLE.map((zone) => {
+    const speedSlow = csd.cs_mps * (zone.pct_cs_min / 100);
+    const speedFast = csd.cs_mps * (zone.pct_cs_max / 100);
+    return {
+      key: zone.key,
+      label: zone.label,
+      pct_cs_min: zone.pct_cs_min,
+      pct_cs_max: zone.pct_cs_max,
+      pace_s_per_km_slow: Math.round((1000 / speedSlow) * 10) / 10,
+      pace_s_per_km_fast: Math.round((1000 / speedFast) * 10) / 10,
+    };
+  });
+}
+
+// --- f) predictRaceTimes ------------------------------------------------------
+
+/** Distanze standard delle predizioni di gara (Q6): niente 21/42 km, sarebbero
+ * numeri falsi oltre la finestra di fit del modello CS 2P. */
+const DEFAULT_RACE_DISTANCES_M: readonly number[] = [1000, 3000, 5000, 10000];
+
+export interface RacePrediction {
+  distance_m: number;
+  /** "1 km" | "3 km" | "5 km" | "10 km". */
+  label: string;
+  time_s: number;
+  pace_s_per_km: number;
+  /** false se time_s esce dalla finestra di fit 120–900s (CS_FIT_SECS):
+   * stima ottimista, il modello CS 2P è tarato su sforzi di 2–15 min. */
+  in_model_window: boolean;
+}
+
+/**
+ * Inverte d = CS·t + D′  →  t = (d − D′)/CS. [] se csd è null. Distanze ≤ D′
+ * danno un tempo negativo o nullo: il punto va scartato (No Virtual Math),
+ * non mostrato come tempo negativo.
+ */
+export function predictRaceTimes(
+  csd: CSDResult | null,
+  distances: readonly number[] = DEFAULT_RACE_DISTANCES_M
+): RacePrediction[] {
+  if (csd == null) return [];
+
+  const predictions: RacePrediction[] = [];
+  for (const distanceM of distances) {
+    const timeS = (distanceM - csd.d_prime_m) / csd.cs_mps;
+    if (!Number.isFinite(timeS) || timeS <= 0) continue; // sotto D′: scartare il punto
+
+    const roundedTimeS = Math.round(timeS);
+    predictions.push({
+      distance_m: distanceM,
+      label: `${distanceM / 1000} km`,
+      time_s: roundedTimeS,
+      pace_s_per_km: Math.round((roundedTimeS / (distanceM / 1000)) * 10) / 10,
+      in_model_window: roundedTimeS >= 120 && roundedTimeS <= 900,
+    });
+  }
+  return predictions;
+}

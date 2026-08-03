@@ -114,6 +114,7 @@ export function RouteCardStack({
   aiEnabled,
   aiComment,
   aiCommentAt,
+  isRunner = false,
 }: {
   terrain: TerrainSummary | null;
   analysis: SavedGapAnalysis | null;
@@ -126,6 +127,10 @@ export function RouteCardStack({
   aiEnabled: boolean;
   aiComment: string | null;
   aiCommentAt: string | null;
+  /** Chi corre e basta (§C1, minimo onesto): niente limitatori in W/kg né
+   * calibrazione MTB, solo mappa + un messaggio onesto. Default false =
+   * comportamento odierno (ciclismo). */
+  isRunner?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("limiters");
 
@@ -153,42 +158,56 @@ export function RouteCardStack({
       <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
 
       {/* La mappa resta sempre visibile qui, non è più una tab: le tab sotto
-          scelgono solo cosa mostrare accanto/sotto di lei. */}
+          scelgono solo cosa mostrare accanto/sotto di lei. Profilo
+          altimetrico e salite sono geometria pura, valgono per qualsiasi
+          sport. */}
       <RouteMapCard terrain={terrain} demands={demands} />
 
-      <div className="flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
-              tab === t.key
-                ? "bg-brand font-medium text-brand-on shadow-sm"
-                : "text-muted hover:text-foreground"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {isRunner ? (
+        // §C1 (minimo onesto): per chi corre e basta i limitatori in W/kg e
+        // la calibrazione dalle uscite MTB sono informazioni false. Il
+        // motore di stima per la corsa resta rinviato al Passo 10 (Q8/Q9).
+        <div className="rounded-metric border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
+          Le stime di passo per la corsa non ci sono ancora: qui trovi solo
+          il profilo altimetrico del percorso.
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  "min-h-10 flex-1 rounded-lg px-2 py-1 transition-colors",
+                  tab === t.key
+                    ? "bg-brand font-medium text-brand-on shadow-sm"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-      {tab === "limiters" && (
-        <LimitersCard analysis={analysis} generatedAt={gapGeneratedAt} />
-      )}
+          {tab === "limiters" && (
+            <LimitersCard analysis={analysis} generatedAt={gapGeneratedAt} />
+          )}
 
-      {tab === "estimate" && (
-        <EstimateCard
-          terrain={terrain}
-          estimate={estimate}
-          estimateGeneratedAt={estimateGeneratedAt}
-          signatureLevel={signatureLevel}
-          routeSettings={routeSettings}
-          aiEnabled={aiEnabled}
-          aiComment={aiComment}
-          aiCommentAt={aiCommentAt}
-        />
+          {tab === "estimate" && (
+            <EstimateCard
+              terrain={terrain}
+              estimate={estimate}
+              estimateGeneratedAt={estimateGeneratedAt}
+              signatureLevel={signatureLevel}
+              routeSettings={routeSettings}
+              aiEnabled={aiEnabled}
+              aiComment={aiComment}
+              aiCommentAt={aiCommentAt}
+            />
+          )}
+        </>
       )}
     </div>
   );

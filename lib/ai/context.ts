@@ -32,6 +32,13 @@ export interface DossierRow {
   preferenze_allenamento: string | null;
   stile_allenamento: string | null;
   note_personali: string | null;
+  /**
+   * Risposte dell'intervista filosofia (migration 023): condenseContext ne
+   * estrae solo piace/detesta (vedi sotto) — dal wizard senza più lo step
+   * "Parametri fisiologici" è l'unica fonte di preferenze di seduta per i
+   * nuovi utenti; preferenze_allenamento resta per chi l'aveva già scritta.
+   */
+  filosofia_risposte: { piace?: string[]; detesta?: string[] } | null;
   /** Filosofia di coaching generata (migration 023): dà la voce al coach. */
   filosofia_coaching: string | null;
 }
@@ -105,7 +112,15 @@ function prune(obj: Record<string, unknown>): Record<string, unknown> | null {
 
 /** Condensazione pura: dalle righe DB al fascicolo per il prompt. */
 export function condenseContext(sources: ContextSources): AthleteContext {
-  const atleta = sources.dossier ? prune({ ...sources.dossier }) : null;
+  const filosofia = sources.dossier?.filosofia_risposte ?? null;
+  const atleta = sources.dossier
+    ? prune({
+        ...sources.dossier,
+        filosofia_risposte: undefined, // il blob grezzo non serve al prompt
+        piace_allenamento: filosofia?.piace ?? null,
+        evita_allenamento: filosofia?.detesta ?? null,
+      })
+    : null;
 
   let condizione: AthleteContext["condizione"] = null;
   const mirror = sources.mirror;
@@ -180,7 +195,7 @@ export async function assembleAthleteContext(
     admin
       .from("athlete_profiles")
       .select(
-        "nome, eta, sesso, sport_principali, livello_esperienza, obiettivi, gare_target, data_obiettivo, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, infortuni_attuali, dolore_attuale, limiti_principali, preferenze_allenamento, stile_allenamento, note_personali, filosofia_coaching"
+        "nome, eta, sesso, sport_principali, livello_esperienza, obiettivi, gare_target, data_obiettivo, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, infortuni_attuali, dolore_attuale, limiti_principali, preferenze_allenamento, stile_allenamento, note_personali, filosofia_risposte, filosofia_coaching"
       )
       .eq("user_id", userId)
       .maybeSingle(),

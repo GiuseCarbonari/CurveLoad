@@ -13,10 +13,8 @@ import {
 } from "@/lib/onboarding/dossier";
 
 import {
-  StepAttrezzatura,
   StepChiSei,
   StepFilosofia,
-  StepFisiologia,
   StepObiettivi,
   StepSalute,
   StepSettimana,
@@ -24,9 +22,10 @@ import {
 } from "./dossier-fields";
 
 /**
- * Wizard di onboarding (PRD §12.1, step 3→11). Un argomento per step,
- * salvataggio su DB ad ogni avanzamento così chiudere a metà non perde dati.
- * Step 1 (account) e 2 (Intervals) sono già fatti prima di qui.
+ * Wizard di onboarding (PRD §12.1, step 3→9 + analisi automatica allo step
+ * 10). Un argomento per step, salvataggio su DB ad ogni avanzamento (e ad
+ * ogni ritorno indietro) così chiudere a metà o navigare avanti/indietro non
+ * perde mai dati. Step 1 (account) e 2 (Intervals) sono già fatti prima di qui.
  */
 
 const EDU_MESSAGE =
@@ -72,7 +71,17 @@ export function OnboardingWizard({
     if (ok) setStep(nextStep);
   }
 
-  // --- Step 13: prima analisi (auto) -----------------------------------------
+  // Come advance, ma per il bottone Indietro: salva comunque il form corrente
+  // (prima non lo faceva, e chi modificava un campo e tornava indietro perdeva
+  // quel valore al reload).
+  async function goBack(payload: Record<string, unknown>, prevStep: number) {
+    setSaving(true);
+    const ok = await persist({ ...payload, step: prevStep });
+    setSaving(false);
+    if (ok) setStep(prevStep);
+  }
+
+  // --- Step 10: prima analisi (auto) -----------------------------------------
   const analysisStarted = useRef(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -98,12 +107,11 @@ export function OnboardingWizard({
 
   const progressPct = Math.round((step / LAST_STEP) * 100);
 
-  const canAdvanceStep5 = form.nome.trim() !== "" && form.livello_esperienza !== "";
+  const canAdvanceStep5 =
+    form.sport_principali.length > 0 &&
+    form.nome.trim() !== "" &&
+    form.livello_esperienza !== "";
   const canAdvanceStep7 = form.disponibilita_ore_sett.trim() !== "";
-
-  function goBack(prevStep: number) {
-    setStep(prevStep);
-  }
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -188,6 +196,27 @@ export function OnboardingWizard({
           <div className="rounded-metric border border-l-[3px] border-border border-l-brand bg-surface p-5 text-sm leading-relaxed text-secondary">
             {EDU_MESSAGE}
           </div>
+          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
+              Ogni giorno
+            </p>
+            <p className="text-sm leading-relaxed text-secondary">
+              CurveLoad legge i tuoi dati da Intervals.icu — readiness, HRV, sonno,
+              carico — e decide se l&apos;allenamento del giorno è confermato,
+              ridotto o rimandato. La dashboard ti mostra sempre cosa fare e perché.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
+            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
+              Ogni settimana
+            </p>
+            <p className="text-sm leading-relaxed text-secondary">
+              Genera il piano settimanale in un click: CurveLoad costruisce la
+              distribuzione dei carichi in base al tuo dossier e alla fase
+              corrente. Il piano si pubblica direttamente su Intervals.icu,
+              così lo ritrovi nel tuo calendario.
+            </p>
+          </div>
           <div className="rounded-metric border border-border bg-surface p-5 text-sm leading-relaxed text-secondary">
             <p className="mb-2 font-medium text-foreground">Nota su DFA a1</p>
             <p>
@@ -224,7 +253,7 @@ export function OnboardingWizard({
           </div>
           <StepChiSei form={form} update={update} />
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(4)}>Indietro</Button>
+            <Button variant="outline" onClick={() => void goBack({}, 4)}>Indietro</Button>
             <Button
               disabled={!canAdvanceStep5 || saving}
               onClick={() => void advance({ profile: formToPatch(form) }, 6)}
@@ -234,7 +263,7 @@ export function OnboardingWizard({
           </div>
           {!canAdvanceStep5 && (
             <p className="text-right text-xs text-muted">
-              Compila nome e livello di esperienza per continuare.
+              Scegli lo sport e compila nome e livello di esperienza per continuare.
             </p>
           )}
         </section>
@@ -253,7 +282,12 @@ export function OnboardingWizard({
           </div>
           <StepObiettivi form={form} update={update} />
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(5)}>Indietro</Button>
+            <Button
+              variant="outline"
+              onClick={() => void goBack({ profile: formToPatch(form) }, 5)}
+            >
+              Indietro
+            </Button>
             <Button
               disabled={saving}
               onClick={() => void advance({ profile: formToPatch(form) }, 7)}
@@ -277,7 +311,12 @@ export function OnboardingWizard({
           </div>
           <StepSettimana form={form} update={update} />
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(6)}>Indietro</Button>
+            <Button
+              variant="outline"
+              onClick={() => void goBack({ profile: formToPatch(form) }, 6)}
+            >
+              Indietro
+            </Button>
             <Button
               disabled={!canAdvanceStep7 || saving}
               onClick={() => void advance({ profile: formToPatch(form) }, 8)}
@@ -293,56 +332,8 @@ export function OnboardingWizard({
         </section>
       )}
 
-      {/* Step 8 — Parametri fisiologici */}
+      {/* Step 8 — Salute e note */}
       {step === 8 && (
-        <section className="flex flex-col gap-6">
-          <div>
-            <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
-              Parametri fisiologici
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Tutto opzionale — se hai Intervals.icu verranno sincronizzati automaticamente.
-            </p>
-          </div>
-          <StepFisiologia form={form} update={update} />
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(7)}>Indietro</Button>
-            <Button
-              disabled={saving}
-              onClick={() => void advance({ profile: formToPatch(form) }, 9)}
-            >
-              {saving ? "Salvo…" : "Avanti"}
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 9 — Attrezzatura */}
-      {step === 9 && (
-        <section className="flex flex-col gap-6">
-          <div>
-            <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
-              Attrezzatura
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Ci aiuta a capire quali dati possiamo usare e come strutturare il piano.
-            </p>
-          </div>
-          <StepAttrezzatura form={form} update={update} />
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(8)}>Indietro</Button>
-            <Button
-              disabled={saving}
-              onClick={() => void advance({ profile: formToPatch(form) }, 10)}
-            >
-              {saving ? "Salvo…" : "Avanti"}
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 10 — Salute e note */}
-      {step === 10 && (
         <section className="flex flex-col gap-6">
           <div>
             <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
@@ -354,10 +345,15 @@ export function OnboardingWizard({
           </div>
           <StepSalute form={form} update={update} />
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(9)}>Indietro</Button>
+            <Button
+              variant="outline"
+              onClick={() => void goBack({ profile: formToPatch(form) }, 7)}
+            >
+              Indietro
+            </Button>
             <Button
               disabled={saving}
-              onClick={() => void advance({ profile: formToPatch(form) }, 11)}
+              onClick={() => void advance({ profile: formToPatch(form) }, 9)}
             >
               {saving ? "Salvo…" : "Avanti"}
             </Button>
@@ -365,8 +361,8 @@ export function OnboardingWizard({
         </section>
       )}
 
-      {/* Step 11 — La tua filosofia */}
-      {step === 11 && (
+      {/* Step 9 — La tua filosofia */}
+      {step === 9 && (
         <section className="flex flex-col gap-6">
           <div>
             <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
@@ -380,92 +376,15 @@ export function OnboardingWizard({
           </div>
           <StepFilosofia form={form} update={update} />
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(10)}>Indietro</Button>
             <Button
-              disabled={saving}
-              onClick={() => void advance({ profile: formToPatch(form) }, 12)}
+              variant="outline"
+              onClick={() => void goBack({ profile: formToPatch(form) }, 8)}
             >
-              {saving ? "Salvo…" : "Avanti"}
+              Indietro
             </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 12 — Inizia con CurveLoad */}
-      {step === 12 && (
-        <section className="flex flex-col gap-6">
-          <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">
-            Ecco come funziona CurveLoad
-          </h1>
-
-          {/* Blocco 1: il loop quotidiano */}
-          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
-              Ogni giorno
-            </p>
-            <p className="text-sm leading-relaxed text-secondary">
-              CurveLoad legge i tuoi dati da Intervals.icu — readiness, HRV, sonno,
-              carico — e decide se l&apos;allenamento del giorno è confermato,
-              ridotto o rimandato. La dashboard ti mostra sempre cosa fare e perché.
-            </p>
-          </div>
-
-          {/* Blocco 2: il piano settimanale */}
-          <div className="flex flex-col gap-3 rounded-metric border border-border bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
-              Ogni settimana
-            </p>
-            <p className="text-sm leading-relaxed text-secondary">
-              Genera il piano settimanale in un click: CurveLoad costruisce la
-              distribuzione dei carichi in base al tuo dossier e alla fase
-              corrente. Il piano si pubblica direttamente su Intervals.icu,
-              così lo ritrovi nel tuo calendario.
-            </p>
-          </div>
-
-          {/* Blocco 3: Intervals fondamentale */}
-          <div className="flex flex-col gap-3 rounded-metric border border-l-[3px] border-border border-l-brand bg-surface p-5">
-            <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-brand-ink">
-              Perché Intervals.icu è fondamentale
-            </p>
-            <p className="text-sm leading-relaxed text-secondary">
-              Intervals.icu è la fonte di tutti i tuoi dati: storico allenamenti,
-              readiness giornaliera, HRV, metriche di carico. Senza un account
-              Intervals attivo e collegato, CurveLoad non può leggere nulla e il
-              coach resta cieco.
-            </p>
-            <ul className="mt-1 flex flex-col gap-1.5 text-sm text-secondary">
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand-ink">→</span>
-                <span>
-                  Se non hai ancora un account, crealo su{" "}
-                  <strong>intervals.icu</strong> (gratuito) e collegalo
-                  al tuo dispositivo GPS o a Strava.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand-ink">→</span>
-                <span>
-                  Più dati storici hai su Intervals, più il piano sarà
-                  preciso fin dal primo giorno.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-brand-ink">→</span>
-                <span>
-                  La connessione l&apos;hai già configurata nel primo passo —
-                  se qualcosa non andava, torna nelle impostazioni prima di
-                  procedere.
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => goBack(11)}>Indietro</Button>
             <Button
               disabled={saving}
-              onClick={() => void advance({}, 13)}
+              onClick={() => void advance({ profile: formToPatch(form) }, 10)}
             >
               {saving ? "Salvo…" : "Tutto chiaro, inizia l'analisi"}
             </Button>
@@ -473,8 +392,8 @@ export function OnboardingWizard({
         </section>
       )}
 
-      {/* Step 13 — Prima analisi */}
-      {step === 13 && (
+      {/* Step 10 — Prima analisi */}
+      {step === 10 && (
         <section className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
           {analysisError ? (
             <>

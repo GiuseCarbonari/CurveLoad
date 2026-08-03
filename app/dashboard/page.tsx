@@ -10,7 +10,7 @@ import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
 import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
-import type { BuiltSession } from "@/lib/planner/build-week";
+import { isRunningOnlyDossier, type BuiltSession } from "@/lib/planner/build-week";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
       .maybeSingle(),
     supabase
       .from("athlete_profiles")
-      .select("nome, preferences, ai_comment_oggi, ai_comment_oggi_at")
+      .select("nome, preferences, ai_comment_oggi, ai_comment_oggi_at, sport_principali")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -105,7 +105,10 @@ export default async function DashboardPage() {
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
-  const efficiencyTrend = mirror ? computeEfficiencyTrend(mirror.activities_90d) : null;
+  const isRunner = isRunningOnlyDossier(preferenceRow?.sport_principali);
+  const efficiencyTrend = mirror
+    ? computeEfficiencyTrend(mirror.activities_90d, isRunner ? "run" : "bike")
+    : null;
 
   const preferences =
     preferenceRow?.preferences != null &&
@@ -335,7 +338,7 @@ export default async function DashboardPage() {
       {/* Trend chart */}
       {mirror && <ConditionTrendChart days={mirror.wellness_30d} />}
 
-      {/* Trend efficienza aerobica (ciclismo) */}
+      {/* Trend efficienza aerobica (bici o corsa, secondo sport_principali) */}
       {mirror && efficiencyTrend && <EfficiencyTrendChart trend={efficiencyTrend} />}
 
       {/* Footer: disconnect */}

@@ -6,6 +6,9 @@ import {
   estimateCSD,
   extractPaceProfile,
   formatPace,
+  paceZones,
+  predictRaceTimes,
+  type CSDResult,
   type PaceCurve,
   type PaceCurvesResponse,
   type RPPPoint,
@@ -209,4 +212,99 @@ test("buildRunnerProfile: generatedAt iniettato è puro, nessun clock interno", 
   );
   assert.ok(profile);
   assert.equal(profile.meta.generated_at, "2020-01-01T00:00:00.000Z");
+});
+
+// --- paceZones -----------------------------------------------------------------
+
+/** Stessa fixture sintetica CS=4.00 m/s, D′=180 m usata sopra. */
+function fixtureCSD(): CSDResult {
+  const csd = estimateCSD(extractPaceProfile(curve("42d")));
+  assert.ok(csd, "fixture CSD non disponibile");
+  return csd;
+}
+
+test("paceZones: null se csd è null", () => {
+  assert.deepEqual(paceZones(null), []);
+});
+
+test("paceZones: 5 zone ordinate, senza buchi, pace_fast < pace_slow in ognuna", () => {
+  const zones = paceZones(fixtureCSD());
+  assert.equal(zones.length, 5);
+  assert.deepEqual(zones.map((z) => z.key), ["Z1", "Z2", "Z3", "Z4", "Z5"]);
+
+  for (const zone of zones) {
+    assert.ok(
+      zone.pace_s_per_km_fast < zone.pace_s_per_km_slow,
+      `${zone.key}: passo veloce (${zone.pace_s_per_km_fast}) deve essere < passo lento (${zone.pace_s_per_km_slow})`
+    );
+  }
+
+  // Senza buchi: il bordo veloce di ogni zona è il bordo lento della successiva,
+  // sia in % di CS sia nel passo corrispondente.
+  for (let i = 0; i < zones.length - 1; i++) {
+    assert.equal(zones[i].pct_cs_max, zones[i + 1].pct_cs_min);
+    assert.equal(zones[i].pace_s_per_km_fast, zones[i + 1].pace_s_per_km_slow);
+  }
+});
+
+test("paceZones: valori attesi calcolati a mano dalla fixture CS=4.00 m/s", () => {
+  const zones = paceZones(fixtureCSD());
+  const z1 = zones.find((z) => z.key === "Z1")!;
+  const z2 = zones.find((z) => z.key === "Z2")!;
+  const z5 = zones.find((z) => z.key === "Z5")!;
+
+  // Z1 è aperta verso il basso (0% CS): nessun limite lento, formatPace la
+  // renderà "—".
+  assert.equal(z1.pace_s_per_km_slow, Infinity);
+  // 80% di 4.0 m/s = 3.2 m/s → 1000/3.2 = 312.5 s/km.
+  assert.equal(z1.pace_s_per_km_fast, 312.5);
+  // 88% di 4.0 m/s = 3.52 m/s → 1000/3.52 = 284.1 s/km (1 decimale).
+  assert.equal(z2.pace_s_per_km_fast, 284.1);
+  // 115% di 4.0 m/s = 4.6 m/s → 1000/4.6 = 217.4 s/km (1 decimale).
+  assert.equal(z5.pace_s_per_km_fast, 217.4);
+});
+
+// --- predictRaceTimes ------------------------------------------------------------
+
+test("predictRaceTimes: null se csd è null", () => {
+  assert.deepEqual(predictRaceTimes(null), []);
+});
+
+test("predictRaceTimes: 5 km con CS/D' noti = valore atteso calcolato a mano", () => {
+  // t = (d - D')/CS = (5000 - 180)/4.0 = 1205 s; passo = 1205/5 = 241 s/km.
+  const predictions = predictRaceTimes(fixtureCSD());
+  const at5k = predictions.find((p) => p.distance_m === 5000);
+  assert.ok(at5k);
+  assert.equal(at5k.time_s, 1205);
+  assert.equal(at5k.pace_s_per_km, 241);
+  assert.equal(at5k.label, "5 km");
+});
+
+test("predictRaceTimes: in_model_window === false sulla predizione dei 10 km della fixture", () => {
+  // t = (10000 - 180)/4.0 = 2455 s, ben oltre i 900s (15 min) della finestra
+  // di fit: stima ottimista, fuori dal modello.
+  const predictions = predictRaceTimes(fixtureCSD());
+  const at10k = predictions.find((p) => p.distance_m === 10000);
+  assert.ok(at10k);
+  assert.equal(at10k.time_s, 2455);
+  assert.equal(at10k.in_model_window, false);
+});
+
+test("predictRaceTimes: distanza minore di D' non compare nell'array", () => {
+  const csd: CSDResult = {
+    cs_mps: 4.0,
+    cs_pace_s_per_km: 250,
+    d_prime_m: 1200,
+    r2: 1,
+    fit_secs: [120, 300, 600, 900],
+    model: "CS_2P_LINEAR",
+    source: "app_cs2p_fit",
+  };
+  const predictions = predictRaceTimes(csd, [1000, 5000]);
+  assert.equal(
+    predictions.find((p) => p.distance_m === 1000),
+    undefined,
+    "1000m < D'=1200m deve essere scartato, non un tempo negativo"
+  );
+  assert.ok(predictions.find((p) => p.distance_m === 5000));
 });

@@ -44,20 +44,11 @@ export async function POST() {
     );
   }
 
-  // FTP dichiarato dal dossier: fallback finché non c'è una stima da power-curves.
-  const { data: dossier } = await admin
-    .from("athlete_profiles")
-    .select("ftp_outdoor_w")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const declaredFtpW =
-    typeof dossier?.ftp_outdoor_w === "number" ? dossier.ftp_outdoor_w : null;
-
   const fetcher = new IntervalsFetcher(
     decryptToken(connection.access_token_encrypted)
   );
 
-  return buildProfiles(fetcher, admin, supabase, user.id, declaredFtpW);
+  return buildProfiles(fetcher, admin, supabase, user.id);
 }
 
 /** Percorso ciclismo: power-curves → CP/W′ (PRD §33). */
@@ -65,8 +56,7 @@ async function buildProfiles(
   fetcher: IntervalsFetcher,
   admin: ReturnType<typeof createAdminClient>,
   supabase: ReturnType<typeof createClient>,
-  userId: string,
-  declaredFtpW: number | null
+  userId: string
 ) {
   let powerCurves;
   let athleteRaw;
@@ -93,6 +83,31 @@ async function buildProfiles(
     );
   }
 
+  // FTP dichiarato: non più un campo del wizard (l'onboarding non lo chiede
+  // più, migration 024) ma icu_ftp/threshold_power, che Intervals restituisce
+  // già in questa stessa getProfile() — stesso fallback usato dal mirror di
+  // sync (lib/intervals/sync.ts).
+  const declaredFtpW =
+    (athleteRaw.icu_ftp as number | undefined) ??
+    (athleteRaw.threshold_power as number | undefined) ??
+    null;
+
+  // Ramo corsa (Passo 9), fail-soft assoluto: chi non corre (o l'endpoint
+  // pace-curves fallisce per qualunque motivo — 404, 401, rete, parsing) non
+  // deve mai far fallire il profilo bici. Errore ingoiato e loggato senza
+  // token né body. Va PRIMA del ramo bici (bug §0): se buildAthleteProfile
+  // lancia (chi corre e basta non ha power-curves), runnerData deve già
+  // essere pronto per essere salvato nel catch qui sotto.
+  let runnerData = null;
+  try {
+    runnerData = buildRunnerProfile(await fetcher.getPaceCurves());
+  } catch (error) {
+    console.error(
+      "Build profilo corsa fallita (ignorato, il profilo bici non ne risente):",
+      error instanceof Error ? error.message : "errore sconosciuto"
+    );
+  }
+
   let profileData;
   try {
     profileData = buildAthleteProfile(powerCurves, athleteRaw, undefined, declaredFtpW);
@@ -101,6 +116,47 @@ async function buildProfiles(
       "Build profilo fallita:",
       error instanceof Error ? error.message : "errore sconosciuto"
     );
+    // Chi corre e basta non ha power-curves: buildAthleteProfile lancia
+    // sempre per lui. Se il ramo corsa sopra ha comunque prodotto un
+    // runnerData valido, il profilo di corsa va salvato lo stesso (§0) invece
+    // di rispondere 422 secco come se non ci fosse nulla da salvare.
+    if (runnerData != null) {
+      const { error: upsertError } = await supabase.from("athlete_profiles").upsert(
+        { user_id: userId, runner_profile_data: runnerData },
+        { onConflict: "user_id" }
+      );
+      if (upsertError) {
+        console.error("Salvataggio profilo corsa fallito:", upsertError.message);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "internal_error",
+            message: "Salvataggio profilo fallito",
+          },
+          { status: 500 }
+        );
+      }
+
+      await admin.from("audit_logs").insert({
+        user_id: userId,
+        action: "profile.built",
+        source: "profile_build",
+        payload: {
+          phenotype: null,
+          confidence: runnerData.meta.confidence,
+          cp_w: null,
+          model: null,
+          cs_mps: runnerData.cs_dprime?.cs_mps ?? null,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        phenotype: null,
+        confidence: runnerData.meta.confidence,
+      });
+    }
+
     return NextResponse.json(
       {
         success: false,
@@ -108,20 +164,6 @@ async function buildProfiles(
         message: "Dati power curve insufficienti per costruire il profilo",
       },
       { status: 422 }
-    );
-  }
-
-  // Ramo corsa (Passo 9), fail-soft assoluto: chi non corre (o l'endpoint
-  // pace-curves fallisce per qualunque motivo — 404, 401, rete, parsing) non
-  // deve mai far fallire il profilo bici. Errore ingoiato e loggato senza
-  // token né body.
-  let runnerData = null;
-  try {
-    runnerData = buildRunnerProfile(await fetcher.getPaceCurves());
-  } catch (error) {
-    console.error(
-      "Build profilo corsa fallita (ignorato, il profilo bici non ne risente):",
-      error instanceof Error ? error.message : "errore sconosciuto"
     );
   }
 

@@ -49,9 +49,10 @@ export interface AthleteProfileData {
   rpp: RPPEntry[];
   /**
    * FTP a livello top (fonte di verità per i consumer nuovi): la stima del
-   * modello CP se presente, altrimenti il valore dichiarato dall'atleta
-   * (ftp_outdoor_w) come fallback. `cp_wprime.ftp_model_w` resta per
-   * retrocompat ma non va più letto per questo scopo.
+   * modello CP se presente, altrimenti il dichiarato Intervals (icu_ftp /
+   * threshold_power, letto in /api/profile/build) come fallback.
+   * `cp_wprime.ftp_model_w` resta per retrocompat ma non va più letto per
+   * questo scopo.
    */
   ftp_model_w: number | null;
   ftp_source: "declared" | "estimated" | null;

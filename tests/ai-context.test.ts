@@ -29,6 +29,7 @@ const emptyDossier: DossierRow = {
   preferenze_allenamento: null,
   stile_allenamento: null,
   note_personali: null,
+  filosofia_risposte: null,
   filosofia_coaching: null,
 };
 
@@ -297,5 +298,27 @@ test("condenseContext: la filosofia di coaching entra nel fascicolo", () => {
   assert.deepEqual(ctx.atleta, {
     nome: "Giuseppe",
     filosofia_coaching: "Ti alleno col metodo polarizzato: il facile resta facile.",
+  });
+});
+
+test("condenseContext: piace/detesta della filosofia sostituiscono preferenze_allenamento nel fascicolo", () => {
+  // Lo step 8 (Parametri fisiologici) è sparito dal wizard e con lui la
+  // domanda "preferenze di allenamento" — per i nuovi utenti l'unica fonte
+  // di questo segnale è filosofia_risposte.piace/detesta (step filosofia).
+  const ctx = condenseContext({
+    dossier: {
+      ...emptyDossier,
+      nome: "Giuseppe",
+      filosofia_risposte: { piace: ["salite", "lungo"], detesta: ["indoor"] },
+    },
+    mirror: null,
+    dataQualityLevel: null,
+    decisions: [],
+    memories: [],
+  });
+  assert.deepEqual(ctx.atleta, {
+    nome: "Giuseppe",
+    piace_allenamento: ["salite", "lungo"],
+    evita_allenamento: ["indoor"],
   });
 });

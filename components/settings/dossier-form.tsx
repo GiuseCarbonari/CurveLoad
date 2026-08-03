@@ -3,10 +3,8 @@
 import { useState } from "react";
 
 import {
-  StepAttrezzatura,
   StepChiSei,
   StepFilosofia,
-  StepFisiologia,
   StepObiettivi,
   StepSalute,
   StepSettimana,
@@ -18,15 +16,13 @@ import { COACHING_SCHOOLS } from "@/lib/coaching/schools";
 import {
   ALLENAMENTI_OPTIONS,
   BLOCCHI_DURI_OPTIONS,
-  CICLOCOMPUTER_OPTIONS,
   DATI_SENSAZIONI_OPTIONS,
-  FASE_OPTIONS,
   formToPatch,
   GIORNI,
   INDOOR_OUTDOOR_OPTIONS,
   LIVELLO_OPTIONS,
-  PIATTAFORMA_OPTIONS,
   SESSO_OPTIONS,
+  SPORT_OPTIONS,
   STILE_OPTIONS,
   STRUTTURA_OPTIONS,
   TONO_OPTIONS,
@@ -37,8 +33,6 @@ import {
   User,
   Target,
   CalendarDays,
-  Activity,
-  Bike,
   HeartPulse,
   ChevronRight,
   Compass,
@@ -57,8 +51,6 @@ type GroupKey =
   | "chi_sei"
   | "obiettivi"
   | "settimana"
-  | "fisiologia"
-  | "attrezzatura"
   | "salute"
   | "filosofia";
 
@@ -78,11 +70,7 @@ function num(v: string, unit = ""): string {
   return v.trim() === "" ? "—" : `${v.trim()}${unit}`;
 }
 
-function list(values: string[]): string {
-  return values.length > 0 ? values.join(", ") : "—";
-}
-
-/** Come list(), ma traducendo i value nelle etichette leggibili. */
+/** Traduce i value scelti (sport, giorni, chip…) nelle etichette leggibili. */
 function labels(
   options: ReadonlyArray<{ value: string; label: string }>,
   values: string[]
@@ -121,8 +109,6 @@ const GROUPS: { key: GroupKey | "infortuni"; label: string; icon: React.ElementT
   { key: "chi_sei",      label: "Chi sei",               icon: User },
   { key: "obiettivi",    label: "Obiettivi",              icon: Target },
   { key: "settimana",    label: "La tua settimana",       icon: CalendarDays },
-  { key: "fisiologia",   label: "Parametri fisiologici",  icon: Activity },
-  { key: "attrezzatura", label: "Attrezzatura",           icon: Bike },
   { key: "salute",       label: "Salute e note",          icon: HeartPulse },
   { key: "filosofia",    label: "La tua filosofia",       icon: Compass },
   { key: "infortuni",    label: "Periodi infortunio",     icon: ShieldAlert },
@@ -294,21 +280,16 @@ export function SettingsDossierForm({
                         <div className="divide-y divide-border">
                           {g.key === "chi_sei" && (
                             <>
+                              <Row label="Sport" value={labels(SPORT_OPTIONS, saved.sport_principali)} />
                               <Row label="Nome" value={text(saved.nome)} />
                               <Row label="Età" value={num(saved.eta)} />
                               <Row label="Sesso" value={optLabel(SESSO_OPTIONS, saved.sesso)} />
-                              <Row label="Altezza" value={num(saved.altezza_cm, " cm")} />
-                              <Row label="Peso attuale" value={num(saved.peso_dichiarato_kg, " kg")} />
-                              <Row label="Peso target" value={num(saved.peso_target_kg, " kg")} />
-                              <Row label="Sport principali" value={list(saved.sport_principali)} />
                               <Row label="Livello" value={optLabel(LIVELLO_OPTIONS, saved.livello_esperienza)} />
                             </>
                           )}
                           {g.key === "obiettivi" && (
                             <>
                               <Row label="Obiettivi" value={text(saved.obiettivi)} />
-                              <Row label="Fase attuale" value={optLabel(FASE_OPTIONS, saved.fase_corrente)} />
-                              <Row label="Stile allenamento" value={optLabel(STILE_OPTIONS, saved.stile_allenamento)} />
                               <Row label="Gara target" value={text(saved.gara.nome)} />
                               <Row label="Data gara" value={text(saved.gara.data)} />
                               <Row label="Distanza" value={num(saved.gara.distanza_km, " km")} />
@@ -322,30 +303,12 @@ export function SettingsDossierForm({
                               <Row label="Max weekend" value={num(saved.durata_max_weekend_min, " min")} />
                               <Row label="Giorni preferiti" value={days(saved.giorni_preferiti)} />
                               <Row label="Giorni impossibili" value={days(saved.giorni_impossibili)} />
-                            </>
-                          )}
-                          {g.key === "fisiologia" && (
-                            <>
-                              <Row label="FTP outdoor" value={num(saved.ftp_outdoor_w, " W")} />
-                              <Row label="FTP indoor" value={num(saved.ftp_indoor_w, " W")} />
-                              <Row label="FC max" value={num(saved.max_hr, " bpm")} />
-                              <Row label="FC soglia" value={num(saved.threshold_hr, " bpm")} />
-                              <Row label="LT1 potenza" value={num(saved.lt1_w, " W")} />
-                              <Row label="LT1 FC" value={num(saved.lt1_hr, " bpm")} />
-                              <Row label="LT2 potenza" value={num(saved.lt2_w, " W")} />
-                              <Row label="LT2 FC" value={num(saved.lt2_hr, " bpm")} />
-                            </>
-                          )}
-                          {g.key === "attrezzatura" && (
-                            <>
-                              <Row label="Ciclocomputer" value={optLabel(CICLOCOMPUTER_OPTIONS, saved.ciclocomputer)} />
-                              <Row label="Misuratore potenza" value={yesNo(saved.ha_misuratore_potenza)} />
-                              <Row label="Fascia cardio" value={yesNo(saved.ha_fascia_cardio)} />
-                              <Row label="Smartwatch" value={yesNo(saved.ha_smartwatch)} />
-                              <Row label="Rulli indoor" value={yesNo(saved.ha_rulli)} />
-                              <Row label="Bici outdoor" value={text(saved.bici_outdoor)} />
-                              <Row label="Piattaforma indoor" value={optLabel(PIATTAFORMA_OPTIONS, saved.piattaforma_indoor)} />
-                              <Row label="Indoor / outdoor" value={optLabel(INDOOR_OUTDOOR_OPTIONS, saved.indoor_outdoor)} />
+                              {!saved.sport_principali.includes("Corsa") && (
+                                <>
+                                  <Row label="Indoor / outdoor" value={optLabel(INDOOR_OUTDOOR_OPTIONS, saved.indoor_outdoor)} />
+                                  <Row label="Rulli indoor" value={yesNo(saved.ha_rulli)} />
+                                </>
+                              )}
                             </>
                           )}
                           {g.key === "salute" && (
@@ -353,7 +316,6 @@ export function SettingsDossierForm({
                               <Row label="Infortuni attuali" value={text(saved.infortuni_attuali)} />
                               <Row label="Dolori ricorrenti" value={text(saved.dolore_attuale)} />
                               <Row label="Farmaci / integratori" value={text(saved.farmaci_integratori)} />
-                              <Row label="Preferenze allenamento" value={text(saved.preferenze_allenamento)} />
                               <Row label="Limiti principali" value={text(saved.limiti_principali)} />
                               <Row label="Note personali" value={text(saved.note_personali)} />
                             </>
@@ -366,6 +328,7 @@ export function SettingsDossierForm({
                               <Row label="Struttura o flessibilità" value={optLabel(STRUTTURA_OPTIONS, saved.filosofia.struttura)} />
                               <Row label="Dati o sensazioni" value={optLabel(DATI_SENSAZIONI_OPTIONS, saved.filosofia.dati_sensazioni)} />
                               <Row label="Tono del coach" value={optLabel(TONO_OPTIONS, saved.filosofia.tono)} />
+                              <Row label="Stile allenamento" value={optLabel(STILE_OPTIONS, saved.stile_allenamento)} />
                               <Row label="Cosa ti piace" value={labels(ALLENAMENTI_OPTIONS, saved.filosofia.piace)} />
                               <Row label="Cosa detesti" value={labels(ALLENAMENTI_OPTIONS, saved.filosofia.detesta)} />
                             </>
@@ -389,8 +352,6 @@ export function SettingsDossierForm({
                         {g.key === "chi_sei" && <StepChiSei form={form} update={update} />}
                         {g.key === "obiettivi" && <StepObiettivi form={form} update={update} />}
                         {g.key === "settimana" && <StepSettimana form={form} update={update} />}
-                        {g.key === "fisiologia" && <StepFisiologia form={form} update={update} />}
-                        {g.key === "attrezzatura" && <StepAttrezzatura form={form} update={update} />}
                         {g.key === "salute" && <StepSalute form={form} update={update} />}
                         {g.key === "filosofia" && <StepFilosofia form={form} update={update} />}
                       </>

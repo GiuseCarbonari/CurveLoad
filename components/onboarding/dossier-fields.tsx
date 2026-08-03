@@ -4,14 +4,12 @@ import { COACHING_SCHOOLS } from "@/lib/coaching/schools";
 import {
   ALLENAMENTI_OPTIONS,
   BLOCCHI_DURI_OPTIONS,
-  CICLOCOMPUTER_OPTIONS,
   DATI_SENSAZIONI_OPTIONS,
-  FASE_OPTIONS,
   GIORNI,
   INDOOR_OUTDOOR_OPTIONS,
   LIVELLO_OPTIONS,
-  PIATTAFORMA_OPTIONS,
   SESSO_OPTIONS,
+  SPORT_OPTIONS,
   STILE_OPTIONS,
   STRUTTURA_OPTIONS,
   TONO_OPTIONS,
@@ -46,6 +44,11 @@ function toggle(list: string[], value: string): string[] {
     : [...list, value];
 }
 
+/** true se il dossier dichiara Corsa (esclude Ciclismo: sono a scelta singola). */
+function isCorsa(form: DossierForm): boolean {
+  return form.sport_principali.includes("Corsa");
+}
+
 // --- Step 5: Chi sei ---------------------------------------------------------
 
 export function StepChiSei({
@@ -57,6 +60,14 @@ export function StepChiSei({
 }) {
   return (
     <div className="flex flex-col gap-4">
+      <ChipMultiSelect
+        label="Che sport pratichi? *"
+        values={form.sport_principali}
+        options={SPORT_OPTIONS}
+        single
+        onToggle={(v) => update("sport_principali", [v])}
+        hint="Determina che tipo di piano ti costruiamo"
+      />
       <TextField
         label="Come ti chiami? *"
         value={form.nome}
@@ -79,30 +90,6 @@ export function StepChiSei({
           hint="Opzionale"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <TextField
-          label="Altezza (cm)"
-          type="number"
-          value={form.altezza_cm}
-          onChange={(v) => update("altezza_cm", v)}
-          placeholder="es. 175"
-        />
-        <TextField
-          label="Peso attuale (kg)"
-          type="number"
-          value={form.peso_dichiarato_kg}
-          onChange={(v) => update("peso_dichiarato_kg", v)}
-          placeholder="es. 70"
-        />
-      </div>
-      <TextField
-        label="Peso target (kg)"
-        type="number"
-        value={form.peso_target_kg}
-        onChange={(v) => update("peso_target_kg", v)}
-        placeholder="Lascia vuoto se non hai un target"
-        hint="Opzionale"
-      />
       <SelectField
         label="Livello di esperienza *"
         value={form.livello_esperienza}
@@ -139,22 +126,6 @@ export function StepObiettivi({
         rows={3}
         hint="Opzionale — più sei specifico, più il piano sarà preciso"
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SelectField
-          label="Fase di allenamento attuale"
-          value={form.fase_corrente}
-          onChange={(v) => update("fase_corrente", v)}
-          options={FASE_OPTIONS}
-          hint="Opzionale"
-        />
-        <SelectField
-          label="Stile di allenamento preferito"
-          value={form.stile_allenamento}
-          onChange={(v) => update("stile_allenamento", v)}
-          options={STILE_OPTIONS}
-          hint="Opzionale"
-        />
-      </div>
 
       <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
         <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
@@ -242,184 +213,28 @@ export function StepSettimana({
         options={GIORNI}
         onToggle={(v) => update("giorni_impossibili", toggle(form.giorni_impossibili, v))}
       />
+      {/* Indoor/rulli hanno senso solo in bici: la corsa non ha uno "smart
+          trainer" equivalente nel planner. */}
+      {!isCorsa(form) && (
+        <>
+          <SelectField
+            label="Preferisci indoor o outdoor?"
+            value={form.indoor_outdoor}
+            onChange={(v) => update("indoor_outdoor", v)}
+            options={INDOOR_OUTDOOR_OPTIONS}
+          />
+          <YesNoField
+            label="Rulli / smart trainer indoor?"
+            value={form.ha_rulli}
+            onChange={(v) => update("ha_rulli", v)}
+          />
+        </>
+      )}
     </div>
   );
 }
 
-// --- Step 8: Parametri fisiologici -------------------------------------------
-
-export function StepFisiologia({
-  form,
-  update,
-}: {
-  form: DossierForm;
-  update: DossierUpdater;
-}) {
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="rounded-lg border border-l-[3px] border-border border-l-brand bg-surface p-4 text-sm leading-relaxed text-secondary">
-        Se hai Intervals.icu questi valori verranno sincronizzati automaticamente.
-        Puoi inserirli qui se li conosci già — il piano li userà subito e li
-        aggiornerà non appena la sync sarà attiva.
-      </div>
-
-      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
-        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-          FTP — Functional Threshold Power
-        </legend>
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <TextField
-            label="FTP outdoor (W)"
-            type="number"
-            value={form.ftp_outdoor_w}
-            onChange={(v) => update("ftp_outdoor_w", v)}
-            placeholder="es. 260"
-          />
-          <TextField
-            label="FTP indoor (W)"
-            type="number"
-            value={form.ftp_indoor_w}
-            onChange={(v) => update("ftp_indoor_w", v)}
-            placeholder="es. 245"
-            hint="Di solito ~5% in meno"
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
-        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-          Frequenza cardiaca
-        </legend>
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <TextField
-            label="FC massima (bpm)"
-            type="number"
-            value={form.max_hr}
-            onChange={(v) => update("max_hr", v)}
-            placeholder="es. 185"
-          />
-          <TextField
-            label="FC soglia / MLSS (bpm)"
-            type="number"
-            value={form.threshold_hr}
-            onChange={(v) => update("threshold_hr", v)}
-            placeholder="es. 168"
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
-        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-          LT1 — Prima soglia (soglia aerobica)
-        </legend>
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <TextField
-            label="Potenza LT1 (W)"
-            type="number"
-            value={form.lt1_w}
-            onChange={(v) => update("lt1_w", v)}
-            placeholder="es. 185"
-          />
-          <TextField
-            label="FC a LT1 (bpm)"
-            type="number"
-            value={form.lt1_hr}
-            onChange={(v) => update("lt1_hr", v)}
-            placeholder="es. 142"
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-lg border border-border bg-surface-2 p-4">
-        <legend className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-          LT2 — Seconda soglia (MLSS / soglia anaerobica)
-        </legend>
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <TextField
-            label="Potenza LT2 (W)"
-            type="number"
-            value={form.lt2_w}
-            onChange={(v) => update("lt2_w", v)}
-            placeholder="es. 255"
-          />
-          <TextField
-            label="FC a LT2 (bpm)"
-            type="number"
-            value={form.lt2_hr}
-            onChange={(v) => update("lt2_hr", v)}
-            placeholder="es. 165"
-          />
-        </div>
-      </fieldset>
-    </div>
-  );
-}
-
-// --- Step 9: Attrezzatura ----------------------------------------------------
-
-export function StepAttrezzatura({
-  form,
-  update,
-}: {
-  form: DossierForm;
-  update: DossierUpdater;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <SelectField
-        label="Ciclocomputer / dispositivo principale"
-        value={form.ciclocomputer}
-        onChange={(v) => update("ciclocomputer", v)}
-        options={CICLOCOMPUTER_OPTIONS}
-        hint="Determina la disponibilità di DFA a1"
-      />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <YesNoField
-          label="Misuratore di potenza?"
-          value={form.ha_misuratore_potenza}
-          onChange={(v) => update("ha_misuratore_potenza", v)}
-        />
-        <YesNoField
-          label="Fascia cardio?"
-          value={form.ha_fascia_cardio}
-          onChange={(v) => update("ha_fascia_cardio", v)}
-        />
-        <YesNoField
-          label="Smartwatch?"
-          value={form.ha_smartwatch}
-          onChange={(v) => update("ha_smartwatch", v)}
-        />
-        <YesNoField
-          label="Rulli / smart trainer indoor?"
-          value={form.ha_rulli}
-          onChange={(v) => update("ha_rulli", v)}
-        />
-      </div>
-      <TextField
-        label="Bici outdoor (modello)"
-        value={form.bici_outdoor}
-        onChange={(v) => update("bici_outdoor", v)}
-        placeholder="es. Canyon Endurace CF SL 7"
-        hint="Opzionale"
-      />
-      <SelectField
-        label="Piattaforma indoor"
-        value={form.piattaforma_indoor}
-        onChange={(v) => update("piattaforma_indoor", v)}
-        options={PIATTAFORMA_OPTIONS}
-        hint="Opzionale"
-      />
-      <SelectField
-        label="Preferisci indoor o outdoor?"
-        value={form.indoor_outdoor}
-        onChange={(v) => update("indoor_outdoor", v)}
-        options={INDOOR_OUTDOOR_OPTIONS}
-      />
-    </div>
-  );
-}
-
-// --- Step 10: Salute e note --------------------------------------------------
+// --- Step 8: Salute e note ----------------------------------------------------
 
 export function StepSalute({
   form,
@@ -455,14 +270,6 @@ export function StepSalute({
         rows={2}
       />
       <TextAreaField
-        label="Preferenze di allenamento"
-        value={form.preferenze_allenamento}
-        onChange={(v) => update("preferenze_allenamento", v)}
-        placeholder="es. Preferisco uscite lunghe a bassa intensità, evito i gruppi"
-        hint="Opzionale"
-        rows={2}
-      />
-      <TextAreaField
         label="Limiti o vincoli principali"
         value={form.limiti_principali}
         onChange={(v) => update("limiti_principali", v)}
@@ -482,16 +289,16 @@ export function StepSalute({
   );
 }
 
-// --- Step 11: La tua filosofia -----------------------------------------------
+// --- Step 9: La tua filosofia -----------------------------------------------
 
 /**
  * Intervista sulla filosofia di coaching. Solo le domande che il dossier non
  * fa già altrove: gara, obiettivi, infortuni e ore disponibili stanno negli
  * step precedenti e non si ripetono.
  *
- * Le scuole scelte qui decidono `stile_allenamento` (vedi formToPatch), che a
- * sua volta cambia la seduta dura del piano. Tutto il resto resta prosa per il
- * commento AI.
+ * Le scuole scelte qui hanno l'ultima parola su `stile_allenamento` (vedi
+ * formToPatch): la select sotto è il valore di partenza/fallback per chi non
+ * ne sceglie nessuna.
  */
 export function StepFilosofia({
   form,
@@ -504,6 +311,10 @@ export function StepFilosofia({
   function set<K extends keyof FilosofiaForm>(key: K, value: FilosofiaForm[K]) {
     update("filosofia", { ...f, [key]: value });
   }
+  // "Rulli / indoor" è un'opzione da bici: non ha senso proporla a un runner.
+  const allenamentiOptions = isCorsa(form)
+    ? ALLENAMENTI_OPTIONS.filter((o) => o.value !== "indoor")
+    : ALLENAMENTI_OPTIONS;
 
   return (
     <div className="flex flex-col gap-4">
@@ -546,16 +357,23 @@ export function StepFilosofia({
         onChange={(v) => set("tono", v)}
         options={TONO_OPTIONS}
       />
+      <SelectField
+        label="Stile di allenamento preferito"
+        value={form.stile_allenamento}
+        onChange={(v) => update("stile_allenamento", v)}
+        options={STILE_OPTIONS}
+        hint="Se scegli scuole qui sopra, sono loro a decidere lo stile: questa resta come riferimento senza scuole"
+      />
       <ChipMultiSelect
         label="Cosa ti piace davvero fare?"
         values={f.piace}
-        options={ALLENAMENTI_OPTIONS}
+        options={allenamentiOptions}
         onToggle={(v) => set("piace", toggle(f.piace, v))}
       />
       <ChipMultiSelect
         label="E cosa detesti?"
         values={f.detesta}
-        options={ALLENAMENTI_OPTIONS}
+        options={allenamentiOptions}
         onToggle={(v) => set("detesta", toggle(f.detesta, v))}
         hint="Sapere cosa eviti conta quanto sapere cosa ti piace"
       />

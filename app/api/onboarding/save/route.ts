@@ -1,19 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { DOSSIER_COLUMNS, type DossierColumn } from "@/lib/onboarding/dossier";
+import { DOSSIER_COLUMNS, LAST_STEP, type DossierColumn } from "@/lib/onboarding/dossier";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/onboarding/save — persiste uno step dell'onboarding (PRD §12).
  *
- * Ogni step del wizard salva qui, così chiudere a metà non perde dati. Scrive
- * col client UTENTE (RLS: l'utente possiede la propria riga users e
- * athlete_profiles). Tre pezzi indipendenti, tutti opzionali nel body:
+ * Ogni step del wizard salva qui (avanti E indietro), così chiudere a metà o
+ * navigare non perde dati. Scrive col client UTENTE (RLS: l'utente possiede
+ * la propria riga users e athlete_profiles). Tre pezzi indipendenti, tutti
+ * opzionali nel body:
  *  - consent: aggiorna users.gdpr_consent (+ consensi granulari) — step 3;
- *  - profile: patch del dossier (solo colonne whitelisted) — step 5/6;
+ *  - profile: patch del dossier (solo colonne whitelisted) — step 5+;
  *  - step/complete: avanzamento wizard e chiusura — onboarding_completed
- *    diventa true SOLO con complete (step 7).
+ *    diventa true SOLO con complete (LAST_STEP).
  */
 
 interface SaveBody {
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (typeof body.step === "number" && body.step >= 0 && body.step <= 7) {
+  if (typeof body.step === "number" && body.step >= 0 && body.step <= LAST_STEP) {
     patch.onboarding_step = body.step;
   }
   if (body.complete === true) {

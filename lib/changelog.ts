@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.14.1";
+export const APP_VERSION = "1.15.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,19 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.15.0",
+    date: "3 ago 2026",
+    title: "Corsa o ciclismo, fin dal primo passo",
+    items: [
+      { type: "new", text: "L'onboarding ora chiede subito se fai Ciclismo o Corsa: chi corre non vede più domande su FTP o potenza, e la scheda «Oggi» mostra un indicatore di efficienza calcolato sul passo invece che sui watt" },
+      { type: "new", text: "Nella scheda profilo, chi corre trova le zone di passo e le previsioni sui 1-3-5-10 km calcolate dalla propria velocità critica, al posto delle card sulla potenza che non lo riguardano" },
+      { type: "improve", text: "La pagina Percorso, per chi corre, non mostra più limitatori in W/kg o riferimenti a uscite in bici pensati per chi pedala" },
+      { type: "improve", text: "Tolte dall'onboarding tredici domande che venivano salvate ma non usate da nessuna parte dell'app (altezza, peso, FTP indoor, soglie di frequenza cardiaca, tipo di ciclocomputer e attrezzatura)" },
+      { type: "fix", text: "Chi chiudeva l'onboarding a metà riprendeva sempre dal passo 7 invece che da dove aveva lasciato davvero" },
+      { type: "fix", text: "Chi corre e basta ora riesce a costruire il proprio profilo (prima l'app si fermava cercando prima i dati della bici) e vede comunque il commento del coach e il taccuino, che prima sparivano per lui" },
+    ],
+  },
   {
     version: "1.14.1",
     date: "3 ago 2026",

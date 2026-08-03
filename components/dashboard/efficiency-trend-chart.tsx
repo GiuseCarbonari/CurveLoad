@@ -68,7 +68,7 @@ export function EfficiencyTrendChart({ trend }: { trend: EfficiencyTrend }) {
             Efficienza aerobica · {points.length} wk
           </p>
           <h2 className="font-display mt-1 text-[21px] font-semibold leading-tight text-foreground">
-            Watt per battito
+            {trend.title}
           </h2>
         </div>
         <span className="font-body hidden text-[10px] text-faint sm:inline">
@@ -82,7 +82,7 @@ export function EfficiencyTrendChart({ trend }: { trend: EfficiencyTrend }) {
           style={{ left: `${(selectedX / 340) * 100}%` }}
         >
           <div className="font-display flex items-center gap-2 text-[13px] font-semibold leading-none tabular-nums">
-            <span style={{ color: LINE_COLOR }}>{selectedPoint.efficiency.toFixed(2)} W/bpm</span>
+            <span style={{ color: LINE_COLOR }}>{selectedPoint.efficiency.toFixed(2)} {trend.unit}</span>
           </div>
         </div>
 

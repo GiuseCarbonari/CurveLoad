@@ -176,6 +176,22 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       un tester avrà corse vere su Intervals.)
 - [ ] **Passo 10 — Modulo Corsa, parte 2**: libreria sedute corsa + planner
       che sceglie per sport
+      — **anticipato in parte il 2026-08-03** (revisione onboarding, non un
+      passo a sé): l'onboarding ora fa scegliere Ciclismo o Corsa (esclusivi,
+      step 5 del wizard) e `sport_principali` arriva correttamente valorizzato
+      a `["Corsa"]`; `/api/planner/generate` riconosce il caso
+      (`isRunningOnlyDossier` in `lib/planner/build-week.ts`) e risponde 409
+      con messaggio onesto invece di generare sedute di bici spacciate per
+      corsa. Resta da fare tutto il resto del passo: libreria sedute
+      (prefissi RA-/RS-/RV-/RN-/RR-) e il routing per sport in
+      `session-selector.ts`.
+      — **Preferenza espressa da Giuseppe il 2026-08-03** per le stime di
+      passo su un percorso (quando si farà questa parte): motore basato sulla
+      **firma di velocità personale** (riuso di `buildSignatureFromStreams`
+      in `lib/terrain/velocity-signature.ts`, filtrando le corse invece delle
+      uscite MTB — è già sport-agnostica dentro), NON il modello fisico
+      semplice proposto come default più veloce da implementare. Richiede
+      corse vere sincronizzate per calibrarsi bene.
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro
 - [ ] **Passo 12 — Onboarding a chiacchierata**: il questionario diventa una
       conversazione (+ filosofia di coaching nel dossier)
@@ -183,10 +199,26 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       Giuseppe nel browser il 2026-08-03**, anticipata rispetto al passo:
       `docs/COACHING_SCHOOLS.md` (8 scuole reali con fonti lette davvero) +
       `lib/coaching/schools.ts`, migration 023, intervista deterministica
-      (step 11 del wizard + gruppo in `/settings/profile`), leva vera sul
+      (step 9 del wizard + gruppo in `/settings/profile`), leva vera sul
       planner (`stile_allenamento` → seduta dura in `session-selector.ts`) e
       sintesi AI in `/profile`. Resta da fare **solo la parte
       "a chiacchierata"**: il questionario che diventa conversazione.
+      — **Revisione onboarding del 2026-08-03** (fuori passo, richiesta da
+      Giuseppe): il wizard passa da 11 a 8 schermate (step 3→10). Rimossi 18
+      campi senza alcun lettore verificato (altezza, peso, peso target, fase
+      corrente, FTP indoor, FC max/soglia, LT1/LT2, ciclocomputer, misuratore
+      potenza, fascia cardio, smartwatch, bici outdoor, piattaforma indoor) —
+      quei numeri arrivano da Intervals.icu, già obbligatorio prima
+      dell'onboarding. Attrezzatura (indoor/rulli) assorbita nello step "La
+      tua settimana"; step "Come funziona" e "Inizia con CurveLoad" fusi in
+      uno. `stile_allenamento` spostato accanto alle scuole (dove già veniva
+      sovrascritto in silenzio) così la precedenza è visibile. Due bug
+      corretti: il clamp di `onboarding_step` si era fermato alla vecchia
+      versione a 7 step (chi chiudeva a metà retrocedeva), e "Indietro" non
+      salvava le modifiche in corso. Migration `024_prune_dossier.sql` pronta
+      (da lanciare in Supabase dopo il deploy). `npm test`/`tsc`/`lint`/`build`
+      verdi; verifica nel browser da fare da Giuseppe (nuovo onboarding intero
+      + `/settings/profile` + blocco corsa su "Genera settimana").
 - [ ] **Passo 13 — Il coach che si sveglia da solo (cron)**: sync notturno +
       brief mattutino via email
 - [ ] **Passo 14 — Deploy per i tester**: pubblicazione su Vercel + inviti

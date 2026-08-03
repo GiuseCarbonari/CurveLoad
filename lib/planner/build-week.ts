@@ -245,6 +245,19 @@ function resolveSport(
 }
 
 /**
+ * true se il dossier dichiara SOLO corsa: la libreria sedute di buildWeek è
+ * solo ciclismo (resolveSport sopra non produce mai "Corsa"), quindi
+ * /api/planner/generate deve bloccarsi con un messaggio onesto invece di
+ * spacciare sedute di bici per un piano corsa. Un dossier misto ["Corsa",
+ * "Ciclismo"] (non raggiungibile dal wizard, scelta esclusiva) degrada sul
+ * ramo ciclismo esistente piuttosto che bloccarsi.
+ */
+export function isRunningOnlyDossier(sports: string[] | null | undefined): boolean {
+  const list = sports ?? [];
+  return list.length > 0 && list.every((s) => /corsa|running/i.test(s));
+}
+
+/**
  * Costruisce la settimana completa. `phase` è la fase rilevata (per audit e
  * validation_metadata); `athleteProfile` serve solo a graduare la confidence
  * (presenza di CP/peso) — NON si inventano numeri fisiologici.
