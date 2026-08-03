@@ -310,3 +310,91 @@ test("redistributeWeek: il risultato ha sempre esattamente 7 sessioni", () => {
 
   assert.equal(result.new_week.length, 7, "sempre 7 sessioni (una per giorno)");
 });
+
+// --- Stile di allenamento (filosofia di coaching) ---------------------------
+// Regola: lo stile cambia SOLO dove oggi decide la sola fase. "mixed" e
+// assente devono produrre la settimana identica a prima della filosofia.
+
+const idsOf = (sessions: ReturnType<typeof selectWeekSessions>) =>
+  sessions.map((s) => `${s.day}:${s.library_id ?? "rest"}`);
+
+test("stile: 'mixed' e assente producono la stessa settimana di sempre", () => {
+  const avail = computeAvailableDays(DOSSIER);
+  for (const phase of ["base", "build", "peak", "taper", "recovery"] as const) {
+    const senza = selectWeekSessions(phase, DOSSIER, GO, { levers: [] }, avail);
+    const misto = selectWeekSessions(
+      phase,
+      { ...DOSSIER, stile_allenamento: "mixed" },
+      GO,
+      { levers: [] },
+      avail
+    );
+    assert.deepEqual(idsOf(misto), idsOf(senza), `fase ${phase}: mixed ha cambiato il piano`);
+  }
+  // E i template storici sono ancora quelli attesi.
+  const build = selectWeekSessions("build", DOSSIER, GO, { levers: [] }, avail);
+  const base = selectWeekSessions("base", DOSSIER, GO, { levers: [] }, avail);
+  assert.equal(build.find((s) => s.slot === "primary_hard")?.library_id, "VO2-1");
+  assert.equal(base.find((s) => s.slot === "primary_hard")?.library_id, "SS-1");
+});
+
+test("stile polarizzato: in base niente sweet spot, intervalli lunghi 4×8", () => {
+  const avail = computeAvailableDays(DOSSIER);
+  const dossier = { ...DOSSIER, stile_allenamento: "polarized" };
+  const sessions = selectWeekSessions("base", dossier, GO, { levers: [] }, avail);
+
+  assert.equal(sessions.find((s) => s.slot === "primary_hard")?.library_id, "TH-2");
+  assert.ok(
+    !sessions.some((s) => s.library_id === "SS-1" || s.library_id === "SS-5"),
+    "polarizzato non deve piazzare sedute sweet spot"
+  );
+  // Le regole ferme restano: spacing e tetto dure non cambiano con lo stile.
+  assert.ok(hardSpacingOk(sessions));
+  assert.ok(countHardSessions(sessions) <= 2);
+});
+
+test("stile soglia: in build la dura primaria è TH-1 invece di VO2-1", () => {
+  const avail = computeAvailableDays(DOSSIER);
+  const dossier = { ...DOSSIER, stile_allenamento: "threshold" };
+  const sessions = selectWeekSessions("build", dossier, GO, { levers: [] }, avail);
+
+  assert.equal(sessions.find((s) => s.slot === "primary_hard")?.library_id, "TH-1");
+  assert.ok(hardSpacingOk(sessions));
+});
+
+test("stile: il limitatore della gap analysis batte lo stile", () => {
+  const avail = computeAvailableDays(DOSSIER);
+  const dossier = { ...DOSSIER, stile_allenamento: "polarized" };
+  const sessions = selectWeekSessions(
+    "build",
+    dossier,
+    GO,
+    { levers: ["threshold_long"] },
+    avail
+  );
+  // Con polarized la secondaria sarebbe VO2-2: il limitatore la riporta a TH-1.
+  assert.equal(sessions.find((s) => s.slot === "secondary_hard")?.library_id, "TH-1");
+});
+
+test("stile: ogni library_id scelto dallo stile esiste in libreria", () => {
+  const avail = computeAvailableDays(DOSSIER);
+  for (const stile of ["polarized", "pyramidal", "threshold", "mixed"]) {
+    for (const phase of ["base", "build", "peak", "taper", "recovery"] as const) {
+      const sessions = selectWeekSessions(
+        phase,
+        { ...DOSSIER, stile_allenamento: stile },
+        GO,
+        { levers: [] },
+        avail
+      );
+      for (const s of sessions) {
+        if (s.library_id != null) {
+          assert.ok(
+            VALID_LIBRARY_IDS.has(s.library_id),
+            `${stile}/${phase}: ${s.library_id} non in libreria`
+          );
+        }
+      }
+    }
+  }
+});

@@ -61,6 +61,13 @@ export interface PlannerDossier {
   indoor_outdoor: string | null;
   ha_rulli: boolean | null;
   sport_principali?: string[];
+  /**
+   * "polarized" | "pyramidal" | "threshold" | "mixed" | null. Deriva dalla
+   * filosofia di coaching (scuole scelte nell'intervista) o, senza scuole, da
+   * quello che l'atleta ha dichiarato allo step Obiettivi. Assente o "mixed"
+   * ⇒ selezione identica a prima della filosofia.
+   */
+  stile_allenamento?: string | null;
 }
 
 /** Readiness di OGGI (l'unica disponibile): si applica al giorno corrente. */
@@ -200,14 +207,38 @@ interface SlotChoice {
   note: string;
 }
 
-/** Template della seduta dura PRIMARIA per fase. */
-function primaryHardChoice(phase: Phase): SlotChoice {
+/**
+ * Stile di allenamento dell'atleta (athlete_profiles.stile_allenamento), che
+ * nasce dalla filosofia di coaching: le scuole scelte nell'intervista danno
+ * l'asse prevalente (lib/coaching/schools.ts → prevailingAxis).
+ *
+ * Cambia SOLO la scelta del template dove oggi decide la sola fase. Limitatori
+ * della gap analysis e readiness restano prioritari, e "mixed"/assente lascia
+ * il comportamento identico a prima dell'introduzione della filosofia.
+ */
+function isPolarized(stile: string | null | undefined): boolean {
+  return stile === "polarized";
+}
+function isThreshold(stile: string | null | undefined): boolean {
+  return stile === "threshold";
+}
+
+/** Template della seduta dura PRIMARIA per fase + stile. */
+function primaryHardChoice(phase: Phase, stile?: string | null): SlotChoice {
   switch (phase) {
     case "build":
     case "peak":
-      return { library_id: "VO2-1", note: "VO₂max prioritario in build/peak (§5.1)" };
+      // Scuola della soglia (Coggan/Overton, Canova): si va diretti in Z4
+      // invece di passare dal VO₂max.
+      return isThreshold(stile)
+        ? { library_id: "TH-1", note: "Stile soglia: lavoro diretto a FTP in build/peak (§5.1)" }
+        : { library_id: "VO2-1", note: "VO₂max prioritario in build/peak (§5.1)" };
     case "base":
-      return { library_id: "SS-1", note: "Sweet spot come dura principale in base (§5.1)" };
+      // Polarizzato (Seiler, San Millán): la zona media si salta anche in base
+      // — al posto del sweet spot, gli intervalli lunghi 4×8.
+      return isPolarized(stile)
+        ? { library_id: "TH-2", note: "Stile polarizzato: intervalli lunghi 4×8 (Seiler) al posto del sweet spot in base" }
+        : { library_id: "SS-1", note: "Sweet spot come dura principale in base (§5.1)" };
     case "taper":
       return { library_id: "MIX-2", note: "Opener pre-gara in taper (§4.3 race-week)" };
     case "recovery":
@@ -215,8 +246,12 @@ function primaryHardChoice(phase: Phase): SlotChoice {
   }
 }
 
-/** Template della seduta dura SECONDARIA per fase + limitatori. */
-function secondaryHardChoice(phase: Phase, lev: Set<string>): SlotChoice {
+/** Template della seduta dura SECONDARIA per fase + limitatori + stile. */
+function secondaryHardChoice(
+  phase: Phase,
+  lev: Set<string>,
+  stile?: string | null
+): SlotChoice {
   if (phase === "recovery" || phase === "taper") {
     return { library_id: "AE-1", note: "Nessuna seconda dura in recovery/taper" };
   }
@@ -225,6 +260,11 @@ function secondaryHardChoice(phase: Phase, lev: Set<string>): SlotChoice {
   }
   if (phase === "peak") {
     return { library_id: "MIX-1", note: "Lavoro race-specific in peak (§5.1)" };
+  }
+  // Polarizzato: entrambe le dure stanno sopra la soglia, niente sweet spot.
+  // Short-short 30/15: tanto tempo in Z5 con lattato contenuto.
+  if (isPolarized(stile)) {
+    return { library_id: "VO2-2", note: "Stile polarizzato: seconda dura sopra soglia (30/15), niente zona media" };
   }
   if (phase === "base") {
     return { library_id: "SS-5", note: "Seconda sweet spot ripetuta in base" };
@@ -454,13 +494,13 @@ export function selectWeekSessions(
   if (structuredTarget >= 1) {
     hardSlotPlan.push({
       slot: "primary_hard",
-      choice: primaryHardChoice(phase),
+      choice: primaryHardChoice(phase, dossier.stile_allenamento),
     });
   }
   if (structuredTarget >= 2) {
     hardSlotPlan.push({
       slot: "secondary_hard",
-      choice: secondaryHardChoice(phase, lev),
+      choice: secondaryHardChoice(phase, lev, dossier.stile_allenamento),
     });
   }
   if (structuredTarget >= 3) {

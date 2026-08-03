@@ -124,6 +124,7 @@ interface ProfileRow {
   indoor_outdoor: string | null;
   ha_rulli: boolean | null;
   sport_principali: string[] | null;
+  stile_allenamento: string | null;
   injury_periods: Array<{ start: string; end: string; note?: string }> | null;
   dolore_attuale: string | null;
   farmaci_integratori: string | null;
@@ -146,7 +147,7 @@ export async function POST() {
   const { data: profileRow } = await supabase
     .from("athlete_profiles")
     .select(
-      "profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, injury_periods, dolore_attuale, farmaci_integratori, limiti_principali"
+      "profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, stile_allenamento, injury_periods, dolore_attuale, farmaci_integratori, limiti_principali"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -241,6 +242,7 @@ export async function POST() {
     indoor_outdoor: row?.indoor_outdoor ?? null,
     ha_rulli: row?.ha_rulli ?? null,
     sport_principali: row?.sport_principali ?? [],
+    stile_allenamento: row?.stile_allenamento ?? null,
   };
   const availableDays = computeAvailableDays(dossier);
 
