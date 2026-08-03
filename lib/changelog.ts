@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.14.0";
+export const APP_VERSION = "1.14.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.14.1",
+    date: "3 ago 2026",
+    title: "La filosofia si schiera",
+    items: [
+      { type: "fix", text: "Quando scegli scuole che sono davvero in disaccordo tra loro (es. Seiler contro Coggan sulla zona centrale), la tua filosofia ora dice esplicitamente quale segue per te e perché, invece di elencarle una dopo l'altra senza mai farle scontrare" },
+      { type: "fix", text: "Il paragrafo su «chi sei come atleta» ora confronta davvero quello che hai dichiarato con quello che mostrano i tuoi dati, invece di limitarsi a ripetere il dossier" },
+    ],
+  },
   {
     version: "1.14.0",
     date: "3 ago 2026",

@@ -76,6 +76,48 @@ test("allowedNumbers copre i numeri del contesto e quelli dentro le scuole", () 
   assert.ok(prompt.allowedNumbers.includes(8));
 });
 
+test("input: dichiarato e osservato separati, il modello può confrontarli", () => {
+  const prompt = buildPhilosophyPrompt(RISPOSTE, "polarized", CONTEXT);
+  const input = JSON.parse(prompt.user.split("\n").slice(1).join("\n")) as {
+    dichiarato: { atleta: unknown };
+    osservato: { condizione: unknown };
+  };
+
+  assert.deepEqual(input.dichiarato.atleta, CONTEXT.atleta);
+  assert.deepEqual(input.osservato.condizione, CONTEXT.condizione);
+  // Il system prompt deve dire esplicitamente di confrontarli, non solo
+  // separarli: altrimenti il modello può ignorare "osservato" e ripetere
+  // solo "dichiarato" (il difetto trovato nella prima verifica).
+  assert.ok(prompt.system.includes("CONFRONTALI"));
+});
+
+test("scuole in disaccordo vero: il prompt porta il punto e obbliga a schierarsi", () => {
+  const prompt = buildPhilosophyPrompt(
+    { ...RISPOSTE, scuole: ["seiler", "coggan_overton"] },
+    null,
+    CONTEXT
+  );
+  const input = JSON.parse(prompt.user.split("\n").slice(1).join("\n")) as {
+    disaccordi: string[];
+  };
+
+  assert.equal(input.disaccordi.length, 1);
+  assert.match(input.disaccordi[0], /sweet spot|zona centrale/i);
+  assert.ok(prompt.system.includes("SCEGLI ESPLICITAMENTE"));
+});
+
+test("scuole concordi: nessun disaccordo forzato nell'input", () => {
+  const prompt = buildPhilosophyPrompt(
+    { ...RISPOSTE, scuole: ["seiler", "san_millan"] },
+    null,
+    CONTEXT
+  );
+  const input = JSON.parse(prompt.user.split("\n").slice(1).join("\n")) as {
+    disaccordi: string[];
+  };
+  assert.deepEqual(input.disaccordi, []);
+});
+
 test("check anti-invenzione: un numero non derivabile viene segnalato", () => {
   const prompt = buildPhilosophyPrompt(RISPOSTE, "polarized", CONTEXT);
 

@@ -146,6 +146,84 @@ export const COACHING_SCHOOLS: CoachingSchool[] = [
   },
 ];
 
+/**
+ * I disaccordi VERI tra scuole, presi uno a uno dalla tabella «Dove litigano
+ * davvero» di docs/COACHING_SCHOOLS.md. Sono qui e non solo nel doc perché
+ * senza questi il modello non sa dove le scuole si contraddicono: chiedergli
+ * di scegliere una posizione senza dargli il contrasto significa fargliela
+ * inventare.
+ */
+export interface SchoolDisagreement {
+  /** I due id in contrasto. */
+  tra: [string, string];
+  /** Il punto in una frase, con le due posizioni. */
+  punto: string;
+}
+
+export const DISAGREEMENTS: SchoolDisagreement[] = [
+  {
+    tra: ["seiler", "coggan_overton"],
+    punto:
+      "La zona centrale: per Seiler è da evitare («troppo dolore per troppo poco»), per Coggan/Overton il sweet spot (84-97% FTP) è il punto di massimo rendimento per il tempo speso.",
+  },
+  {
+    tra: ["san_millan", "coggan_overton"],
+    punto:
+      "Dove si costruisce il motore: San Millán dice sotto, in Zona 2 pura e per tante ore; Coggan/Overton dicono nella fascia sweet spot, perché rende di più a parità di tempo.",
+  },
+  {
+    tra: ["seiler", "canova"],
+    punto:
+      "Quanto distanziare le andature: Seiler polarizza e lascia il centro vuoto, Canova rifiuta i salti grandi e vuole «tante piccole scale» di ritmi adiacenti per collegare le velocità.",
+  },
+  {
+    tra: ["lydiard", "hansons"],
+    punto:
+      "Il lungo: Lydiard lo vuole lunghissimo come base di tutto, gli Hansons non superano mai le 16 miglia e costruiscono la fatica accumulando giorni.",
+  },
+  {
+    tra: ["canova", "hansons"],
+    punto:
+      "Il lungo: Canova arriva a 30-32 km gran parte a ritmo gara, gli Hansons tappano a 16 miglia perché il corpo non distingue da dove viene la fatica.",
+  },
+  {
+    tra: ["daniels", "lydiard"],
+    punto:
+      "Chi comanda: Daniels calibra tutto su un numero misurato in gara (il VDOT), Lydiard va a sensazione e mette il cronometro dopo.",
+  },
+  {
+    tra: ["coggan_overton", "lydiard"],
+    punto:
+      "Chi comanda: Coggan prescrive a watt (FTP, TSS), Lydiard corre «dentro sé stesso» e diffida del numero.",
+  },
+  {
+    tra: ["san_millan", "lydiard"],
+    punto:
+      "Chi comanda: San Millán vuole il lattato misurato in laboratorio, Lydiard la sensazione sul campo.",
+  },
+  {
+    tra: ["friel", "hansons"],
+    punto:
+      "Il recupero: Friel lo allunga e lo taglia sulla persona (microciclo di 9 giorni, scarico ogni 3 settimane dopo i 50), gli Hansons lo lasciano deliberatamente incompleto — è il meccanismo del metodo.",
+  },
+  {
+    tra: ["lydiard", "canova"],
+    punto:
+      "Quanto volume serve: per Lydiard il volume è la base di tutto (fino a 160 km/settimana), il Canova moderno ne toglie (160-190 invece dei 290+ degli anni '90) perché il recupero attorno alle sedute specifiche vale più dei chilometri.",
+  },
+];
+
+/**
+ * I disaccordi INTERNI a un gruppo di scuole: solo quelli in cui entrambe le
+ * parti sono tra quelle scelte, perché è lì che l'atleta ha davvero due
+ * padroni che dicono cose opposte. Gruppo concorde ⇒ lista vuota, e chi
+ * costruisce il prompt lo gestisce (non si forza un litigio che non c'è).
+ */
+export function disagreementsAmong(ids: string[]): SchoolDisagreement[] {
+  const chosen = new Set(ids);
+  return DISAGREEMENTS.filter((d) => chosen.has(d.tra[0]) && chosen.has(d.tra[1]));
+}
+
 /** Lookup per id. null se l'id non esiste (dato utente vecchio o corrotto). */
 export function getSchool(id: string): CoachingSchool | null {
   return COACHING_SCHOOLS.find((s) => s.id === id) ?? null;

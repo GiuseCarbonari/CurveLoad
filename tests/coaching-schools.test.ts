@@ -3,6 +3,8 @@ import { test } from "node:test";
 
 import {
   COACHING_SCHOOLS,
+  DISAGREEMENTS,
+  disagreementsAmong,
   getSchool,
   prevailingAxis,
   resolveSchools,
@@ -28,6 +30,30 @@ test("libreria: ogni scuola ha asse valido, metodo non vuoto e almeno 2 fonti", 
     }
     assert.ok(s.tratti.length > 0, `${s.id}: nessun tratto`);
   }
+});
+
+test("DISAGREEMENTS: ogni coppia esiste davvero in libreria ed è distinta", () => {
+  const ids = new Set(COACHING_SCHOOLS.map((s) => s.id));
+  for (const d of DISAGREEMENTS) {
+    assert.ok(ids.has(d.tra[0]), `${d.tra[0]} non è una scuola`);
+    assert.ok(ids.has(d.tra[1]), `${d.tra[1]} non è una scuola`);
+    assert.notEqual(d.tra[0], d.tra[1]);
+    assert.ok(d.punto.trim().length > 0);
+  }
+});
+
+test("disagreementsAmong: coppia in contrasto -> il punto vero, non generico", () => {
+  const found = disagreementsAmong(["seiler", "coggan_overton"]);
+  assert.equal(found.length, 1);
+  assert.match(found[0].punto, /sweet spot|zona centrale/i);
+});
+
+test("disagreementsAmong: gruppo concorde -> nessun litigio forzato", () => {
+  // seiler e san_millan sono entrambe polarized: nessun disaccordo registrato
+  // tra loro, ed è corretto restare a lista vuota invece di inventarne uno.
+  assert.deepEqual(disagreementsAmong(["seiler", "san_millan"]), []);
+  assert.deepEqual(disagreementsAmong(["seiler"]), []); // una sola scuola: niente da confrontare
+  assert.deepEqual(disagreementsAmong([]), []);
 });
 
 test("getSchool / resolveSchools: id ignoti scartati senza rompere", () => {

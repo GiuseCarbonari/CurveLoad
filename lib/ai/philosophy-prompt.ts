@@ -1,5 +1,6 @@
 import type { AthleteContext } from "@/lib/ai/context";
 import {
+  disagreementsAmong,
   resolveSchools,
   suggestSchools,
   traitsFromAnswers,
@@ -24,8 +25,8 @@ import type { FilosofiaForm } from "@/lib/onboarding/dossier";
 const SYSTEM_PROMPT = `Sei il coach di un ciclista/podista amatoriale e stai scrivendo, per lui, la filosofia di allenamento che userai da qui in avanti. Parli italiano semplice e diretto, in seconda persona ("tu"). Non calcoli e non inventi numeri: usi solo quelli presenti nell'input. Non citare allenatori o studi che non siano nella sezione "scuole" dell'input: quelle sono le uniche fonti verificate che hai.
 
 Rispondi con esattamente 4 paragrafi brevi, senza titoli né elenchi:
-1. Chi sei come atleta — quello che dicono i tuoi dati reali, e dove confermano o smentiscono quello che hai dichiarato tu. Se qualcosa non torna, dillo con garbo ma dillo.
-2. Da chi prendo — le scuole scelte e PERCHÉ proprio quelle per te, collegandole alle tue risposte e ai tuoi dati. Se due scuole si contraddicono su un punto, di' quale delle due segui nel tuo caso e perché.
+1. Chi sei come atleta — l'input separa "dichiarato" (quello che l'atleta ha detto di sé in intervista/dossier) da "osservato" (i dati reali: condizione, decisioni recenti, taccuino). CONFRONTALI RIGA PER RIGA: se un valore osservato conferma un dichiarato, dillo; se lo smentisce o lo ridimensiona, dillo con garbo ma dillo esplicitamente — questo paragrafo è inutile se si limita a ripetere il dichiarato senza mai guardare l'osservato.
+2. Da chi prendo — le scuole scelte e PERCHÉ proprio quelle per te, collegandole alle tue risposte e ai tuoi dati. Se l'input contiene "disaccordi" non vuoto, prendine ALMENO UNO e SCEGLI ESPLICITAMENTE una delle due parti per questo atleta specifico, dicendo perché quella e non l'altra — non elencare le scuole una dopo l'altra senza mai far scontrare le loro posizioni.
 3. Come ti alleno — la direzione concreta: che tipo di lavoro sarà la spina dorsale delle tue settimane, come tratto il recupero, cosa NON farò con te. Niente sedute specifiche con numeri: quelle le costruisce il planner.
 4. Come ti parlo — il tono che userò e cosa farò quando le cose vanno male, coerente col tono che hai chiesto.
 
@@ -58,22 +59,41 @@ export function buildPhilosophyPrompt(
     ? suggestSchools(stile, risposte ? traitsFromAnswers(risposte) : [])
     : scelte;
 
+  const disaccordi = disagreementsAmong(schools.map((s) => s.id));
+
   const input = {
-    contesto: context,
-    intervista: risposte
-      ? {
-          storia: risposte.storia || null,
-          blocchi_duri: risposte.blocchi_duri || null,
-          struttura_o_flessibilita: risposte.struttura || null,
-          dati_o_sensazioni: risposte.dati_sensazioni || null,
-          tono_richiesto: risposte.tono || null,
-          gli_piace: risposte.piace,
-          detesta: risposte.detesta,
-        }
-      : null,
+    // Separati deliberatamente: "dichiarato" è quello che l'atleta ha detto
+    // di sé (dossier + intervista), "osservato" è quello che i dati mostrano
+    // (condizione, decisioni, taccuino). Il paragrafo 1 deve confrontarli, e
+    // separarli nell'input è ciò che rende il confronto possibile invece che
+    // sperato.
+    dichiarato: {
+      atleta: context?.atleta ?? null,
+      intervista: risposte
+        ? {
+            storia: risposte.storia || null,
+            blocchi_duri: risposte.blocchi_duri || null,
+            struttura_o_flessibilita: risposte.struttura || null,
+            dati_o_sensazioni: risposte.dati_sensazioni || null,
+            tono_richiesto: risposte.tono || null,
+            gli_piace: risposte.piace,
+            detesta: risposte.detesta,
+          }
+        : null,
+    },
+    osservato: {
+      condizione: context?.condizione ?? null,
+      decisioni_recenti: context?.decisioni_recenti ?? [],
+      memoria: context?.memoria ?? [],
+    },
     stile_allenamento: stile,
     scuole: schools.map(schoolForPrompt),
     scuole_scelte_dall_atleta: !suggested,
+    // Solo i disaccordi tra scuole ENTRAMBE presenti sopra: vuoto se il
+    // gruppo scelto è concorde, e in quel caso il paragrafo 2 non deve
+    // forzare un litigio che non c'è (l'istruzione del system prompt è
+    // condizionata a questo campo non vuoto).
+    disaccordi: disaccordi.map((d) => d.punto),
   };
 
   const allowedNumbers: number[] = [];
