@@ -69,6 +69,18 @@ Ogni termine della scheda ha un'icona "?" che apre un tooltip. Testi esatti:
 > Le soglie che classificano il fenotipo sono una *prima versione* (euristiche),
 > da affinare con l'esperienza. Indicano la direzione, non una verità assoluta.
 
+### CS — Velocità critica (Passo 9, Modulo Corsa)
+> **La velocità che puoi tenere a lungo senza affondare.** È il gemello della
+> CP ma per la corsa: sopra questa velocità la fatica cresce in fretta e non
+> riesci a mantenerla per molto. La vedi come passo al chilometro (es.
+> "4:15/km"), il modo in cui i corridori parlano di velocità.
+
+### D′ (D prime) — Passo 9, Modulo Corsa
+> **Quanti metri puoi correre più veloce della velocità critica prima di
+> esaurirti.** È la "batteria" della corsa: il gemello della W′ della bici, ma
+> misurata in metri invece che in kilojoule. Una D′ alta vuol dire che puoi
+> spingere più forte, o più a lungo, prima di dover rallentare.
+
 ---
 
 ## 2. Box "Come leggere questa scheda" (statico, sempre presente in cima)

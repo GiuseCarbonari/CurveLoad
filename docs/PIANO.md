@@ -137,8 +137,43 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       tsc/lint/build puliti. Verificato da Giuseppe nel browser su `/plan`:
       card coi blocchi reali, stato vuoto/gara passata cambiando la data in
       `/settings/profile`, riga di confronto dopo «Rigenera».)
-- [ ] **Passo 9 — Modulo Corsa, parte 1**: dati e motore (CS/D′ dalle curve
-      di passo)
+- [x] **Passo 9 — Modulo Corsa, parte 1** (fatto 2026-08-03: dati e motore
+      CS/D′ dalle curve di passo. Migration 022 ripristina
+      `athlete_profiles.runner_profile_data` [annulla la 019, stesso
+      statement della 015]. Nuovo `lib/profile/pace-profile.ts` — motore
+      puro, file unico [primitive + `buildRunnerProfile`, decisione §1.2,
+      qui non c'è nulla da aggregare come durability/route_settings]:
+      regressione LINEARE `d = CS·t + D′` [CS in m/s, D′ in METRI, mai
+      joule, mai `w_prime`] sulla finestra `[120,300,600,900]`s [2-15 min,
+      diversa dalla power-law bici che va 5-60 min], `extractPaceProfile`
+      nearest-match copiato riga per riga da `extractMMP`, guard di
+      plausibilità velocità 0.5-12 m/s come rete di sicurezza contro unità
+      sbagliate o dati sporchi. Cablato `getPaceCurves()` in
+      `lib/intervals-client.ts`, ramo corsa fail-soft in
+      `/api/profile/build` [`buildCyclist` rinominata `buildProfiles`,
+      qualunque errore ingoiato senza mai far fallire il profilo bici,
+      `runner_profile_data` entra nell'upsert SOLO se non null per non
+      sovrascrivere un profilo corsa buono con un fallimento transitorio],
+      card `<RunnerCard/>` sotto la Durabilità in `/profile` [ritorna null
+      se non corri: zero rumore, zero routing per sport, nessun tocco al
+      Passo 10], due voci di glossario `cs`/`dprime` [testi trascritti da
+      `docs/scheda_atleta_tooltip_e_commento.md`]. Endpoint pace-curves
+      verificato PARZIALMENTE prima di scrivere il fetch [percorso reale e
+      unità m/s confermati da fonti indipendenti via probe 401, il nome
+      del campo `values[]` è assunto per coerenza con power-curves.json ma
+      non visto in una risposta autenticata reale — il guard di
+      plausibilità copre l'eventuale errore, dettagli in
+      `docs/INTERVALS_API_NOTES.md`]. Rete di sicurezza aggiuntiva (trovata
+      in revisione): CS finale scartato se fuori 1.5-6.5 m/s [2:34/km-11:07/km],
+      copre un errore di scala nelle unità [es. km/h scambiati per m/s] che
+      il guard per-punto 0.5-12 m/s da solo non intercetta sempre. 311 test
+      verdi [+15: `tests/pace-profile.test.ts`], tsc/lint/build puliti.
+      Migration 022 applicata da Giuseppe nel SQL Editor Supabase. Verificato
+      da Giuseppe nel browser su `/profile` dopo «Aggiorna profilo»: nessun
+      account con corse sincronizzate ancora, quindi la verifica possibile
+      oggi era "il ramo corsa non disturba il profilo bici" — confermato,
+      tutto identico a prima. I numeri CS/D′ restano da vedere quando lui o
+      un tester avrà corse vere su Intervals.)
 - [ ] **Passo 10 — Modulo Corsa, parte 2**: libreria sedute corsa + planner
       che sceglie per sport
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro

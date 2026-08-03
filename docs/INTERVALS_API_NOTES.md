@@ -88,6 +88,45 @@ Risposta: `{ list: [curva_42d, curva_90d, curva_1y] }`. Ogni curva:
 
 `icu_weight`, `icu_resting_hr`, `icu_date_of_birth`, `sex`.
 
+## Endpoint pace profile (Passo 9 — verificato PARZIALMENTE, vedi nota)
+
+### `GET /api/v1/athlete/0/pace-curves.json?type=Run&curves=42d,90d,1y,all`
+
+**Cosa è verificato per davvero (2026-08-03):**
+
+- **L'endpoint esiste**: sonda diretta senza token → risposta `401
+  Unauthorized`, non `404 Not Found`. Un percorso inventato risponderebbe
+  404: 401 conferma che il percorso è quello giusto e che serve solo
+  l'autenticazione.
+- **Parametri**: stesso schema di `power-curves.json` con `type=Run` al
+  posto di `type=Ride` — confermato da fonti esterne indipendenti (client
+  TypeScript generato dallo spec OpenAPI ufficiale + forum Intervals.icu)
+  che citano esattamente `pace-curves.json?type=Run&curves=1y,42d,all`.
+- **Unità di `values[]`**: **m/s** — confermato da fonte indipendente
+  (forum ufficiale: "m/s values are provided for pace steps").
+
+**Cosa NON è ancora verificato via ispezione reale** (serve un token vero
+di un account con attività di corsa, che questa sessione non ha):
+
+- Il nome esatto del campo dentro ogni curva (assunto `values[]`, identico
+  a `power-curves.json`, per coerenza di forma — ma non visto in una
+  risposta reale).
+- Se esiste un equivalente di `powerModels[]` con CS/D′ già calcolati da
+  Intervals (in tal caso andrebbe letto, non ricalcolato — vedi
+  `lib/profile/pace-profile.ts`).
+
+**Rete di sicurezza**: `lib/profile/pace-profile.ts` scarta come `null`
+ogni velocità fuori dal range fisiologico umano di corsa (0.5–12 m/s). Se
+l'assunzione sopra fosse sbagliata su un dettaglio minore, il risultato è
+"nessun numero mostrato", mai un numero inventato o silenziosamente
+sbagliato — coerente con la regola "No Virtual Math".
+
+**Prossimo passo per chiudere la verifica al 100%**: la prima volta che
+un utente con attività di corsa reali preme «Aggiorna profilo» dopo il
+Passo 9, ispezionare la risposta vera (log temporaneo o
+`/api/debug/inspect-events`-style probe, stesso pattern di Milestone 7/8)
+e aggiornare questa sezione con la conferma definitiva.
+
 ## Endpoint eventi calendario (verificati — 13 giugno 2026, via inspect-events)
 
 ### `GET /api/v1/athlete/0/events?oldest=YYYY-MM-DD&newest=YYYY-MM-DD&category=RACE_A`

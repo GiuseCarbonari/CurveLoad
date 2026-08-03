@@ -8,6 +8,7 @@
  * path — mai il token, mai gli header, mai il body della risposta.
  */
 
+import type { PaceCurvesResponse } from "@/lib/profile/pace-profile";
 import type { PowerCurvesResponse } from "@/lib/profile/power-profile";
 import type { IntervalsWorkoutEvent } from "@/lib/planner/intervals-workout-format";
 import type { ActivityStream } from "@/lib/terrain/velocity-signature";
@@ -263,6 +264,22 @@ export class IntervalsFetcher {
   getPowerCurves(): Promise<PowerCurvesResponse> {
     return this.get<PowerCurvesResponse>("/athlete/0/power-curves.json", {
       type: "Ride",
+      curves: "42d,90d,1y,all",
+    });
+  }
+
+  /**
+   * GET /api/v1/athlete/0/pace-curves.json — velocità (m/s) per finestra
+   * (42d/90d/1y). Endpoint verificato PARZIALMENTE (Passo 9, vedi
+   * docs/INTERVALS_API_NOTES.md sezione "Endpoint pace profile"): il
+   * percorso e le unità m/s sono confermati, il nome del campo values[] è
+   * assunto per coerenza con power-curves.json ma non visto in una risposta
+   * reale — il guard di plausibilità 0.5–12 m/s in pace-profile.ts fa da
+   * rete di sicurezza se l'assunzione fosse sbagliata su un dettaglio minore.
+   */
+  getPaceCurves(): Promise<PaceCurvesResponse> {
+    return this.get<PaceCurvesResponse>("/athlete/0/pace-curves.json", {
+      type: "Run",
       curves: "42d,90d,1y,all",
     });
   }

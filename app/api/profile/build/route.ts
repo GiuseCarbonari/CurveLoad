@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { decryptToken } from "@/lib/crypto";
 import { IntervalsApiError, IntervalsFetcher } from "@/lib/intervals-client";
 import { buildAthleteProfile } from "@/lib/profile/build-profile";
+import { buildRunnerProfile } from "@/lib/profile/pace-profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,11 +57,11 @@ export async function POST() {
     decryptToken(connection.access_token_encrypted)
   );
 
-  return buildCyclist(fetcher, admin, supabase, user.id, declaredFtpW);
+  return buildProfiles(fetcher, admin, supabase, user.id, declaredFtpW);
 }
 
 /** Percorso ciclismo: power-curves → CP/W′ (PRD §33). */
-async function buildCyclist(
+async function buildProfiles(
   fetcher: IntervalsFetcher,
   admin: ReturnType<typeof createAdminClient>,
   supabase: ReturnType<typeof createClient>,
@@ -110,12 +111,35 @@ async function buildCyclist(
     );
   }
 
+  // Ramo corsa (Passo 9), fail-soft assoluto: chi non corre (o l'endpoint
+  // pace-curves fallisce per qualunque motivo — 404, 401, rete, parsing) non
+  // deve mai far fallire il profilo bici. Errore ingoiato e loggato senza
+  // token né body.
+  let runnerData = null;
+  try {
+    runnerData = buildRunnerProfile(await fetcher.getPaceCurves());
+  } catch (error) {
+    console.error(
+      "Build profilo corsa fallita (ignorato, il profilo bici non ne risente):",
+      error instanceof Error ? error.message : "errore sconosciuto"
+    );
+  }
+
   // Upsert col client UTENTE: le policy RLS su athlete_profiles consentono
   // insert/update della propria riga — il dossier è dell'atleta, non serve
   // service role. updated_at lo aggiorna il trigger del DB.
-  const { error: upsertError } = await supabase
-    .from("athlete_profiles")
-    .upsert({ user_id: userId, profile_data: profileData }, { onConflict: "user_id" });
+  // runner_profile_data entra nell'oggetto SOLO se runnerData non è null: se
+  // la chiamata corsa fallisce, l'upsert Supabase non deve sovrascrivere con
+  // null un profilo corsa buono salvato in precedenza (aggiorna solo le
+  // colonne presenti nell'oggetto).
+  const { error: upsertError } = await supabase.from("athlete_profiles").upsert(
+    {
+      user_id: userId,
+      profile_data: profileData,
+      ...(runnerData != null ? { runner_profile_data: runnerData } : {}),
+    },
+    { onConflict: "user_id" }
+  );
   if (upsertError) {
     console.error("Salvataggio profilo fallito:", upsertError.message);
     return NextResponse.json(
@@ -137,6 +161,7 @@ async function buildCyclist(
       confidence: profileData.meta.confidence,
       cp_w: profileData.cp_wprime?.cp_w ?? null,
       model: profileData.cp_wprime?.model ?? null,
+      cs_mps: runnerData?.cs_dprime?.cs_mps ?? null,
     },
   });
 

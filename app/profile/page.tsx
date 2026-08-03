@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { DurabilityCard } from "@/components/profile/durability-card";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
+import { RunnerCard } from "@/components/profile/runner-card";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
+import type { RunnerProfileData } from "@/lib/profile/pace-profile";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ProfilePage() {
@@ -17,7 +19,9 @@ export default async function ProfilePage() {
   const [{ data: row }, { data: userRow }, { data: memoryRows }] = await Promise.all([
     supabase
       .from("athlete_profiles")
-      .select("profile_data, updated_at, ai_comment_profilo, ai_comment_profilo_at")
+      .select(
+        "profile_data, runner_profile_data, updated_at, ai_comment_profilo, ai_comment_profilo_at"
+      )
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -34,6 +38,7 @@ export default async function ProfilePage() {
   ]);
 
   const profile = (row?.profile_data ?? null) as AthleteProfileData | null;
+  const runner = (row?.runner_profile_data ?? null) as RunnerProfileData | null;
   const cpw = profile?.cp_wprime ?? null;
   // Chiave propria (mai esposta) OPPURE fallback del server (Passo 2 — BYOK).
   const aiEnabled = userRow?.groq_key_encrypted != null || !!process.env.GROQ_API_KEY;
@@ -52,6 +57,9 @@ export default async function ProfilePage() {
 
       <div className="pt-4">
         <DurabilityCard durability={profile?.durability ?? null} />
+        <div className="pt-4">
+          <RunnerCard runner={runner} />
+        </div>
       </div>
     </CurveLoadShell>
   );

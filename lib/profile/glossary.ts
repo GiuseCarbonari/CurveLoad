@@ -42,6 +42,12 @@ export const GLOSSARY: Record<string, string> = {
   soglie_v0:
     "Le soglie che classificano il fenotipo sono una prima versione (euristiche), da affinare con l'esperienza. Indicano la direzione, non una verità assoluta.",
 
+  // --- Modulo Corsa (Passo 9) ---
+  cs: "La velocità che puoi tenere a lungo senza affondare. È il gemello della CP ma per la corsa: sopra questa velocità la fatica cresce in fretta e non riesci a mantenerla per molto. La vedi come passo al chilometro (es. \"4:15/km\"), il modo in cui i corridori parlano di velocità.",
+
+  dprime:
+    "Quanti metri puoi correre più veloce della velocità critica prima di esaurirti. È la \"batteria\" della corsa: il gemello della W′ della bici, ma misurata in metri invece che in kilojoule. Una D′ alta vuol dire che puoi spingere più forte, o più a lungo, prima di dover rallentare.",
+
   // --- Analisi evento (gap analysis, §33 C.6) ---
   limitatore:
     "Il punto debole che, per QUESTA gara, rischia di costarti di più: una richiesta del percorso (una salita, uno strappo) dove il tuo profilo è più scoperto. Non è un giudizio sull'atleta, è il margine di miglioramento più utile in vista dell'evento.",
