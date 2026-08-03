@@ -32,6 +32,8 @@ export interface DossierRow {
   preferenze_allenamento: string | null;
   stile_allenamento: string | null;
   note_personali: string | null;
+  /** Filosofia di coaching generata (migration 023): dà la voce al coach. */
+  filosofia_coaching: string | null;
 }
 
 /** Riga condensata di coach_decisions. */
@@ -178,7 +180,7 @@ export async function assembleAthleteContext(
     admin
       .from("athlete_profiles")
       .select(
-        "nome, eta, sesso, sport_principali, livello_esperienza, obiettivi, gare_target, data_obiettivo, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, infortuni_attuali, dolore_attuale, limiti_principali, preferenze_allenamento, stile_allenamento, note_personali"
+        "nome, eta, sesso, sport_principali, livello_esperienza, obiettivi, gare_target, data_obiettivo, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, infortuni_attuali, dolore_attuale, limiti_principali, preferenze_allenamento, stile_allenamento, note_personali, filosofia_coaching"
       )
       .eq("user_id", userId)
       .maybeSingle(),

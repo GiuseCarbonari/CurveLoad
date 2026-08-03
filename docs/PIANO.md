@@ -179,6 +179,14 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro
 - [ ] **Passo 12 — Onboarding a chiacchierata**: il questionario diventa una
       conversazione (+ filosofia di coaching nel dossier)
+      — **la seconda metà (filosofia di coaching) è FATTA e verificata da
+      Giuseppe nel browser il 2026-08-03**, anticipata rispetto al passo:
+      `docs/COACHING_SCHOOLS.md` (8 scuole reali con fonti lette davvero) +
+      `lib/coaching/schools.ts`, migration 023, intervista deterministica
+      (step 11 del wizard + gruppo in `/settings/profile`), leva vera sul
+      planner (`stile_allenamento` → seduta dura in `session-selector.ts`) e
+      sintesi AI in `/profile`. Resta da fare **solo la parte
+      "a chiacchierata"**: il questionario che diventa conversazione.
 - [ ] **Passo 13 — Il coach che si sveglia da solo (cron)**: sync notturno +
       brief mattutino via email
 - [ ] **Passo 14 — Deploy per i tester**: pubblicazione su Vercel + inviti

@@ -29,6 +29,7 @@ const emptyDossier: DossierRow = {
   preferenze_allenamento: null,
   stile_allenamento: null,
   note_personali: null,
+  filosofia_coaching: null,
 };
 
 function wellnessDay(date: string, ctl: number | null, atl: number | null): WellnessDay {
@@ -279,4 +280,22 @@ test("buildProfileExplainPrompt: senza contesto resta retrocompatibile", () => {
   const prompt = buildProfileExplainPrompt(profileFixture);
   assert.ok(prompt.user.includes('"contesto": null'));
   assert.ok(prompt.allowedNumbers.includes(240));
+});
+
+test("condenseContext: la filosofia di coaching entra nel fascicolo", () => {
+  const ctx = condenseContext({
+    dossier: {
+      ...emptyDossier,
+      nome: "Giuseppe",
+      filosofia_coaching: "Ti alleno col metodo polarizzato: il facile resta facile.",
+    },
+    mirror: null,
+    dataQualityLevel: null,
+    decisions: [],
+    memories: [],
+  });
+  assert.deepEqual(ctx.atleta, {
+    nome: "Giuseppe",
+    filosofia_coaching: "Ti alleno col metodo polarizzato: il facile resta facile.",
+  });
 });

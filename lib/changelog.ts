@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.13.0";
+export const APP_VERSION = "1.14.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.14.0",
+    date: "3 ago 2026",
+    title: "La tua filosofia di coaching",
+    items: [
+      { type: "new", text: "Nelle impostazioni c'è una sezione nuova, «La tua filosofia»: sette domande su come vuoi essere allenato (struttura o libertà, dati o sensazioni, come reagisci ai blocchi duri, cosa ti piace e cosa detesti) e otto scuole di allenamento vere tra cui scegliere — da Seiler a Canova, da Lydiard a Coggan. Se non ne conosci nessuna, le scegliamo noi dalle tue risposte" },
+      { type: "new", text: "Nella scheda atleta il bottone «Scrivi la mia filosofia» mette insieme le tue risposte, i tuoi dati reali e le scuole scelte, e scrive il patto tra te e il tuo coach: chi sei come atleta, da chi prendiamo e perché, come ti alleniamo, come ti parliamo" },
+      { type: "improve", text: "Le scuole che scegli cambiano davvero il piano, non solo le parole: con un'impostazione polarizzata la seduta dura di base diventa gli intervalli lunghi di Seiler invece del sweet spot; con la scuola della soglia si va diretti a FTP. Le regole di sicurezza (distanza tra le sedute dure, readiness, limitatori) restano sopra a tutto" },
+      { type: "improve", text: "Tutti i commenti del coach — profilo, giornata, percorso — ora parlano con il tono che hai scelto" },
+    ],
+  },
   {
     version: "1.13.0",
     date: "2 ago 2026",

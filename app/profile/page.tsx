@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { DurabilityCard } from "@/components/profile/durability-card";
+import { PhilosophyCard } from "@/components/profile/philosophy-card";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { RunnerCard } from "@/components/profile/runner-card";
+import type { FilosofiaForm } from "@/lib/onboarding/dossier";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import type { RunnerProfileData } from "@/lib/profile/pace-profile";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +22,7 @@ export default async function ProfilePage() {
     supabase
       .from("athlete_profiles")
       .select(
-        "profile_data, runner_profile_data, updated_at, ai_comment_profilo, ai_comment_profilo_at"
+        "profile_data, runner_profile_data, updated_at, ai_comment_profilo, ai_comment_profilo_at, filosofia_risposte, filosofia_coaching, filosofia_coaching_at"
       )
       .eq("user_id", user.id)
       .maybeSingle(),
@@ -42,6 +44,7 @@ export default async function ProfilePage() {
   const cpw = profile?.cp_wprime ?? null;
   // Chiave propria (mai esposta) OPPURE fallback del server (Passo 2 — BYOK).
   const aiEnabled = userRow?.groq_key_encrypted != null || !!process.env.GROQ_API_KEY;
+  const filosofia = (row?.filosofia_risposte ?? null) as FilosofiaForm | null;
 
   return (
     <CurveLoadShell>
@@ -59,6 +62,15 @@ export default async function ProfilePage() {
         <DurabilityCard durability={profile?.durability ?? null} />
         <div className="pt-4">
           <RunnerCard runner={runner} />
+        </div>
+        <div className="pt-4">
+          <PhilosophyCard
+            philosophy={row?.filosofia_coaching ?? null}
+            philosophyAt={row?.filosofia_coaching_at ?? null}
+            scuole={filosofia?.scuole ?? []}
+            hasAnswers={filosofia != null}
+            aiEnabled={aiEnabled}
+          />
         </div>
       </div>
     </CurveLoadShell>
