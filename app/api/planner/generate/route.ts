@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { MirrorData } from "@/lib/intervals/sync";
-import { buildWeek, isRunningOnlyDossier, type BuiltSession } from "@/lib/planner/build-week";
+import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import { isInjured } from "@/lib/planner/injury";
 import { hasHealthNote } from "@/lib/planner/health-flag";
@@ -14,11 +14,13 @@ import {
 } from "@/lib/planner/mesocycle";
 import {
   computeAvailableDays,
+  resolveSportModule,
   selectWeekSessions,
   type DayKey,
   type PlannerDossier,
 } from "@/lib/planner/session-selector";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
+import type { RunnerProfileData } from "@/lib/profile/pace-profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -113,6 +115,7 @@ function daysUntil(dateStr: string | null): number | null {
 
 interface ProfileRow {
   profile_data: AthleteProfileData | null;
+  runner_profile_data: RunnerProfileData | null;
   gap_analysis: { limiters?: Array<{ training_lever?: string }> } | null;
   data_obiettivo: string | null;
   gare_target: Array<{ data?: string }> | null;
@@ -147,7 +150,7 @@ export async function POST() {
   const { data: profileRow } = await supabase
     .from("athlete_profiles")
     .select(
-      "profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, stile_allenamento, injury_periods, dolore_attuale, farmaci_integratori, limiti_principali"
+      "profile_data, runner_profile_data, gap_analysis, data_obiettivo, gare_target, disponibilita_ore_sett, giorni_preferiti, giorni_impossibili, durata_max_weekday_min, durata_max_weekend_min, indoor_outdoor, ha_rulli, sport_principali, stile_allenamento, injury_periods, dolore_attuale, farmaci_integratori, limiti_principali"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -245,16 +248,17 @@ export async function POST() {
     stile_allenamento: row?.stile_allenamento ?? null,
   };
 
-  // Blocco onesto: il planner ha solo la libreria ciclismo (il modulo Corsa
-  // parte 2 — libreria sedute + routing — è ancora da fare, PIANO.md P5). A
-  // un runner non si spacciano sedute di bici.
-  if (isRunningOnlyDossier(dossier.sport_principali)) {
+  // Blocco onesto: nessuna libreria sedute per lo sport dichiarato (oggi
+  // irraggiungibile dal wizard, che offre solo Ciclismo/Corsa — entrambi con
+  // modulo — ma resta un guard esplicito se un domani se ne aggiunge uno).
+  const sportModule = resolveSportModule(dossier.sport_principali);
+  if (sportModule === null) {
     return NextResponse.json(
       {
         success: false,
         error: "sport_not_supported",
         message:
-          "Il piano automatico per la corsa non è ancora disponibile: profilo, CS/D′ e readiness funzionano già, la libreria sedute corsa arriva col modulo Corsa parte 2.",
+          "Per lo sport indicato nel profilo non esiste ancora una libreria di sedute: non genero un piano finto.",
       },
       { status: 409 }
     );
@@ -306,11 +310,15 @@ export async function POST() {
     { volume_factor: mesocycle.volume_factor, is_deload: mesocycle.is_deload }
   );
 
-  const week = buildWeek(weekStart, selected, dossier, profile, alignment.phase, {
-    tsb,
-    ri,
-    data_age_hours: dataAgeHours,
-  });
+  const week = buildWeek(
+    weekStart,
+    selected,
+    dossier,
+    profile,
+    alignment.phase,
+    { tsb, ri, data_age_hours: dataAgeHours },
+    row?.runner_profile_data ?? null
+  );
 
   // --- Marca sessioni in periodo infortunio ------------------------------------
   const injuryPeriods = row?.injury_periods ?? [];

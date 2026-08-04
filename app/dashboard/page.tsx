@@ -10,7 +10,8 @@ import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
 import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
-import { isRunningOnlyDossier, type BuiltSession } from "@/lib/planner/build-week";
+import type { BuiltSession } from "@/lib/planner/build-week";
+import { resolveSportModule } from "@/lib/planner/session-selector";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -105,7 +106,7 @@ export default async function DashboardPage() {
 
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
   const readiness = mirror?.readiness_today ?? null;
-  const isRunner = isRunningOnlyDossier(preferenceRow?.sport_principali);
+  const isRunner = resolveSportModule(preferenceRow?.sport_principali) === "run";
   const efficiencyTrend = mirror
     ? computeEfficiencyTrend(mirror.activities_90d, isRunner ? "run" : "bike")
     : null;

@@ -12,14 +12,18 @@
  */
 
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
+import type { RunnerProfileData } from "@/lib/profile/pace-profile";
+import { formatPace, paceZones } from "@/lib/profile/pace-profile";
 import type { Phase } from "@/lib/planner/phase-detector";
 import {
   DAY_KEYS,
   countHardSessions,
   effectiveMinGapDays,
   hardSpacingOk,
+  resolveSportModule,
   type DayKey,
   type SelectedSession,
+  type SportModule,
 } from "@/lib/planner/session-selector";
 import {
   getTemplate,
@@ -103,6 +107,23 @@ const FATIGUE_ALTERNATIVE: Record<string, string | null> = {
   // Strength-endurance
   "SE-1": "SS-4",
   "SE-2": "SS-1",
+  // --- Corsa (solo gli id che session-selector.ts può emettere) ------------
+  // Endurance
+  "RA-1": "RA-4",
+  "RA-2": "RA-1",
+  "RA-3": "RA-2",
+  "RA-4": null,
+  "RA-6": "RA-3",
+  // Soglia (sweet_spot/tempo corsa)
+  "RS-1": "RS-4",
+  "RS-2": "RS-1",
+  "RS-4": "RA-5",
+  // VO2max
+  "RV-1": "RS-4",
+  "RV-2": "RS-4",
+  // Race-specific
+  "RR-1": "RA-5",
+  "RR-2": "RA-4",
 };
 
 export interface ValidationMetadata {
@@ -221,12 +242,15 @@ function restSession(s: SelectedSession, date: string): BuiltSession {
 /** Descrizione semplice + struttura con riferimento WU/CD per le strutturate. */
 function describe(
   template: WorkoutTemplate,
-  durationMin: number | null
+  durationMin: number | null,
+  mod: SportModule
 ): { description: string; structure: string } {
   const needsWuCd = template.domain !== "endurance";
   const wuCd = needsWuCd
     ? " Includi riscaldamento (WU-STD/WU-PROG, 15–20′) e defaticamento (CD-STD, 10–15′)."
-    : " Pedalata con ramp-in/ramp-out (10–15′ in entrata e in uscita).";
+    : mod === "run"
+      ? " Corsa continua con ramp-in/ramp-out (10–15′ in entrata e in uscita)."
+      : " Pedalata con ramp-in/ramp-out (10–15′ in entrata e in uscita).";
   const dur = durationMin != null ? ` Durata totale prevista ~${durationMin}′.` : "";
   return {
     description: `${template.title}. ${template.structure}.${dur}${wuCd}`,
@@ -234,10 +258,16 @@ function describe(
   };
 }
 
-/** Etichetta sport per il campo BuiltSession.sport. */
+/**
+ * Etichetta sport per il campo BuiltSession.sport. Ordine dei controlli:
+ * prima corsa (ignora `indoor_outdoor`, che è dei rulli: "Corsa indoor"
+ * classificherebbe l'evento come VirtualRide in `eventType`,
+ * intervals-workout-format.ts), poi indoor, poi MTB, poi Ciclismo di default.
+ */
 function resolveSport(
   dossier: { indoor_outdoor?: string | null; sport_principali?: string[] }
 ): string {
+  if (resolveSportModule(dossier.sport_principali) === "run") return "Corsa";
   if (dossier.indoor_outdoor === "indoor") return "indoor";
   const sports = dossier.sport_principali ?? [];
   const isMtb = sports.some((s) => /mtb|gravel/i.test(s));
@@ -245,16 +275,30 @@ function resolveSport(
 }
 
 /**
- * true se il dossier dichiara SOLO corsa: la libreria sedute di buildWeek è
- * solo ciclismo (resolveSport sopra non produce mai "Corsa"), quindi
- * /api/planner/generate deve bloccarsi con un messaggio onesto invece di
- * spacciare sedute di bici per un piano corsa. Un dossier misto ["Corsa",
- * "Ciclismo"] (non raggiungibile dal wizard, scelta esclusiva) degrada sul
- * ramo ciclismo esistente piuttosto che bloccarsi.
+ * Etichetta di zona corsa arricchita col passo derivato da CS (Passo 9).
+ * Nessun ricalcolo: legge cs_dprime e riusa paceZones/formatPace. No Virtual
+ * Math: ogni uscita anticipata ritorna `zoneLabel` invariato, mai un passo
+ * inventato quando CS manca o il fit è fallito.
  */
-export function isRunningOnlyDossier(sports: string[] | null | undefined): boolean {
-  const list = sports ?? [];
-  return list.length > 0 && list.every((s) => /corsa|running/i.test(s));
+function runPaceTarget(zoneLabel: string, runner: RunnerProfileData | null): string {
+  // Etichette a intervallo ("Z1–Z2", "Z3–Z4") vanno dalla zona più lenta
+  // (prima occorrenza) alla più veloce (ultima): usare solo la prima
+  // sottostimava il passo di ogni seduta con range di zona.
+  const keys = zoneLabel.match(/Z[1-5]/g);
+  if (!keys) return zoneLabel;
+  const zones = paceZones(runner?.cs_dprime ?? null);
+  if (zones.length === 0) return zoneLabel; // runner null o cs_dprime null (fit fallito/guard)
+  const first = zones.find((z) => z.key === keys[0]);
+  const last = zones.find((z) => z.key === keys[keys.length - 1]);
+  if (!first || !last) return zoneLabel;
+  const fast = formatPace(last.pace_s_per_km_fast);
+  if (fast === "—") return zoneLabel;
+  const slow = formatPace(first.pace_s_per_km_slow);
+  if (slow === "—") {
+    // Z1: limite lento infinito per costruzione (nessun tetto a "quanto lento").
+    return `${zoneLabel} — più lento di ${fast}/km`;
+  }
+  return `${zoneLabel} — ${slow}–${fast}/km`;
 }
 
 /**
@@ -276,11 +320,15 @@ export function buildWeek(
    * TSB/RI odierni (eccezione §3.1) + età del mirror dati in ore (checklist
    * §11C item 6, Temporal Data Validation). Tutti opzionali/null se assenti.
    */
-  auditContext?: { tsb: number | null; ri: number | null; data_age_hours: number | null } | null
+  auditContext?: { tsb: number | null; ri: number | null; data_age_hours: number | null } | null,
+  /** Profilo corsa (athlete_profiles.runner_profile_data): serve SOLO a derivare
+   *  il passo delle zone. null ⇒ zone senza numeri, mai numeri inventati. */
+  runnerProfile?: RunnerProfileData | null
 ): BuiltWeek {
   const hasInputs = athleteProfile?.cp_wprime?.cp_w != null && athleteProfile.weight_kg != null;
   const confidence: "high" | "medium" | "low" = hasInputs ? "high" : "medium";
   const sport = resolveSport(dossier);
+  const mod: SportModule = resolveSportModule(dossier.sport_principali) ?? "bike";
 
   const built: BuiltSession[] = sessions.map((s) => {
     const date = addDays(weekStartDate, DAY_KEYS.indexOf(s.day));
@@ -303,7 +351,8 @@ export function buildWeek(
       : template;
     const { description, structure } = describe(
       effectiveTemplate,
-      s.adapted_duration_min
+      s.adapted_duration_min,
+      mod
     );
 
     const checklist_passed: Array<number | string> = [0, 1, 8];
@@ -333,7 +382,10 @@ export function buildWeek(
       session_objective: sessionObjective ?? "Allenamento",
       description,
       interval_structure: structure,
-      power_target_zone: template.power_target_zone,
+      power_target_zone:
+        mod === "run"
+          ? runPaceTarget(template.power_target_zone, runnerProfile ?? null)
+          : template.power_target_zone,
       hr_target_zone: template.hr_target_zone,
       rpe_target: template.rpe_target,
       coach_notes: template.coaching_notes,

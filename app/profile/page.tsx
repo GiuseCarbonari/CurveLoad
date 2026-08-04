@@ -6,7 +6,7 @@ import { PhilosophyCard } from "@/components/profile/philosophy-card";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { RunnerCard } from "@/components/profile/runner-card";
 import type { FilosofiaForm } from "@/lib/onboarding/dossier";
-import { isRunningOnlyDossier } from "@/lib/planner/build-week";
+import { resolveSportModule } from "@/lib/planner/session-selector";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import type { RunnerProfileData } from "@/lib/profile/pace-profile";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +43,7 @@ export default async function ProfilePage() {
   const profile = (row?.profile_data ?? null) as AthleteProfileData | null;
   const runner = (row?.runner_profile_data ?? null) as RunnerProfileData | null;
   const cpw = profile?.cp_wprime ?? null;
-  const isRunner = isRunningOnlyDossier(row?.sport_principali);
+  const isRunner = resolveSportModule(row?.sport_principali) === "run";
   // Chiave propria (mai esposta) OPPURE fallback del server (Passo 2 — BYOK).
   const aiEnabled = userRow?.groq_key_encrypted != null || !!process.env.GROQ_API_KEY;
   const filosofia = (row?.filosofia_risposte ?? null) as FilosofiaForm | null;

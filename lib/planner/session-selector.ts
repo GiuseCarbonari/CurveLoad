@@ -8,9 +8,12 @@
  *  - 1 lungo di durabilità, di norma nel weekend;                        (§3.3)
  *  - readiness MODIFY → solo SS-4/AE-7 come "dura"; SKIP → niente dura.  (spec D)
  *
- * Ogni `library_id` proviene dal catalogo reale (workout-library.ts). La
- * selezione del template specifico segue la decision matrix §5.1 + i
- * limitatori della gap analysis. Nessuna AI, nessun numero inventato.
+ * Il selector sceglie da DUE cataloghi (bici o corsa) secondo il modulo
+ * sportivo dichiarato in `dossier.sport_principali` (`resolveSportModule`).
+ * Ogni `library_id` proviene comunque dal catalogo reale unificato
+ * (workout-library.ts, bici + corsa). La selezione del template specifico
+ * segue la decision matrix §5.1 + i limitatori della gap analysis. Nessuna
+ * AI, nessun numero inventato.
  */
 
 import { getTemplate, type WorkoutTemplate } from "@/lib/planner/workout-library";
@@ -68,6 +71,26 @@ export interface PlannerDossier {
    * ⇒ selezione identica a prima della filosofia.
    */
   stile_allenamento?: string | null;
+}
+
+export type SportModule = "bike" | "run";
+
+/**
+ * Modulo di allenamento per gli sport dichiarati nel dossier.
+ * null = sport dichiarato per cui NON esiste una libreria (oggi irraggiungibile
+ * dal wizard: serve a non generare mai sedute finte se domani se ne aggiunge uno).
+ *
+ * Sostituisce `isRunningOnlyDossier` (ex `lib/planner/build-week.ts`): stessa
+ * domanda posta una volta sola, per tutti i chiamanti.
+ */
+export function resolveSportModule(
+  sports: string[] | null | undefined
+): SportModule | null {
+  const list = sports ?? [];
+  if (list.length === 0) return "bike";
+  if (list.every((s) => /corsa|running/i.test(s))) return "run";
+  if (list.some((s) => /cicl|bici|bike|mtb|gravel|strada|road/i.test(s))) return "bike";
+  return null;
 }
 
 /** Readiness di OGGI (l'unica disponibile): si applica al giorno corrente. */
@@ -207,6 +230,46 @@ interface SlotChoice {
   note: string;
 }
 
+/** Id di riferimento per modulo (bici/corsa): recupero, facile, downgrade, opener, terza dura. */
+interface ModuleIds {
+  recovery: string; // recupero attivo (giorno dopo la dura, readiness SKIP)
+  easy: string; // facile di mantenimento (riempimento settimana)
+  modifyDowngrade: string; // dura declassata con readiness MODIFY
+  longModifyDowngrade: string; // lungo duro declassato con readiness MODIFY
+  opener: string; // attivazione pre-gara (taper)
+  thirdHard: SlotChoice; // terza strutturata (disponibilità > 10h)
+}
+
+/**
+ * MODULE_IDS.bike riproduce ESATTAMENTE i valori odierni: il comportamento
+ * ciclismo resta bit-per-bit identico. MODULE_IDS.run è scelto dal catalogo
+ * `run-workout-library.ts` seguendo lo stesso ruolo di ciascun id bici
+ * (§3.1 della spec Passo 10 parte 1): il catalogo corsa ha meno formati
+ * distinti (4 RS invece di 7 sweet_spot/threshold/tempo), quindi alcuni id
+ * corsa coprono più ruoli di quanto facciano i loro equivalenti bici.
+ */
+const MODULE_IDS: Record<SportModule, ModuleIds> = {
+  bike: {
+    recovery: "AE-4", // Recupero attivo
+    easy: "AE-1", // Endurance steady (breve)
+    modifyDowngrade: "SS-4", // Tempo intervals (variante a intensità ridotta)
+    longModifyDowngrade: "AE-3", // Lungo di durabilità
+    opener: "MIX-2", // Opener pre-gara
+    thirdHard: { library_id: "SS-4", note: "Terza strutturata (volume tempo) — disponibilità alta" },
+  },
+  run: {
+    recovery: "RA-4", // Recupero attivo (corsa) — endurance non-hard, minima durata (30′)
+    easy: "RA-1", // Corsa facile (breve) — fondo facile infrasettimanale standard (stesso select_when di AE-1)
+    modifyDowngrade: "RS-4", // Threshold intervals (variante moderata) — select_when cita esplicitamente readiness MODIFY
+    longModifyDowngrade: "RA-3", // Lungo di durabilità — versione non-hard senza finale veloce (come AE-3)
+    opener: "RR-2", // Opener pre-gara (corsa) — titolo identico al ruolo di MIX-2
+    thirdHard: {
+      library_id: "RS-4", // stesso id del modifyDowngrade: stesso ruolo di SS-4 in bici (domain "tempo" in entrambi)
+      note: "Terza strutturata (variante soglia moderata) — disponibilità alta",
+    },
+  },
+};
+
 /**
  * Stile di allenamento dell'atleta (athlete_profiles.stile_allenamento), che
  * nasce dalla filosofia di coaching: le scuole scelte nell'intervista danno
@@ -223,8 +286,30 @@ function isThreshold(stile: string | null | undefined): boolean {
   return stile === "threshold";
 }
 
-/** Template della seduta dura PRIMARIA per fase + stile. */
-function primaryHardChoice(phase: Phase, stile?: string | null): SlotChoice {
+/** Template della seduta dura PRIMARIA per fase + modulo + stile. */
+function primaryHardChoice(phase: Phase, mod: SportModule, stile?: string | null): SlotChoice {
+  const ids = MODULE_IDS[mod];
+  if (mod === "run") {
+    switch (phase) {
+      case "build":
+      case "peak":
+        // Il catalogo corsa non distingue un dominio "threshold" da sweet_spot:
+        // RS-2 (cruise intervals) è il formato più vicino a lavoro diretto di soglia.
+        return isThreshold(stile)
+          ? { library_id: "RS-2", note: "Stile soglia: cruise interval a passo soglia in build/peak, ruolo analogo a TH-1 in bici" }
+          : { library_id: "RV-1", note: "VO₂max prioritario in build/peak" };
+      case "base":
+        // Il catalogo corsa non ha un formato Seiler 4×8 distinto dal VO₂max
+        // standard: RV-1 resta il candidato più vicino per "intervalli sopra soglia".
+        return isPolarized(stile)
+          ? { library_id: "RV-1", note: "Stile polarizzato: intervalli sopra soglia (VO₂max) al posto del formato medio in base" }
+          : { library_id: "RS-1", note: "Formato soglia come dura principale in base" };
+      case "taper":
+        return { library_id: ids.opener, note: "Opener pre-gara in taper (race-week)" };
+      case "recovery":
+        return { library_id: ids.recovery, note: "Solo recupero in fase recovery" };
+    }
+  }
   switch (phase) {
     case "build":
     case "peak":
@@ -246,12 +331,32 @@ function primaryHardChoice(phase: Phase, stile?: string | null): SlotChoice {
   }
 }
 
-/** Template della seduta dura SECONDARIA per fase + limitatori + stile. */
+/** Template della seduta dura SECONDARIA per fase + modulo + limitatori + stile. */
 function secondaryHardChoice(
   phase: Phase,
+  mod: SportModule,
   lev: Set<string>,
   stile?: string | null
 ): SlotChoice {
+  const ids = MODULE_IDS[mod];
+  if (mod === "run") {
+    if (phase === "recovery" || phase === "taper") {
+      return { library_id: ids.easy, note: "Nessuna seconda dura in recovery/taper" };
+    }
+    if (lev.has("threshold_long") && (phase === "build" || phase === "peak")) {
+      return { library_id: "RS-2", note: "Limitatore threshold_long → cruise interval a soglia, ruolo analogo a TH-1 in bici" };
+    }
+    if (phase === "peak") {
+      return { library_id: "RR-1", note: "Lavoro race-specific in peak" };
+    }
+    if (isPolarized(stile)) {
+      return { library_id: "RV-2", note: "Stile polarizzato: seconda dura sopra soglia (short-short), niente zona media" };
+    }
+    // Base e build di default: RS-2 come secondo formato soglia, alternativa a
+    // RS-1 (già usato in primaria) — select_when del catalogo lo descrive
+    // esplicitamente come "alternativa a RS-1 con più varietà".
+    return { library_id: "RS-2", note: "Seconda soglia (cruise interval), alternativa a RS-1" };
+  }
   if (phase === "recovery" || phase === "taper") {
     return { library_id: "AE-1", note: "Nessuna seconda dura in recovery/taper" };
   }
@@ -273,8 +378,17 @@ function secondaryHardChoice(
   return { library_id: "SS-1", note: "Seconda strutturata sweet spot in build" };
 }
 
-/** Template del lungo per fase + limitatore durabilità. */
-function longRideChoice(phase: Phase, lev: Set<string>): SlotChoice {
+/** Template del lungo per fase + modulo + limitatore durabilità. */
+function longRideChoice(phase: Phase, mod: SportModule, lev: Set<string>): SlotChoice {
+  if (mod === "run") {
+    if (phase === "recovery") {
+      return { library_id: "RA-2", note: "Lungo ridotto (Z2) in recovery" };
+    }
+    if (lev.has("durability_fatigued") && (phase === "build" || phase === "peak")) {
+      return { library_id: "RA-6", note: "Limitatore durabilità → lungo con finale a passo gara (occupa slot duro)" };
+    }
+    return { library_id: "RA-3", note: "Lungo di durabilità settimanale" };
+  }
   if (phase === "recovery") {
     return { library_id: "AE-2", note: "Lungo ridotto (Z2, cap) in recovery (§4.3)" };
   }
@@ -283,11 +397,6 @@ function longRideChoice(phase: Phase, lev: Set<string>): SlotChoice {
   }
   return { library_id: "AE-3", note: "Lungo di durabilità settimanale (§4)" };
 }
-
-/** Downgrade per giornata MODIFY: una "dura" diventa SS-4 (tempo). */
-const MODIFY_DOWNGRADE_ID = "SS-4";
-/** AE-6 (lungo duro) in MODIFY scende a AE-3 (toglie il finale Z3). */
-const LONG_MODIFY_DOWNGRADE_ID = "AE-3";
 
 // --- Adattamento durata al dossier (§5.4 time-crunch) ------------------------
 
@@ -298,8 +407,17 @@ function capForDay(day: DayKey, dossier: PlannerDossier): number | null {
   return cap != null && cap > 0 ? cap : null;
 }
 
-/** Nota di fattibilità indoor (no rulli + lungo) — non cambia i minuti. */
-function indoorNote(template: WorkoutTemplate, dossier: PlannerDossier): string | null {
+/**
+ * Nota di fattibilità indoor (no rulli + lungo) — non cambia i minuti.
+ * Sempre null per "run": il campo `ha_rulli` nasce per la bici, "senza rulli
+ * un lungo indoor non è fattibile" non ha senso per chi corre.
+ */
+function indoorNote(
+  template: WorkoutTemplate,
+  dossier: PlannerDossier,
+  mod: SportModule
+): string | null {
+  if (mod === "run") return null;
   if (
     dossier.indoor_outdoor === "indoor" &&
     dossier.ha_rulli === false &&
@@ -318,6 +436,7 @@ function buildSession(
   slot: SessionSlot,
   baseNote: string,
   dossier: PlannerDossier,
+  mod: SportModule,
   extraNotes: string[],
   /** Stato di progressione §5.2 (multi-vettore) per questo formato. */
   progressionState?: ProgressionState,
@@ -369,7 +488,7 @@ function buildSession(
       `Durata adattata a ${minutes}′ (max del giorno): applicate regole time-crunch §5.4 (taglia CD, poi WU, poi n. intervalli).`
     );
   }
-  const indoor = indoorNote(template, dossier);
+  const indoor = indoorNote(template, dossier, mod);
   if (indoor) notes.push(indoor);
 
   return {
@@ -413,6 +532,8 @@ export function selectWeekSessions(
     is_deload: false,
   }
 ): SelectedSession[] {
+  const mod: SportModule = resolveSportModule(dossier.sport_principali) ?? "bike";
+  const ids = MODULE_IDS[mod];
   const available = new Set(availableDays);
   const lev = new Set(gapAnalysis?.levers ?? []);
   const volumeFactor = mesocycle.volume_factor;
@@ -433,13 +554,13 @@ export function selectWeekSessions(
   const hardDays: DayKey[] = [];
   const taken = new Set<DayKey>();
 
-  // ID di recupero/facile.
-  const recoveryId = "AE-4";
-  const easyId = "AE-1";
+  // ID di recupero/facile del modulo attivo.
+  const recoveryId = ids.recovery;
+  const easyId = ids.easy;
 
-  // Downgrade MODIFY per le sedute dure
-  const modifyDowngradeId = MODIFY_DOWNGRADE_ID;
-  const longModifyDowngradeId = LONG_MODIFY_DOWNGRADE_ID;
+  // Downgrade MODIFY per le sedute dure (per modulo attivo)
+  const modifyDowngradeId = ids.modifyDowngrade;
+  const longModifyDowngradeId = ids.longModifyDowngrade;
 
   // recovery/taper: niente sedute dure strutturate, settimana leggera.
   const allowStructuredHard = phase !== "recovery" && phase !== "taper";
@@ -447,7 +568,7 @@ export function selectWeekSessions(
   // 1) Lungo (di norma weekend). In taper niente lungo.
   let longDay: DayKey | null = null;
   if (phase !== "taper") {
-    const longChoice = longRideChoice(phase, lev);
+    const longChoice = longRideChoice(phase, mod, lev);
     const longTemplate = getTemplate(longChoice.library_id);
     const longIsHard = longTemplate?.is_hard_session ?? false;
     longDay =
@@ -473,6 +594,7 @@ export function selectWeekSessions(
         "long_ride",
         `Fase ${phase}. Lungo settimanale. ${longChoice.note}.`,
         dossier,
+        mod,
         extra,
         undefined,
         volumeFactor
@@ -494,19 +616,19 @@ export function selectWeekSessions(
   if (structuredTarget >= 1) {
     hardSlotPlan.push({
       slot: "primary_hard",
-      choice: primaryHardChoice(phase, dossier.stile_allenamento),
+      choice: primaryHardChoice(phase, mod, dossier.stile_allenamento),
     });
   }
   if (structuredTarget >= 2) {
     hardSlotPlan.push({
       slot: "secondary_hard",
-      choice: secondaryHardChoice(phase, lev, dossier.stile_allenamento),
+      choice: secondaryHardChoice(phase, mod, lev, dossier.stile_allenamento),
     });
   }
   if (structuredTarget >= 3) {
     hardSlotPlan.push({
       slot: "third_hard",
-      choice: { library_id: "SS-4", note: "Terza strutturata (volume tempo) — disponibilità alta" },
+      choice: ids.thirdHard,
     });
   }
 
@@ -540,7 +662,7 @@ export function selectWeekSessions(
     }
     if (isReadinessDay(day) && readiness.decision === "MODIFY") {
       libId = modifyDowngradeId;
-      extra.push("Readiness MODIFY oggi: dura declassata a tempo (SS-4/AE-7, §5.1).");
+      extra.push(`Readiness MODIFY oggi: dura declassata a formato più tranquillo (${modifyDowngradeId}, §5.1).`);
     } else if (isReadinessDay(day) && readiness.decision === "SKIP") {
       const session = buildSession(
         day,
@@ -548,6 +670,7 @@ export function selectWeekSessions(
         "recovery",
         `Fase ${phase}. Readiness SKIP oggi: niente seduta dura, recupero attivo.`,
         dossier,
+        mod,
         []
       );
       sessions.set(day, session);
@@ -568,6 +691,7 @@ export function selectWeekSessions(
       slot,
       `Fase ${phase}. Seduta dura ${slot === "primary_hard" ? "primaria" : slot === "secondary_hard" ? "secondaria" : "aggiuntiva"}. ${choice.note}.`,
       dossier,
+      mod,
       extra,
       progressionByFormat[libId],
       volumeFactor
@@ -589,10 +713,11 @@ export function selectWeekSessions(
     if (openerDay) {
       const session = buildSession(
         openerDay,
-        "MIX-2",
+        ids.opener,
         "opener",
         "Fase taper: opener di attivazione pre-gara (§4.3 race-week), senza fatica.",
         dossier,
+        mod,
         []
       );
       sessions.set(openerDay, session);
@@ -628,7 +753,7 @@ export function selectWeekSessions(
           : "Mantenimento aerobico facile.";
     sessions.set(
       day,
-      buildSession(day, fillId, slot, note, dossier, [], undefined, volumeFactor)
+      buildSession(day, fillId, slot, note, dossier, mod, [], undefined, volumeFactor)
     );
   }
 

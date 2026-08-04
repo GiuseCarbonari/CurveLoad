@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.15.0";
+export const APP_VERSION = "1.16.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.16.0",
+    date: "4 ago 2026",
+    title: "Sedute vere per chi corre",
+    items: [
+      { type: "new", text: "Chi ha scelto Corsa ora riceve settimane di allenamento vere — corsa facile, ripetute, lungo, prove a passo gara — invece del messaggio «modulo non disponibile» di prima" },
+      { type: "new", text: "Quando l'app conosce la tua velocità critica (dalle corse sincronizzate su Intervals.icu), le sedute mostrano anche il passo target in minuti al km, non solo la zona" },
+      { type: "improve", text: "Le sedute di corsa inviate a Intervals.icu ora descrivono il passo giusto, invece di mostrare per errore un target in watt pensato per la bici" },
+    ],
+  },
   {
     version: "1.15.0",
     date: "3 ago 2026",

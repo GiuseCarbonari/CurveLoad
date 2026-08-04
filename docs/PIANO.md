@@ -174,24 +174,43 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       oggi era "il ramo corsa non disturba il profilo bici" — confermato,
       tutto identico a prima. I numeri CS/D′ restano da vedere quando lui o
       un tester avrà corse vere su Intervals.)
-- [ ] **Passo 10 — Modulo Corsa, parte 2**: libreria sedute corsa + planner
-      che sceglie per sport
-      — **anticipato in parte il 2026-08-03** (revisione onboarding, non un
-      passo a sé): l'onboarding ora fa scegliere Ciclismo o Corsa (esclusivi,
-      step 5 del wizard) e `sport_principali` arriva correttamente valorizzato
-      a `["Corsa"]`; `/api/planner/generate` riconosce il caso
-      (`isRunningOnlyDossier` in `lib/planner/build-week.ts`) e risponde 409
-      con messaggio onesto invece di generare sedute di bici spacciate per
-      corsa. Resta da fare tutto il resto del passo: libreria sedute
-      (prefissi RA-/RS-/RV-/RN-/RR-) e il routing per sport in
-      `session-selector.ts`.
+- [x] **Passo 10 — Modulo Corsa, parte 2** (fatto 2026-08-04, via /ship —
+      planner→coder→tester→reviewer, un giro di correzione post-review, poi
+      verificato da Giuseppe nel browser): libreria sedute corsa + routing per
+      sport nel planner. `lib/planner/run-workout-library.ts` (nuovo, 17
+      template RA-1..6/RS-1..4/RV-1..3/RN-1..2/RR-1..2, recuperato dalla
+      storia git pre-`bbcd7e4` e riallineato al tipo `WorkoutTemplate`
+      condiviso con `workout-library.ts`, che ora unisce bici+corsa in
+      `getTemplate()`/`VALID_LIBRARY_IDS`). `session-selector.ts`:
+      `resolveSportModule` (sostituisce `isRunningOnlyDossier`) sceglie il
+      catalogo giusto per sport, `MODULE_IDS` (ciclismo bit-per-bit identico a
+      prima). Zone %CS: `runPaceTarget` in `build-week.ts` arricchisce le
+      etichette di zona col passo derivato dal CS del Passo 9 (mai
+      ricalcolato; etichetta secca senza CS, No Virtual Math). Push a
+      Intervals.icu reso sport-aware (`intervals-workout-format.ts`: tipo
+      evento "Run", niente sintassi %FTP per la corsa). `/api/planner/generate`
+      non risponde più 409 per chi ha scelto Corsa. `tests/sport-boundary.test.ts`
+      riscritto come test del confine per sport. 366 test verdi, tsc/lint/build
+      puliti. La parte "onboarding Corsa/Ciclismo" era già stata fatta il
+      2026-08-03 (commit `62b0a69`), fuori da questo giro.
+      — **Bug reale trovato dal reviewer prima della chiusura**: `runPaceTarget`
+      leggeva solo la PRIMA zona di un'etichetta a intervallo ("Z3–Z4",
+      "Z1–Z2 → Z3" — la maggioranza dei template corsa emessi davvero),
+      sottostimando il passo prescritto nelle sedute chiave (una soglia
+      mostrava il passo di recupero). Corretto (prima occorrenza per il
+      confine lento, ultima per il veloce) insieme a due asserzioni di test
+      deboli che non coprivano il caso rotto.
+      — **Non verificato con numeri reali**: nessun account di test ha ancora
+      corse sincronizzate su Intervals, quindi Giuseppe ha verificato la
+      struttura (sedute RA-/RS-/RV-/RN-/RR- al posto del 409, ritorno pulito a
+      Ciclismo) ma non i minuti/km veri — stesso limite già noto dal Passo 9.
       — **Preferenza espressa da Giuseppe il 2026-08-03** per le stime di
-      passo su un percorso (quando si farà questa parte): motore basato sulla
-      **firma di velocità personale** (riuso di `buildSignatureFromStreams`
-      in `lib/terrain/velocity-signature.ts`, filtrando le corse invece delle
-      uscite MTB — è già sport-agnostica dentro), NON il modello fisico
-      semplice proposto come default più veloce da implementare. Richiede
-      corse vere sincronizzate per calibrarsi bene.
+      passo su un percorso (parte successiva, non fatta ora): motore basato
+      sulla **firma di velocità personale** (riuso di
+      `buildSignatureFromStreams` in `lib/terrain/velocity-signature.ts`,
+      filtrando le corse invece delle uscite MTB — è già sport-agnostica
+      dentro), NON il modello fisico semplice. Richiede corse vere
+      sincronizzate per calibrarsi bene.
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro
 - [ ] **Passo 12 — Onboarding a chiacchierata**: il questionario diventa una
       conversazione (+ filosofia di coaching nel dossier)

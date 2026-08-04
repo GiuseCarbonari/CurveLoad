@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import type { BuiltSession } from "@/lib/planner/build-week";
+import { RUN_LIBRARY_IDS } from "@/lib/planner/run-workout-library";
 import type { DayKey } from "@/lib/planner/session-selector";
 import { getTemplate } from "@/lib/planner/workout-library";
 
@@ -19,10 +20,12 @@ export const FTP_ZONE_RANGES = {
   Z5: "106-120%",
 } as const;
 
+/** "Ride*" per lo storico ciclismo, "Run" per la corsa (Passo 10 parte 1). */
 export type IntervalsRideType =
   | "Ride"
   | "VirtualRide"
-  | "MountainBikeRide";
+  | "MountainBikeRide"
+  | "Run";
 
 export interface IntervalsWorkoutEvent {
   uid: string;
@@ -219,12 +222,30 @@ function mainSet(session: BuiltSession): string {
 /**
  * Converte una seduta del planner nella sintassi workout testuale di
  * Intervals.icu. La funzione non legge DB, ambiente o rete.
+ *
+ * Per la corsa (library_id in RUN_LIBRARY_IDS) niente blocchi % FTP: la
+ * struttura in watt sarebbe un numero falso per chi corre. Si emette la
+ * struttura testuale della seduta col target di passo (già arricchito da
+ * `runPaceTarget` in build-week.ts se CS è disponibile).
  */
 export function toIntervalsDescription(session: BuiltSession): string {
   const frameworks =
     session.frameworks_cited.length > 0
       ? session.frameworks_cited.join(", ")
       : "Section 11";
+
+  if (session.library_id != null && RUN_LIBRARY_IDS.has(session.library_id)) {
+    return [
+      `Nota coach: ${session.coach_notes}`,
+      `Framework: ${frameworks}`,
+      "",
+      "Struttura",
+      session.interval_structure,
+      "",
+      `Target di passo: ${session.power_target_zone ?? "—"}`,
+    ].join("\n");
+  }
+
   const warmup = session.library_id === "AE-4" ? "5m" : "10m";
   const cooldown = session.library_id === "AE-4" ? "5m" : "10m";
 
@@ -244,6 +265,7 @@ export function toIntervalsDescription(session: BuiltSession): string {
 }
 
 function eventType(sport: string): IntervalsRideType {
+  if (/corsa|run/i.test(sport)) return "Run";
   const normalized = sport.toLowerCase();
   if (normalized.includes("indoor") || normalized.includes("virtual")) {
     return "VirtualRide";

@@ -46,6 +46,8 @@ export interface WorkoutTemplate {
   optional?: boolean;
 }
 
+import { RUN_WORKOUT_TEMPLATES } from "@/lib/planner/run-workout-library";
+
 /**
  * I 26 template della libreria v0.6. Ordine come nel documento (1A→1F).
  */
@@ -507,22 +509,27 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
   },
 ];
 
-/** Mappa id → template per lookup O(1). */
+/** Mappa id → template per lookup O(1), unione bici + corsa. */
 const BY_ID: Record<string, WorkoutTemplate> = Object.fromEntries(
-  WORKOUT_TEMPLATES.map((t) => [t.id, t])
+  [...WORKOUT_TEMPLATES, ...RUN_WORKOUT_TEMPLATES].map((t) => [t.id, t])
 );
 
-/** Insieme dei library_id validi (per validazione del planner). */
-export const VALID_LIBRARY_IDS: ReadonlySet<string> = new Set(
+/** Id dei soli template CICLISMO (per il test del confine per sport). */
+export const CYCLING_LIBRARY_IDS: ReadonlySet<string> = new Set(
   WORKOUT_TEMPLATES.map((t) => t.id)
 );
 
-/** Ritorna il template per id, o null se non esiste in libreria. */
+/** Union bici + corsa: gli id sono disgiunti per prefisso. */
+export const VALID_LIBRARY_IDS: ReadonlySet<string> = new Set(
+  [...WORKOUT_TEMPLATES, ...RUN_WORKOUT_TEMPLATES].map((t) => t.id)
+);
+
+/** Ritorna il template per id, o null se non esiste in libreria (bici o corsa). */
 export function getTemplate(id: string): WorkoutTemplate | null {
   return BY_ID[id] ?? null;
 }
 
-/** true se l'id riferisce un template reale della libreria. */
+/** true se l'id riferisce un template reale della libreria (bici o corsa). */
 export function isValidLibraryId(id: string): boolean {
   return VALID_LIBRARY_IDS.has(id);
 }
