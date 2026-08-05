@@ -302,6 +302,14 @@ export function WeekGrid({
                         </p>
                       </div>
                     )}
+                    {session.session_rationale && (
+                      <div className="flex min-w-0 gap-2 rounded-lg border border-accent2/[0.2] bg-accent2-dim px-3 py-2.5">
+                        <span className="text-[13px] text-accent2-hover">→</span>
+                        <p className="min-w-0 break-words text-[12.5px] leading-relaxed text-secondary">
+                          {session.session_rationale}
+                        </p>
+                      </div>
+                    )}
                     {session.fatigue_alternative_library_id && (
                       <DetailRow
                         label="Se sei affaticato"

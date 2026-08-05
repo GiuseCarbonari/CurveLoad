@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.16.0";
+export const APP_VERSION = "1.17.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.17.0",
+    date: "5 ago 2026",
+    title: "Il perché di ogni seduta",
+    items: [
+      { type: "new", text: "Sopra la settimana ora trovi un breve riepilogo di cosa dicono i tuoi dati prima del piano: CTL, ACWR, prontezza, la fase in cui sei e perché, quanto vale il volume di questa settimana nel blocco 3:1" },
+      { type: "new", text: "Aprendo una seduta dura, oltre alla nota del coach ora vedi anche il motivo per cui è stata scelta proprio quella per te questa settimana — se colpisce un limitatore del tuo percorso, lo dice" },
+    ],
+  },
   {
     version: "1.16.0",
     date: "4 ago 2026",

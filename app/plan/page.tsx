@@ -7,6 +7,7 @@ import { RedistributeSection } from "@/components/plan/redistribute-section";
 import { SeasonCard } from "@/components/plan/season-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import type { BuiltSession } from "@/lib/planner/build-week";
+import { buildBriefing } from "@/lib/planner/briefing";
 import { computeMacrocycle } from "@/lib/planner/macrocycle";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import type { Phase } from "@/lib/planner/phase-detector";
@@ -38,6 +39,10 @@ interface PlanRow {
     detected_phase?: Phase;
     phase_on_track?: boolean | null;
     phase_alignment_reason?: string;
+    week_in_block?: number;
+    is_deload?: boolean;
+    volume_factor?: number;
+    mesocycle_reason?: string;
   } | null;
   generated_at: string;
   pushed_at: string | null;
@@ -142,6 +147,15 @@ export default async function PlanPage() {
   const completionByDate = plan
     ? buildCompletionByDate(plan.sessions, mirror?.activities_90d ?? [])
     : {};
+  const wellnessLast = mirror?.wellness_30d?.at(-1) ?? null;
+  const briefing = plan
+    ? buildBriefing(
+        meta,
+        wellnessLast ? { ctl: wellnessLast.ctl, atl: wellnessLast.atl } : null,
+        todayReadiness,
+        macro.days_to_race
+      )
+    : [];
 
   return (
     <CurveLoadShell>
@@ -213,10 +227,14 @@ export default async function PlanPage() {
                 </div>
               )}
 
-              {/* Fase reason */}
-              {meta?.phase_reason && !plan.narrative && (
-                <div className="min-w-0 break-words rounded-metric border border-border bg-surface px-4 py-3 text-sm text-secondary">
-                  {meta.phase_reason}
+              {/* Briefing — cosa dicono i dati prima della settimana */}
+              {briefing.length > 0 && !plan.narrative && (
+                <div className="min-w-0 space-y-1.5 break-words rounded-metric border border-border bg-surface px-4 py-3 text-sm text-secondary">
+                  {briefing.map((line, i) => (
+                    <p key={i} className="leading-relaxed">
+                      {line}
+                    </p>
+                  ))}
                 </div>
               )}
 
