@@ -296,9 +296,16 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       + `/settings/profile` + blocco corsa su "Genera settimana").
 - [ ] **Passo 13 — Il coach che si sveglia da solo (cron)**: sync notturno +
       brief mattutino
-      — **Sessione A (soglie personali + intervista) FATTA e verificata da
-      Giuseppe nel browser il 2026-08-05** (v1.19.0), con due bug trovati
-      proprio nella verifica: (a) il riquadro "Equilibrio carico" in dashboard
+      — **Sessione A (soglie personali + intervista) FATTA il 2026-08-05**
+      (v1.19.0), **verificata nel browser SOLO in parte**: Giuseppe ha visto e
+      confermato la card "Come recuperi", la riga delle soglie sotto la
+      readiness e il dettaglio ACWR coi due numeri. **NON ancora guardati da
+      lui**: la card "Cosa si ricorda il coach" con la cancellazione, il
+      bottone "Riscrivi la filosofia" in Impostazioni, la card senza la
+      domanda sul sonno, e il grafico a 6 settimane corretto. Da vedere alla
+      prossima sessione prima di considerare chiuso il sotto-passo.
+      Due bug trovati proprio nella parte verificata: (a) il riquadro
+      "Equilibrio carico" in dashboard
       si giudicava da solo con una soglia 1.3 riscritta a mano, che sarebbe
       divergita dal motore appena le soglie diventano personali — ora legge lo
       stato dal segnale readiness; (b) le note "da dove vengono le soglie"
