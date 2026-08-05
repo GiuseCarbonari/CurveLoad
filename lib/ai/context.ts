@@ -1,4 +1,5 @@
-import type { MirrorData } from "@/lib/intervals/sync";
+import { MEMORY_TYPES } from "@/lib/ai/coach-memory";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -145,7 +146,7 @@ export function condenseContext(sources: ContextSources): AthleteContext {
         rpe: a.perceived_exertion,
       }));
 
-    const latestWellness = mirror.wellness_30d.at(-1) ?? null;
+    const latestWellness = wellnessOf(mirror).at(-1) ?? null;
     condizione = {
       aggiornata_al: mirror.fetched_at.slice(0, 10),
       prontezza_oggi: {
@@ -154,8 +155,11 @@ export function condenseContext(sources: ContextSources): AthleteContext {
         fiducia: mirror.readiness_today.confidence,
       },
       forma: {
-        ctl: latestWellness?.ctl ?? null,
-        atl: latestWellness?.atl ?? null,
+        // Arrotondati come ovunque nell'app: passandoli grezzi il modello
+        // scriveva "un CTL di 36.21359", numeri che nessuna altra schermata
+        // mostra così e che allargano inutilmente la lista dei valori citabili.
+        ctl: latestWellness?.ctl != null ? Math.round(latestWellness.ctl) : null,
+        atl: latestWellness?.atl != null ? Math.round(latestWellness.atl) : null,
       },
       ftp_w: mirror.athlete_profile.ftp,
       peso_kg: mirror.athlete_profile.weight,
@@ -172,11 +176,18 @@ export function condenseContext(sources: ContextSources): AthleteContext {
       decisione: d.recommendation,
     }));
 
-  const memoria = sources.memories.slice(0, MAX_MEMORIES).map((m) => ({
-    data: m.created_at.slice(0, 10),
-    tipo: m.memory_type,
-    nota: m.nota,
-  }));
+  // Solo i tipi ancora supportati: le note `osservazione` salvate prima del
+  // 2026-08-05 restano nel DB (visibili e cancellabili in impostazioni) ma
+  // non tornano nei prompt. Erano il modello che si ripeteva il compito, e
+  // rileggerle a ogni giro le faceva riscrivere in parafrasi all'infinito.
+  const memoria = sources.memories
+    .filter((m) => (MEMORY_TYPES as readonly string[]).includes(m.memory_type))
+    .slice(0, MAX_MEMORIES)
+    .map((m) => ({
+      data: m.created_at.slice(0, 10),
+      tipo: m.memory_type,
+      nota: m.nota,
+    }));
 
   return { atleta, condizione, decisioni_recenti, memoria };
 }

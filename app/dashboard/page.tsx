@@ -12,7 +12,7 @@ import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
 import { latestHrvMeasurement, normalizeHrvProtocol } from "@/lib/hrv";
 import type { BuiltSession } from "@/lib/planner/build-week";
 import { resolveSportModule } from "@/lib/planner/session-selector";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
 const JS_DAY_TO_KEY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -121,31 +121,26 @@ export default async function DashboardPage() {
     preferences.hrv_protocol ?? mirror?.hrv_protocol
   );
 
-  const wellnessToday = mirror?.wellness_30d.at(-1) ?? null;
-  const wellnessPrevious = mirror?.wellness_30d.at(-2) ?? null;
-  const latestRmssd = mirror
-    ? latestHrvMeasurement(mirror.wellness_30d, "rmssd")
-    : null;
-  const latestSdnn = mirror
-    ? latestHrvMeasurement(mirror.wellness_30d, "sdnn")
-    : null;
+  const wellness = wellnessOf(mirror);
+  const wellnessToday = wellness.at(-1) ?? null;
+  const wellnessPrevious = wellness.at(-2) ?? null;
+  const latestRmssd = mirror ? latestHrvMeasurement(wellness, "rmssd") : null;
+  const latestSdnn = mirror ? latestHrvMeasurement(wellness, "sdnn") : null;
 
   let latestRhr: { value: number; date: string } | null = null;
   let previousRhr: { value: number; date: string } | null = null;
-  if (mirror) {
-    for (let i = mirror.wellness_30d.length - 1; i >= 0; i--) {
-      const day = mirror.wellness_30d[i];
-      if (day.restingHR != null) {
-        latestRhr = { value: day.restingHR, date: day.date };
-        for (let j = i - 1; j >= 0; j--) {
-          const previousDay = mirror.wellness_30d[j];
-          if (previousDay.restingHR != null) {
-            previousRhr = { value: previousDay.restingHR, date: previousDay.date };
-            break;
-          }
+  for (let i = wellness.length - 1; i >= 0; i--) {
+    const day = wellness[i];
+    if (day.restingHR != null) {
+      latestRhr = { value: day.restingHR, date: day.date };
+      for (let j = i - 1; j >= 0; j--) {
+        const previousDay = wellness[j];
+        if (previousDay.restingHR != null) {
+          previousRhr = { value: previousDay.restingHR, date: previousDay.date };
+          break;
         }
-        break;
       }
+      break;
     }
   }
 
@@ -164,6 +159,16 @@ export default async function DashboardPage() {
     latestRhr != null && previousRhr != null
       ? latestRhr.value - previousRhr.value
       : null;
+
+  // Il verdetto "ok / alto" del riquadro carico lo dà il motore readiness, non
+  // una soglia riscritta qui: con le soglie personali
+  // (lib/recovery/baselines.ts) l'ambra può stare a 1.2 invece che a 1.3, e
+  // due giudizi diversi sullo stesso numero nella stessa pagina sono peggio di
+  // nessun giudizio. Fallback alla soglia standard solo se manca la readiness.
+  const acwrStatus =
+    readiness?.signals.find((s) => s.name === "acwr")?.status ?? null;
+  const acwrIsOk =
+    acwrStatus != null ? acwrStatus === "green" : acwr != null && acwr <= 1.3;
 
   const lastFetchedAt = mirror?.fetched_at ?? null;
   const initialStatus: "fresh" | "stale" =
@@ -219,11 +224,10 @@ export default async function DashboardPage() {
       label: "Equilibrio carico",
       acronym: "ACWR",
       value: fmt(acwr, 2),
-      delta: acwr != null ? (acwr <= 1.3 ? "ok" : "alto") : null,
-      deltaClassName:
-        acwr != null && acwr <= 1.3 ? "text-ready-go" : "text-ready-modify",
+      delta: acwr != null ? (acwrIsOk ? "ok" : "alto") : null,
+      deltaClassName: acwrIsOk ? "text-ready-go" : "text-ready-modify",
       deltaDirection: "flat" as const,
-      deltaTone: acwr != null && acwr <= 1.3 ? "positive" as const : "negative" as const,
+      deltaTone: acwrIsOk ? ("positive" as const) : ("negative" as const),
       tooltip:
         "Rapporto carico acuto / cronico. Sotto 1.3 è sostenibile; oltre 1.5 = rischio sovraccarico. (Acute:Chronic Workload Ratio)",
     },
@@ -337,7 +341,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Trend chart */}
-      {mirror && <ConditionTrendChart days={mirror.wellness_30d} />}
+      {mirror && <ConditionTrendChart days={wellness} />}
 
       {/* Trend efficienza aerobica (bici o corsa, secondo sport_principali) */}
       {mirror && efficiencyTrend && <EfficiencyTrendChart trend={efficiencyTrend} />}

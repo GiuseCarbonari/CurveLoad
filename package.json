@@ -1,6 +1,6 @@
 {
   "name": "curveload",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "description": "CurveLoad — implementazione web multi-utente del protocollo Section 11, con Intervals.icu come fonte dati.",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --import tsx --test tests/readiness.test.ts tests/intervals-client.test.ts tests/power-profile.test.ts tests/pace-profile.test.ts tests/race-estimator.test.ts tests/planner.test.ts tests/velocity-signature.test.ts tests/intervals-workout-format.test.ts tests/gpx-parser.test.ts tests/gap-analysis.test.ts tests/reconcile.test.ts tests/plan-diff.test.ts tests/readiness-hero-signals.test.ts tests/refresh-orchestrator-chain.test.ts tests/efficiency-trend.test.ts tests/durability.test.ts tests/route-settings.test.ts tests/race-planner-opts.test.ts tests/route-map.test.ts tests/health-flag.test.ts tests/sport-boundary.test.ts tests/route-tube-pdf.test.ts tests/profile-explain-prompt.test.ts tests/resolve-key.test.ts tests/beta-allowlist.test.ts tests/ai-context.test.ts tests/coach-memory.test.ts tests/oggi-explain-prompt.test.ts tests/percorso-explain-prompt.test.ts tests/macrocycle.test.ts tests/coaching-schools.test.ts tests/philosophy-prompt.test.ts tests/briefing.test.ts tests/intervals-sync.test.ts tests/compliance.test.ts tests/review-week.test.ts tests/review-execution.test.ts tests/review-drift.test.ts tests/review-feel.test.ts tests/review-trends.test.ts tests/review-prompt.test.ts"
+    "test": "node --import tsx --test tests/readiness.test.ts tests/intervals-client.test.ts tests/power-profile.test.ts tests/pace-profile.test.ts tests/race-estimator.test.ts tests/planner.test.ts tests/velocity-signature.test.ts tests/intervals-workout-format.test.ts tests/gpx-parser.test.ts tests/gap-analysis.test.ts tests/reconcile.test.ts tests/plan-diff.test.ts tests/readiness-hero-signals.test.ts tests/refresh-orchestrator-chain.test.ts tests/efficiency-trend.test.ts tests/durability.test.ts tests/route-settings.test.ts tests/race-planner-opts.test.ts tests/route-map.test.ts tests/health-flag.test.ts tests/sport-boundary.test.ts tests/route-tube-pdf.test.ts tests/profile-explain-prompt.test.ts tests/resolve-key.test.ts tests/beta-allowlist.test.ts tests/ai-context.test.ts tests/coach-memory.test.ts tests/oggi-explain-prompt.test.ts tests/percorso-explain-prompt.test.ts tests/macrocycle.test.ts tests/coaching-schools.test.ts tests/philosophy-prompt.test.ts tests/briefing.test.ts tests/intervals-sync.test.ts tests/compliance.test.ts tests/review-week.test.ts tests/review-execution.test.ts tests/review-drift.test.ts tests/review-feel.test.ts tests/review-trends.test.ts tests/review-prompt.test.ts tests/recovery-baselines.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",

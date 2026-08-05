@@ -23,6 +23,7 @@ import {
   hrvValue,
   type HrvProtocol,
 } from "@/lib/hrv";
+import type { RecoveryCalibration } from "@/lib/recovery/baselines";
 
 /** Giorno wellness minimo richiesto dal motore (sottoinsieme di WellnessDay). */
 export interface ReadinessInputDay {
@@ -53,6 +54,12 @@ export interface ReadinessExtras {
    * la persistenza RI < 0.7 su 2+ giorni consecutivi (Section 11 amber rule).
    */
   riHistory?: Array<number | null>;
+  /**
+   * Soglie calibrate sulla storia dell'atleta (lib/recovery/baselines.ts).
+   * Se assente, la classificazione resta sui numeri fissi di sempre: la
+   * ladder P0–P3 non cambia in nessuno dei due casi.
+   */
+  calibration?: RecoveryCalibration | null;
 }
 
 export type SignalStatus = "green" | "amber" | "red" | "unavailable";
@@ -72,6 +79,22 @@ export interface ReadinessResult {
   /** Motivi della decisione (regole della ladder che hanno fatto match). */
   reasons: string[];
   confidence: "high" | "medium" | "low";
+  /**
+   * Marker precoce dal calibratore (es. collasso del CV dell'HRV). Non entra
+   * nella ladder e non cambia la decisione: serve a parlarne prima che
+   * diventi un problema.
+   */
+  earlyWarning?: string | null;
+  /**
+   * Cosa manca perché le soglie diventino personali. Transitorio e azionabile
+   * → si mostra in dashboard, e un giorno sparisce da solo.
+   */
+  calibrationPending?: string[];
+  /**
+   * Soglie personali attive e da cosa derivano. Permanente → vive nella card
+   * in impostazioni: in dashboard sarebbe una riga che si smette di leggere.
+   */
+  calibrationApplied?: string[];
 }
 
 const SIGNAL_SCORE_WEIGHT: Record<ReadinessSignal["name"], number> = {
@@ -191,10 +214,46 @@ export function riConsecutiveDaysBelow(
 }
 
 /** Media aritmetica dei valori non-null; null se non ce ne sono. */
-function meanOf(values: Array<number | null>): number | null {
+export function meanOf(values: Array<number | null>): number | null {
   const present = values.filter((v): v is number => v != null);
   if (present.length === 0) return null;
   return present.reduce((sum, v) => sum + v, 0) / present.length;
+}
+
+/**
+ * Recovery Index dei `count` giorni PRECEDENTI l'ultimo della serie (oggi
+ * escluso), in ordine cronologico — il formato che si aspetta
+ * `extras.riHistory`.
+ *
+ * Serve alla regola di persistenza Section 11 "RI < 0.7 per 2+ giorni":
+ * senza questa serie la regola non può mai scattare, e il marker precoce di
+ * sovraccarico più importante resta spento.
+ *
+ * Ogni giorno è valutato contro la SUA baseline (i 7 giorni che lo
+ * precedono), non contro quella di oggi: altrimenti si confronterebbero
+ * giorni diversi con lo stesso metro e la persistenza sarebbe un artefatto.
+ */
+export function computeRiHistory(
+  days: ReadinessInputDay[],
+  protocol: HrvProtocol,
+  count = 7
+): Array<number | null> {
+  const series: Array<number | null> = [];
+  const lastIndex = days.length - 1; // oggi: escluso, lo valuta computeReadiness
+  const firstIndex = Math.max(0, lastIndex - count);
+
+  for (let i = firstIndex; i < lastIndex; i++) {
+    const history = days.slice(Math.max(0, i - 7), i);
+    series.push(
+      computeRecoveryIndex(
+        hrvValue(days[i], protocol),
+        days[i].restingHR,
+        meanOf(history.map((d) => hrvValue(d, protocol))),
+        meanOf(history.map((d) => d.restingHR))
+      )
+    );
+  }
+  return series;
 }
 
 export function computeReadiness(
@@ -206,6 +265,12 @@ export function computeReadiness(
   const reasons: string[] = [];
   const hrvProtocol = extras.hrvProtocol ?? "rmssd";
   const hrvLabel = HRV_PROTOCOL_LABELS[hrvProtocol];
+  // Soglie personali se disponibili, altrimenti i numeri fissi di sempre.
+  const cal = extras.calibration ?? null;
+  const sleepAmberHours = cal?.sleepThresholds.amberBelow ?? 7;
+  const sleepRedHours = cal?.sleepThresholds.redBelow ?? 5;
+  const acwrAmber = cal?.acwrThresholds.amber ?? 1.3;
+  const acwrRed = cal?.acwrThresholds.red ?? 1.5;
 
   // --- Metriche di carico: lette, non ricalcolate -------------------------
   const ctl = wellnessToday?.ctl ?? null;
@@ -221,13 +286,20 @@ export function computeReadiness(
   );
   const rhrBaseline = meanOf(wellnessHistory7d.map((d) => d.restingHR));
 
-  const hrvTodayRaw = hrvValue(wellnessToday, hrvProtocol);
+  // suppressHrv: l'atleta ha dichiarato di non tracciare l'HRV. Non basta che
+  // il dato manchi — senza questo il carry-forward resusciterebbe una misura
+  // vecchia di settimane e la spaccerebbe per il segnale di oggi.
+  const hrvTodayRaw = cal?.suppressHrv
+    ? null
+    : hrvValue(wellnessToday, hrvProtocol);
   const rhrTodayRaw = wellnessToday?.restingHR ?? null;
   const sleepHours =
     wellnessToday?.sleepSecs != null ? wellnessToday.sleepSecs / 3600 : null;
 
   // Carry-forward: usa l'ultimo valore noto se oggi manca, con flag stale.
-  const hrvToday = hrvTodayRaw ?? extras.lastKnownHrv?.value ?? null;
+  const hrvToday = cal?.suppressHrv
+    ? null
+    : hrvTodayRaw ?? extras.lastKnownHrv?.value ?? null;
   const hrvStale = hrvTodayRaw == null && hrvToday != null;
   const rhrToday = rhrTodayRaw ?? extras.lastKnownRhr?.value ?? null;
   const rhrStale = rhrTodayRaw == null && rhrToday != null;
@@ -250,12 +322,22 @@ export function computeReadiness(
   // --- Classificazione segnali (tabella PRD §14.5) ------------------------
   // I segnali mancanti sono "unavailable" ed esclusi dai conteggi ambra/rossi.
 
-  if (hrvDropPct == null) {
+  // "HRV sotto il proprio normale": con il calibratore è la media mobile 7g
+  // fuori dal range personale, altrimenti il vecchio calo >10% vs media 7g.
+  // Le due regole P1 più sotto leggono questo booleano, non la percentuale.
+  let hrvBelowNormal = false;
+
+  if (cal?.hrvSignal) {
+    signals.push({ name: "hrv", ...cal.hrvSignal });
+    hrvBelowNormal = cal.hrvSignal.belowNormal;
+  } else if (hrvDropPct == null) {
     signals.push({
       name: "hrv",
       value: null,
       status: "unavailable",
-      detail: `HRV ${hrvLabel} — nessun dato disponibile`,
+      detail: cal?.suppressHrv
+        ? `HRV ${hrvLabel} — non tracciata (impostazioni)`
+        : `HRV ${hrvLabel} — nessun dato disponibile`,
     });
   } else {
     const status: SignalStatus =
@@ -268,9 +350,32 @@ export function computeReadiness(
       status,
       detail: `HRV ${hrvLabel} ${trendText}${staleNote}`,
     });
+    hrvBelowNormal = hrvDropPct > 10;
   }
 
-  if (rhrDelta == null) {
+  const rhrStaleNote = rhrStale ? staleSuffix(extras.lastKnownRhr?.date) : "";
+  if (rhrToday == null) {
+    signals.push({
+      name: "rhr",
+      value: null,
+      status: "unavailable",
+      detail: "FC riposo — nessun dato disponibile",
+    });
+  } else if (cal?.rhrThresholds) {
+    // Soglie assolute dalla media personale a 30 giorni: +3/+5 bpm fissi
+    // sono troppi per chi ha una FC riposo stabile e troppo pochi per chi
+    // oscilla di suo.
+    const { mean: rhrMean, amberAbove, redAbove } = cal.rhrThresholds;
+    const status: SignalStatus =
+      rhrToday >= redAbove ? "red" : rhrToday >= amberAbove ? "amber" : "green";
+    const delta = rhrToday - rhrMean;
+    signals.push({
+      name: "rhr",
+      value: rhrToday,
+      status,
+      detail: `FC riposo ${rhrToday.toFixed(0)} bpm (${delta >= 0 ? "+" : ""}${delta.toFixed(0)} sul tuo normale ${rhrMean.toFixed(0)})${rhrStaleNote}`,
+    });
+  } else if (rhrDelta == null) {
     signals.push({
       name: "rhr",
       value: null,
@@ -281,12 +386,11 @@ export function computeReadiness(
     const status: SignalStatus =
       rhrDelta >= 5 ? "red" : rhrDelta >= 3 ? "amber" : "green";
     const trendText = `${rhrDelta >= 0 ? "+" : ""}${rhrDelta.toFixed(0)} bpm vs baseline 7g`;
-    const staleNote = rhrStale ? staleSuffix(extras.lastKnownRhr?.date) : "";
     signals.push({
       name: "rhr",
       value: rhrToday,
       status,
-      detail: `FC riposo ${trendText}${staleNote}`,
+      detail: `FC riposo ${trendText}${rhrStaleNote}`,
     });
   }
 
@@ -299,7 +403,11 @@ export function computeReadiness(
     });
   } else {
     const status: SignalStatus =
-      sleepHours < 5 ? "red" : sleepHours < 7 ? "amber" : "green";
+      sleepHours < sleepRedHours
+        ? "red"
+        : sleepHours < sleepAmberHours
+          ? "amber"
+          : "green";
     signals.push({
       name: "sleep",
       value: Math.round(sleepHours * 10) / 10,
@@ -339,12 +447,19 @@ export function computeReadiness(
     });
   } else {
     const status: SignalStatus =
-      acwr >= 1.5 ? "red" : acwr >= 1.3 ? "amber" : "green";
+      acwr >= acwrRed ? "red" : acwr >= acwrAmber ? "amber" : "green";
+    // ATL e CTL restano visibili accanto al rapporto: dal solo ACWR non si
+    // capisce se a muoversi è il carico recente o la condizione di fondo, ed
+    // è la critica principale che la letteratura muove a questo indice.
+    const partsText =
+      atl != null && ctl != null
+        ? ` (carico 7g ${atl.toFixed(0)} su condizione ${ctl.toFixed(0)})`
+        : "";
     signals.push({
       name: "acwr",
       value: Math.round(acwr * 100) / 100,
       status,
-      detail: `ACWR ${acwr.toFixed(2)}`,
+      detail: `ACWR ${acwr.toFixed(2)}${partsText}`,
     });
   }
 
@@ -388,7 +503,9 @@ export function computeReadiness(
 
   // --- Confidence: quanti segnali chiave sono realmente disponibili -------
   const availableKeySignals = [
-    hrvDropPct != null,
+    // Con il calibratore la media mobile 7g può esistere anche se oggi la
+    // misura manca: il segnale c'è, va contato.
+    cal?.hrvSignal != null || hrvDropPct != null,
     rhrDelta != null,
     sleepHours != null,
     tsb != null, // copre anche ACWR (stessi input ctl/atl)
@@ -404,7 +521,27 @@ export function computeReadiness(
   const finish = (
     decision: ReadinessResult["decision"],
     priority: ReadinessResult["priority"]
-  ): ReadinessResult => ({ decision, priority, signals, reasons, confidence });
+  ): ReadinessResult => {
+    // Avvertenza personale ("tendo a non saltare mai una seduta dura"):
+    // si mostra solo se il segnale che la riguarda non è verde, altrimenti è
+    // una frase che l'atleta legge tutti i giorni e smette di vedere.
+    if (cal?.focus) {
+      const target = signals.find((s) => s.name === cal.focus!.signal);
+      if (target && (target.status === "amber" || target.status === "red")) {
+        reasons.push(cal.focus.text);
+      }
+    }
+    return {
+      decision,
+      priority,
+      signals,
+      reasons,
+      confidence,
+      earlyWarning: cal?.earlyWarning ?? null,
+      calibrationPending: cal?.pending ?? [],
+      calibrationApplied: cal?.applied ?? [],
+    };
+  };
 
   // P0 — Safety stop (non negoziabile)
   if (ri != null && ri < 0.6) {
@@ -424,25 +561,25 @@ export function computeReadiness(
   }
 
   // P1 — Sovraccarico acuto → Skip
-  if (acwr != null && acwr >= 1.5) {
-    reasons.push(`P1 sovraccarico acuto: ACWR ${acwr.toFixed(2)} ≥ 1.5`);
+  if (acwr != null && acwr >= acwrRed) {
+    reasons.push(`P1 sovraccarico acuto: ACWR ${acwr.toFixed(2)} ≥ ${acwrRed}`);
     return finish("SKIP", 1);
   }
-  if (tsb != null && tsb < -30 && hrvDropPct != null && hrvDropPct > 10) {
+  if (tsb != null && tsb < -30 && hrvBelowNormal) {
     reasons.push(
-      `P1 sovraccarico acuto: TSB ${tsb.toFixed(1)} < −30 con HRV ↓${hrvDropPct.toFixed(0)}% > 10%`
+      `P1 sovraccarico acuto: TSB ${tsb.toFixed(1)} < −30 con HRV sotto il normale`
     );
     return finish("SKIP", 1);
   }
 
   // P1 — Sovraccarico → Modify
-  if (acwr != null && acwr >= 1.3) {
-    reasons.push(`P1 sovraccarico: ACWR ${acwr.toFixed(2)} ≥ 1.3`);
+  if (acwr != null && acwr >= acwrAmber) {
+    reasons.push(`P1 sovraccarico: ACWR ${acwr.toFixed(2)} ≥ ${acwrAmber}`);
     return finish("MODIFY", 1);
   }
-  if (tsb != null && tsb < -25 && hrvDropPct != null && hrvDropPct > 10) {
+  if (tsb != null && tsb < -25 && hrvBelowNormal) {
     reasons.push(
-      `P1 sovraccarico: TSB ${tsb.toFixed(1)} < −25 con HRV ↓${hrvDropPct.toFixed(0)}% > 10%`
+      `P1 sovraccarico: TSB ${tsb.toFixed(1)} < −25 con HRV sotto il normale`
     );
     return finish("MODIFY", 1);
   }

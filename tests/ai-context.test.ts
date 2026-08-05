@@ -73,7 +73,7 @@ function mirror(overrides: Partial<MirrorData> = {}): MirrorData {
   return {
     fetched_at: "2026-07-31T08:00:00.000Z",
     athlete_profile: { name: "Giuse", weight: 70, resting_hr: 48, ftp: 250, zones: null },
-    wellness_30d: [wellnessDay("2026-07-30", 60.4, 55.1), wellnessDay("2026-07-31", 61.2, 57.9)],
+    wellness: [wellnessDay("2026-07-30", 60.4, 55.1), wellnessDay("2026-07-31", 61.2, 57.9)],
     activities_90d: [],
     hrv_protocol: "rmssd",
     readiness_today: {
@@ -151,7 +151,9 @@ test("condenseContext: condizione dal mirror — forma dall'ultima riga wellness
   });
   assert.ok(ctx.condizione);
   assert.equal(ctx.condizione.aggiornata_al, "2026-07-31");
-  assert.deepEqual(ctx.condizione.forma, { ctl: 61.2, atl: 57.9 });
+  // Arrotondati: il modello scriveva "un CTL di 36.21359", numeri che
+  // nessuna schermata mostra così. La riga wellness ha 61.2 e 57.9.
+  assert.deepEqual(ctx.condizione.forma, { ctl: 61, atl: 58 });
   assert.equal(ctx.condizione.ftp_w, 250);
   assert.equal(ctx.condizione.peso_kg, 70);
   assert.equal(ctx.condizione.qualita_dati_0_4, 3);
@@ -221,7 +223,7 @@ test("condenseContext: decisioni mappate e cap a 10", () => {
 test("condenseContext: memoria mappata (data corta) e cap a 20", () => {
   const memories = Array.from({ length: 25 }, (_, i) => ({
     created_at: `2026-07-${String(31 - (i % 28)).padStart(2, "0")}T10:00:00.000Z`,
-    memory_type: "osservazione",
+    memory_type: "preferenza",
     nota: `Nota ${i}`,
   }));
   const ctx = condenseContext({
@@ -234,7 +236,7 @@ test("condenseContext: memoria mappata (data corta) e cap a 20", () => {
   assert.equal(ctx.memoria.length, 20);
   assert.deepEqual(ctx.memoria[0], {
     data: "2026-07-31",
-    tipo: "osservazione",
+    tipo: "preferenza",
     nota: "Nota 0",
   });
 });
@@ -272,8 +274,9 @@ test("buildProfileExplainPrompt: il contesto entra nel messaggio e i suoi numeri
   assert.ok(prompt.user.includes("Granfondo"));
   // Il taccuino (Passo 5) è nel fascicolo e quindi nel messaggio.
   assert.ok(prompt.user.includes("Preferisce le salite lunghe"));
-  // Numeri presenti SOLO nel contesto (ctl 61.2, ore 9.5) devono essere ammessi.
-  assert.ok(prompt.allowedNumbers.includes(61.2));
+  // Numeri presenti SOLO nel contesto (ctl arrotondato, ore 9.5) ammessi.
+  assert.ok(prompt.allowedNumbers.includes(61));
+  assert.ok(!prompt.allowedNumbers.includes(61.2), "il grezzo non deve piu passare");
   assert.ok(prompt.allowedNumbers.includes(9.5));
 });
 
@@ -321,4 +324,29 @@ test("condenseContext: piace/detesta della filosofia sostituiscono preferenze_al
     piace_allenamento: ["salite", "lungo"],
     evita_allenamento: ["indoor"],
   });
+});
+
+test("condenseContext: le note di tipo non più supportato non entrano nel prompt", () => {
+  // Restano nel DB (visibili e cancellabili in impostazioni), ma smettono di
+  // rientrare nel contesto: era l'anello che le faceva riscrivere all'infinito.
+  const ctx = condenseContext({
+    dossier: null,
+    mirror: null,
+    dataQualityLevel: null,
+    decisions: [],
+    memories: [
+      {
+        created_at: "2026-07-31T10:00:00.000Z",
+        memory_type: "osservazione",
+        nota: "monitorare lo stress dell'atleta",
+      },
+      {
+        created_at: "2026-07-30T10:00:00.000Z",
+        memory_type: "infortunio",
+        nota: "Fastidio al ginocchio destro in salita",
+      },
+    ],
+  });
+  assert.equal(ctx.memoria.length, 1);
+  assert.equal(ctx.memoria[0].tipo, "infortunio");
 });

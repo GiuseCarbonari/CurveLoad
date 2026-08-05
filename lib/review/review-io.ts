@@ -1,6 +1,6 @@
 import { decryptToken } from "@/lib/crypto";
 import { IntervalsApiError, IntervalsFetcher } from "@/lib/intervals-client";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import type { BuiltSession } from "@/lib/planner/build-week";
 import { resolveSportModule } from "@/lib/planner/session-selector";
 import { computeEfficiencyTrend } from "@/lib/efficiency-trend";
@@ -189,7 +189,7 @@ export async function generateWeeklyReview(
   const maxDecouplingPct = decouplingValues.length > 0 ? Math.max(...decouplingValues) : null;
 
   // --- Carico a fine settimana: CTL/ATL letti, TSB/ACWR = aritmetica semplice sui valori letti ---
-  const wellnessAtWeekEnd = [...mirror.wellness_30d]
+  const wellnessAtWeekEnd = [...wellnessOf(mirror)]
     .filter((w) => w.date <= week.weekEnd)
     .sort((a, b) => a.date.localeCompare(b.date))
     .at(-1);
@@ -198,7 +198,7 @@ export async function generateWeeklyReview(
   const tsb = ctl != null && atl != null ? Math.round((ctl - atl) * 10) / 10 : null;
   const acwr = ctl != null && atl != null && ctl !== 0 ? Math.round((atl / ctl) * 100) / 100 : null;
 
-  const sleepValuesInWeek = mirror.wellness_30d
+  const sleepValuesInWeek = wellnessOf(mirror)
     .filter((w) => w.date >= week.weekStart && w.date <= week.weekEnd && w.sleepSecs != null)
     .map((w) => (w.sleepSecs as number) / 3600);
   const sleepAvgHoursFromIntervals =

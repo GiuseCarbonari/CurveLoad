@@ -14,7 +14,7 @@ import { computeMacrocycle } from "@/lib/planner/macrocycle";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import type { Phase } from "@/lib/planner/phase-detector";
 import type { DayKey } from "@/lib/planner/session-selector";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -149,7 +149,7 @@ export default async function PlanPage() {
   const completionByDate = plan
     ? buildCompletionByDate(plan.sessions, mirror?.activities_90d ?? [])
     : {};
-  const wellnessLast = mirror?.wellness_30d?.at(-1) ?? null;
+  const wellnessLast = wellnessOf(mirror).at(-1) ?? null;
   const briefing = plan
     ? buildBriefing(
         meta,

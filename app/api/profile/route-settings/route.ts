@@ -5,7 +5,7 @@ import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
 import { computeRaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
 import { routeSettingsToOpts, sanitizeRouteSettings } from "@/lib/terrain/route-settings";
 import type { VelocitySignature } from "@/lib/terrain/velocity-signature";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
     const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
-    const ctlToday = mirror?.wellness_30d.at(-1)?.ctl ?? null;
+    const ctlToday = wellnessOf(mirror).at(-1)?.ctl ?? null;
 
     raceEstimate = computeRaceEstimateV2(
       terrain,

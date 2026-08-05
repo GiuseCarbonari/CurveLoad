@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.18.0";
+export const APP_VERSION = "1.19.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,28 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.19.0",
+    date: "5 ago 2026",
+    title: "Le soglie diventano le tue",
+    items: [
+      { type: "new", text: "In Impostazioni trovi «Come recuperi»: se misuri l'HRV, quanto stress hai fuori dallo sport, se hai infortuni che tendono a tornare e come ti capita di esagerare. Le risposte tarano il controllo di prontezza sui tuoi numeri invece che su medie generiche" },
+      { type: "improve", text: "L'HRV non viene più giudicata sul valore di oggi contro la media della settimana, ma sulla media degli ultimi 7 giorni confrontata con il TUO range normale: molti meno allarmi inutili per chi ha un'HRV naturalmente ballerina" },
+      { type: "improve", text: "Stessa cosa per la frequenza cardiaca a riposo: il confronto è con la tua media, non con i +5 battiti uguali per tutti. E se dormi di tuo 6 ore, 6 ore non sono più un avviso" },
+      { type: "new", text: "Quando la variabilità della tua HRV si appiattisce mentre la media scende — il segnale che precede il sovraccarico — la scheda Oggi te lo dice prima che diventi un problema, senza per questo fermarti" },
+      { type: "fix", text: "La regola «indice di recupero basso per due giorni di fila» non è mai scattata finora: mancava lo storico giornaliero che serve a rilevarla. Ora c'è" },
+      { type: "improve", text: "Accanto al rapporto di carico (ACWR) ora vedi anche i due numeri che lo compongono: da solo quel rapporto non dice se a muoversi è il carico recente o la condizione di fondo" },
+      { type: "fix", text: "Chi misura l'HRV tre volte a settimana non arrivava mai alle soglie personali: servivano più dati di quanti la finestra ne scaricasse. Ora la storia considerata è di 60 giorni invece di 30" },
+      { type: "improve", text: "Le ore di sonno tipiche le decidono le tue notti misurate su Intervals.icu: la domanda su quanto dormi di solito è stata tolta, perché o veniva scavalcata dal dato vero o non serviva a niente" },
+      { type: "fix", text: "Se oggi manca la misura di HRV o FC a riposo, l'app usa l'ultima disponibile solo se è degli ultimi 7 giorni: prima poteva ripescarne una di settimane prima e mostrarla come se fosse di oggi" },
+      { type: "fix", text: "Il commento del coach attribuiva all'HRV il valore della frequenza cardiaca a riposo, e scriveva i carichi con sei decimali («un CTL di 36.21359»). Ora cita i numeri arrotondati e ognuno con la sua etichetta" },
+      { type: "fix", text: "Il grafico «andamento 6 settimane» ne copriva cinque scarse: mancava un punto agli estremi" },
+      { type: "new", text: "In Impostazioni trovi «Cosa si ricorda il coach»: le note che ha scritto su di te leggendo i tuoi dati, con un pulsante per toglierle. Prima entravano in ogni suo commento e non c'era modo né di vederle né di cancellarle — così il coach poteva continuare a nominare un problema che avevi già tolto dal profilo" },
+      { type: "fix", text: "Il coach non scrive più note di tipo «osservazione»: erano quasi tutte lui che si ripeteva il compito («monitorare lo stress dell'atleta»), e rileggendole ogni volta se le riscriveva in parafrasi all'infinito. Ora ricorda solo fatti: preferenze, infortuni, obiettivi" },
+      { type: "new", text: "Il pulsante «Riscrivi la filosofia» ora è anche in Impostazioni, accanto alle risposte che la rendono obsoleta: la filosofia è scritta una volta e non si aggiorna da sola" },
+      { type: "improve", text: "Sotto la prontezza resta solo quello che ti manca perché le soglie diventino tue («servono 3 misure, ne hai 1»); le soglie già attive si leggono in Impostazioni, dove non diventano una riga che smetti di guardare" },
+    ],
+  },
   {
     version: "1.18.0",
     date: "5 ago 2026",

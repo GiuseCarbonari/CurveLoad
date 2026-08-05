@@ -17,7 +17,7 @@ const SIGNAL_LABEL: Record<ReadinessResult["signals"][number]["name"], string> =
   ri: "Indice di recupero",
 };
 
-const SYSTEM_PROMPT = `Sei un assistente che spiega a un atleta amatoriale la sua prontezza di oggi (readiness), già calcolata da un motore deterministico — non tu. Non calcoli e non inventi numeri: usi solo quelli forniti nell'input. Parli italiano semplice, tono onesto e incoraggiante, senza gergo non spiegato. La decisione (via libera / attenzione / riposo) è già presa dal motore: tu la spieghi, non la cambi né la rimetti in discussione. Non prescrivi una seduta specifica (ci pensa il planner). Se l'input contiene il "contesto" dell'atleta (chi è, obiettivi, decisioni recenti, note in memoria), usalo per personalizzare, sempre citando solo numeri presenti nell'input. Se il contesto contiene "filosofia_coaching", quello è il patto già scritto con questo atleta: adotta quel tono e resta coerente con quell'impostazione. Rispondi con UN SOLO paragrafo breve (3-5 frasi), senza titoli né elenchi: perché la giornata è quella che è, cosa tenere d'occhio, un consiglio pratico e generico su come affrontarla.`;
+const SYSTEM_PROMPT = `Sei un assistente che spiega a un atleta amatoriale la sua prontezza di oggi (readiness), già calcolata da un motore deterministico — non tu. Non calcoli e non inventi numeri: usi solo quelli forniti nell'input. Parli italiano semplice, tono onesto e incoraggiante, senza gergo non spiegato. La decisione (via libera / attenzione / riposo) è già presa dal motore: tu la spieghi, non la cambi né la rimetti in discussione. Non prescrivi una seduta specifica (ci pensa il planner). Se l'input contiene il "contesto" dell'atleta (chi è, obiettivi, decisioni recenti, note in memoria), usalo per personalizzare, sempre citando solo numeri presenti nell'input. Se il contesto contiene "filosofia_coaching", quello è il patto già scritto con questo atleta: adotta quel tono e resta coerente con quell'impostazione. Ogni numero appartiene al segnale nella cui riga compare: non spostare mai una cifra da un segnale all'altro (la FC a riposo non è l'HRV). Se per una frase ti serve un numero che non trovi nella riga di quel segnale, scrivi la frase senza numero. Rispondi con UN SOLO paragrafo breve (3-5 frasi), senza titoli né elenchi: perché la giornata è quella che è, cosa tenere d'occhio, un consiglio pratico e generico su come affrontarla.`;
 
 export interface OggiExplainPrompt {
   system: string;
@@ -36,9 +36,14 @@ export function buildOggiExplainPrompt(
       decisione: readiness.decision,
       confidenza: readiness.confidence,
       motivi: readiness.reasons,
+      // Niente campo `valore` accanto a `dettaglio`: il numero è già dentro
+      // la prosa del motore, con la sua etichetta ("FC riposo 59 bpm").
+      // Passarlo anche nudo lasciava in giro cifre orfane, e il modello ne
+      // prendeva una dal segnale sbagliato — scriveva "la tua HRV è di 59"
+      // usando il valore della FC a riposo. Il controllo anti-numeri-inventati
+      // non poteva accorgersene: 59 era un numero legittimo dell'input.
       segnali: readiness.signals.map((s) => ({
         nome: SIGNAL_LABEL[s.name] ?? s.name,
-        valore: s.value,
         stato: s.status,
         dettaglio: s.detail,
       })),

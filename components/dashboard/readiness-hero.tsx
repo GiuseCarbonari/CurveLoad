@@ -194,9 +194,28 @@ export function ReadinessHero({
           </ul>
         )}
 
+        {/* Marker precoce: non cambia la decisione di oggi, ma è la cosa che
+            si vede prima che diventi un problema — va detta anche in un GO. */}
+        {readiness.earlyWarning && (
+          <p className="mt-3 rounded-lg border border-amber/40 bg-amber/10 px-3 py-2 text-[12.5px] leading-snug text-secondary">
+            <span className="font-medium text-foreground">Da tenere d&apos;occhio:</span>{" "}
+            {readiness.earlyWarning}
+          </p>
+        )}
+
         <p className="mt-3 text-[11px] text-faint">
           Confidenza {readiness.confidence === "high" ? "alta" : readiness.confidence === "medium" ? "media" : "bassa"} — {CONFIDENCE_LABEL[readiness.confidence]}
         </p>
+
+        {/* Solo quello che manca perché le soglie diventino tue: è azionabile
+            e un giorno sparisce da solo. Le soglie già attive vivono nella
+            card in impostazioni — qui sarebbero una riga che si legge una
+            volta e poi si smette di vedere. */}
+        {readiness.calibrationPending && readiness.calibrationPending.length > 0 && (
+          <p className="mt-1 text-[11px] leading-relaxed text-faint">
+            {readiness.calibrationPending.join(" ")}
+          </p>
+        )}
 
         {/* Griglia 2×3 (non una riga di 6: etichette come "Indice recupero"
             sfondavano il viewport sugli schermi stretti). */}

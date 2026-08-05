@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { BuiltSession } from "@/lib/planner/build-week";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import type { Phase } from "@/lib/planner/phase-detector";
 import {
   redistributeWeek,
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
-  const wellness = mirror?.wellness_30d ?? [];
+  const wellness = wellnessOf(mirror);
   const ctlToday = wellness.at(-1)?.ctl ?? null;
   const atlToday = wellness.at(-1)?.atl ?? null;
   const tsb = ctlToday != null && atlToday != null ? Number((ctlToday - atlToday).toFixed(1)) : null;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
 import { buildComplianceByDate } from "@/lib/planner/compliance";
 import { diffPlan } from "@/lib/planner/plan-diff";
@@ -194,7 +194,7 @@ export async function POST() {
     );
   }
 
-  const wellness = mirror.wellness_30d ?? [];
+  const wellness = wellnessOf(mirror);
   const ctlHistory = wellness.map((d) => d.ctl);
   const ctlToday = wellness.at(-1)?.ctl ?? null;
   const atlToday = wellness.at(-1)?.atl ?? null;

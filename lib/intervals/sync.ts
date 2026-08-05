@@ -7,8 +7,13 @@ import {
 } from "@/lib/intervals-client";
 import {
   computeReadiness,
+  computeRiHistory,
   type ReadinessResult,
 } from "@/lib/readiness";
+import {
+  computeRecoveryCalibration,
+  recoveryInputsFromPreferences,
+} from "@/lib/recovery/baselines";
 import {
   hrvProtocolFromPreferences,
   latestHrvMeasurement,
@@ -56,7 +61,14 @@ export interface MirrorData {
     hr_zones_bike?: SportHrZones | null;
     hr_zones_run?: SportHrZones | null;
   };
-  wellness_30d: WellnessDay[];
+  /**
+   * Wellness in ordine cronologico, ultimo = oggi. Finestra corrente: 60
+   * giorni. Leggere SEMPRE con `wellnessOf()`, mai direttamente: gli snapshot
+   * salvati prima portano ancora il nome storico `wellness_30d`.
+   */
+  wellness: WellnessDay[];
+  /** @deprecated Nome di quando la finestra era di 30 giorni. Solo lettura. */
+  wellness_30d?: WellnessDay[];
   activities_90d: IntervalsActivity[];
   hrv_protocol: HrvProtocol;
   readiness_today: ReadinessResult;
@@ -91,12 +103,52 @@ export function findSportSettings(
   );
 }
 
+/**
+ * Unico modo di leggere il wellness da un mirror.
+ *
+ * Esiste perché il nome della chiave è cambiato quando la finestra è passata
+ * da 30 a 60 giorni, e gli snapshot già salvati portano ancora quello vecchio.
+ * Tenere la compatibilità in un posto solo evita sia di spargere `??` in 13
+ * file, sia di far esplodere la dashboard di chi non ha ancora
+ * risincronizzato. La prossima volta che la finestra cambia, qui non si tocca
+ * niente.
+ */
+export function wellnessOf(
+  mirror:
+    | { wellness?: WellnessDay[]; wellness_30d?: WellnessDay[] }
+    | null
+    | undefined
+): WellnessDay[] {
+  if (!mirror) return [];
+  return mirror.wellness ?? mirror.wellness_30d ?? [];
+}
+
 export type SyncOutcome =
   | { ok: true; snapshotId: string; readiness: ReadinessResult["decision"] }
   | { ok: false; reason: "not_connected" }
   | { ok: false; reason: "intervals_unauthorized" }
   | { ok: false; reason: "api_error"; status: number }
   | { ok: false; reason: "internal_error" };
+
+/**
+ * Giorni di wellness scaricati a ogni sync.
+ *
+ * 60 e non 30: il periodo di riferimento per le soglie personali sono questi
+ * giorni meno la finestra mobile di 7, e con 30 servivano di fatto 4 misure
+ * HRV a settimana per superare MIN_BASELINE_MEASURES. Chi ne fa 3 — la
+ * compliance minima valida secondo Plews 2014 — non arrivava mai alle soglie
+ * personali. Con 60 giorni ci arriva. Costo: ~30 righe wellness in più nello
+ * snapshot, trascurabili accanto a 90 giorni di attività.
+ */
+const WELLNESS_WINDOW_DAYS = 60;
+
+/**
+ * Quanto indietro può pescare il carry-forward di HRV e FC riposo quando la
+ * misura di oggi manca. Oltre una settimana il valore non descrive più lo
+ * stato attuale: meglio un segnale "non disponibile" onesto di un numero
+ * vecchio spacciato per attuale.
+ */
+const CARRY_FORWARD_MAX_DAYS = 7;
 
 /** Data locale in formato YYYY-MM-DD, spostata di `offsetDays` giorni. */
 function localDate(offsetDays = 0): string {
@@ -186,12 +238,12 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
   const today = localDate(0);
 
   let profileRaw;
-  let wellness30d: WellnessDay[];
+  let wellnessWindow: WellnessDay[];
   let activities90d: IntervalsActivity[];
   try {
-    [profileRaw, wellness30d, activities90d] = await Promise.all([
+    [profileRaw, wellnessWindow, activities90d] = await Promise.all([
       fetcher.getProfile(),
-      fetcher.getWellness(localDate(-30), today),
+      fetcher.getWellness(localDate(-WELLNESS_WINDOW_DAYS), today),
       fetcher.getActivities(localDate(-90)),
     ]);
   } catch (error) {
@@ -233,14 +285,20 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
   // "Oggi" = riga wellness più recente disponibile (Intervals crea la riga
   // del giorno con ctl/atl anche senza dati soggettivi); baseline = i 7
   // giorni che la precedono.
-  const wellnessSorted = [...wellness30d].sort((a, b) =>
+  const wellnessSorted = [...wellnessWindow].sort((a, b) =>
     a.date.localeCompare(b.date)
   );
   const wellnessToday = wellnessSorted.at(-1) ?? null;
   const history7d = wellnessSorted.slice(-8, -1);
 
-  // Carry-forward: cerca l'ultimo valore noto nei 30 giorni escludendo oggi.
-  const wellnessExcludingToday = wellnessSorted.slice(0, -1);
+  // Carry-forward: se oggi la misura manca si usa l'ultima nota, ma solo se
+  // recente. Una HRV di sei settimane fa non dice niente su come stai adesso,
+  // e prima di questo limite la ricerca spazzolava l'intera finestra: passando
+  // da 30 a 60 giorni avrebbe iniziato a ripescare misure vecchie il doppio.
+  const wellnessExcludingToday = wellnessSorted.slice(
+    -CARRY_FORWARD_MAX_DAYS - 1,
+    -1
+  );
   const lastKnownHrv = latestHrvMeasurement(wellnessExcludingToday, hrvProtocol);
   const lastKnownRhr = (() => {
     for (let i = wellnessExcludingToday.length - 1; i >= 0; i--) {
@@ -250,10 +308,22 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
     return null;
   })();
 
+  // Soglie calibrate sulla storia dell'atleta e sulle sue risposte in
+  // impostazioni. Se lo storico è corto o rado torna soglie nulle e la
+  // readiness resta sui numeri fissi di sempre.
+  const calibration = computeRecoveryCalibration(
+    wellnessSorted,
+    hrvProtocol,
+    recoveryInputsFromPreferences(athleteSettings?.preferences)
+  );
+
   const readinessToday = computeReadiness(wellnessToday, history7d, {
     hrvProtocol,
     lastKnownHrv,
     lastKnownRhr,
+    // Senza questa serie la regola "RI < 0.7 per 2+ giorni" non scatta mai.
+    riHistory: computeRiHistory(wellnessSorted, hrvProtocol),
+    calibration,
   });
 
   // --- Profilo: sottoinsieme verificato ------------------------------------
@@ -289,14 +359,14 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
   const mirrorData: MirrorData = {
     fetched_at: new Date().toISOString(),
     athlete_profile: athleteProfile,
-    wellness_30d: wellnessSorted,
+    wellness: wellnessSorted,
     activities_90d: activities90d,
     hrv_protocol: hrvProtocol,
     readiness_today: readinessToday,
     data_quality_warning: stravaWarning ? "strava_source_detected" : null,
   };
 
-  const dataQualityLevel = computeDataQualityLevel(activities90d, wellness30d);
+  const dataQualityLevel = computeDataQualityLevel(activities90d, wellnessWindow);
 
   // Snapshot immutabile: ogni sync inserisce una riga nuova (audit-first);
   // la dashboard legge sempre la più recente.

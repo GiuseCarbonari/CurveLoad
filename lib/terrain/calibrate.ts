@@ -9,7 +9,7 @@
 
 import { decryptToken } from "@/lib/crypto";
 import { IntervalsApiError, IntervalsFetcher } from "@/lib/intervals-client";
-import type { MirrorData } from "@/lib/intervals/sync";
+import { wellnessOf, type MirrorData } from "@/lib/intervals/sync";
 import type { AthleteProfileData } from "@/lib/profile/build-profile";
 import { computeRaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
@@ -102,7 +102,7 @@ export async function calibrateAthlete(userId: string): Promise<CalibrateResult>
     .limit(1)
     .maybeSingle();
   const mirror = (snapshot?.mirror_data ?? null) as MirrorData | null;
-  const ctlToday = mirror?.wellness_30d.at(-1)?.ctl ?? null;
+  const ctlToday = wellnessOf(mirror).at(-1)?.ctl ?? null;
 
   const update: Record<string, unknown> = {
     velocity_signature: signature,

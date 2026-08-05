@@ -15,11 +15,11 @@ import {
 const COMMENT = "Primo paragrafo.\n\nSecondo paragrafo.\n\nTerzo paragrafo.";
 
 test("extractCoachNotes: riga NOTE_COACH staccata e note valide estratte", () => {
-  const raw = `${COMMENT}\n${NOTE_MARKER} [{"tipo": "osservazione", "nota": "Cala sui 5min rispetto all'anno scorso"}, {"tipo": "traguardo", "nota": "Nuovo record sui 5s"}]`;
+  const raw = `${COMMENT}\n${NOTE_MARKER} [{"tipo": "preferenza", "nota": "Cala sui 5min rispetto all'anno scorso"}, {"tipo": "traguardo", "nota": "Nuovo record sui 5s"}]`;
   const { comment, notes, discarded } = extractCoachNotes(raw);
   assert.equal(comment, COMMENT);
   assert.deepEqual(notes, [
-    { tipo: "osservazione", nota: "Cala sui 5min rispetto all'anno scorso" },
+    { tipo: "preferenza", nota: "Cala sui 5min rispetto all'anno scorso" },
     { tipo: "traguardo", nota: "Nuovo record sui 5s" },
   ]);
   assert.equal(discarded, 0);
@@ -48,7 +48,7 @@ test("extractCoachNotes: JSON rotto -> il marker sparisce comunque dal commento"
 
 test("extractCoachNotes: JSON non-array -> zero note", () => {
   const { notes } = extractCoachNotes(
-    `${COMMENT}\n${NOTE_MARKER} {"tipo": "osservazione", "nota": "x"}`
+    `${COMMENT}\n${NOTE_MARKER} {"tipo": "preferenza", "nota": "x"}`
   );
   assert.deepEqual(notes, []);
 });
@@ -64,7 +64,7 @@ test("extractCoachNotes: tipo fuori allowlist o nota vuota -> scartate e contate
 
 test("extractCoachNotes: cap a 3 note, le eccedenti contate come scartate", () => {
   const items = Array.from({ length: 5 }, (_, i) =>
-    JSON.stringify({ tipo: "osservazione", nota: `Nota ${i}` })
+    JSON.stringify({ tipo: "preferenza", nota: `Nota ${i}` })
   ).join(", ");
   const { notes, discarded } = extractCoachNotes(
     `${COMMENT}\n${NOTE_MARKER} [${items}]`
@@ -86,4 +86,16 @@ test("extractCoachNotes: array JSON a capo dopo il marker viene parsato", () => 
   const { comment, notes } = extractCoachNotes(raw);
   assert.equal(comment, COMMENT);
   assert.deepEqual(notes, [{ tipo: "traguardo", nota: "CP in crescita" }]);
+});
+
+test("extractCoachNotes: 'osservazione' non è più un tipo valido e viene scartata", () => {
+  // Su 12 note reali del 5 ago 2026, 10 erano di questo tipo e nessuna era un
+  // fatto sull'atleta: erano il modello che si ripeteva il compito, e
+  // rileggendole a ogni prompt se le riscriveva in parafrasi all'infinito.
+  const raw = `${COMMENT}\n${NOTE_MARKER} [{"tipo": "osservazione", "nota": "monitorare lo stress dell'atleta"}, {"tipo": "infortunio", "nota": "Fastidio al ginocchio destro in salita"}]`;
+  const { notes, discarded } = extractCoachNotes(raw);
+  assert.deepEqual(notes, [
+    { tipo: "infortunio", nota: "Fastidio al ginocchio destro in salita" },
+  ]);
+  assert.equal(discarded, 1);
 });

@@ -295,7 +295,123 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       verdi; verifica nel browser da fare da Giuseppe (nuovo onboarding intero
       + `/settings/profile` + blocco corsa su "Genera settimana").
 - [ ] **Passo 13 — Il coach che si sveglia da solo (cron)**: sync notturno +
-      brief mattutino via email
+      brief mattutino
+      — **Sessione A (soglie personali + intervista) FATTA e verificata da
+      Giuseppe nel browser il 2026-08-05** (v1.19.0), con due bug trovati
+      proprio nella verifica: (a) il riquadro "Equilibrio carico" in dashboard
+      si giudicava da solo con una soglia 1.3 riscritta a mano, che sarebbe
+      divergita dal motore appena le soglie diventano personali — ora legge lo
+      stato dal segnale readiness; (b) le note "da dove vengono le soglie"
+      venivano scritte PRIMA dell'aggiustamento per stress alto, quindi
+      mostravano 6.0h mentre il motore usava 6.5h — un numero mostrato diverso
+      da quello usato. Corretti entrambi, con test di regressione. Nuovo
+      `lib/recovery/baselines.ts` (puro): media mobile 7g di ln(rMSSD) contro
+      il range personale ±1 SD invece del −10/−20% fisso, FC riposo su media
+      personale ±SD con pavimenti in bpm, soglia sonno dalle ore dichiarate,
+      ACWR conservativo per chi dichiara infortuni ricorrenti, marker precoce
+      "collasso del CV" (avviso, mai stop). La ladder P0–P3 di `SECTION_11.md`
+      **non è stata toccata**: senza storico sufficiente il calibratore torna
+      soglie nulle e valgono i numeri fissi di prima. Fonti e limiti noti di
+      ogni soglia in `docs/RECOVERY_SCIENCE.md` (incluso il fatto che l'ACWR è
+      contestato in letteratura: Impellizzeri 2020/2021, Lolli 2019 — resta
+      come indicatore di variazione di carico, mai come stima di rischio
+      infortunio). **Bug trovato e corretto**: `extras.riHistory` non veniva
+      mai passato da `sync.ts`, quindi la regola P1 "RI < 0.7 per 2+ giorni"
+      era codice morto dall'inizio (nuova `computeRiHistory`). Intervista
+      "Come recuperi" in `/settings/profile` — **niente migration**: le
+      risposte stanno in `athlete_profiles.preferences.recovery`, stesso
+      pattern di `hrv_protocol`, nessun passaggio manuale in Supabase.
+      441 test verdi (+12), tsc/lint/build puliti.
+      — **Correzione al vincolo cron scritto in P7**: "max 2 cron su Hobby"
+      non è più vero (verificato sui doc Vercel il 2026-08-05: 100 cron per
+      progetto su Hobby, minimo una volta al giorno, precisione ±59 min).
+      Restiamo su una route sola per non duplicare auth e loop, ma per scelta.
+      — **Email fuori dal passo**: Resend free invia dal sandbox
+      `onboarding@resend.dev` solo all'indirizzo di registrazione; per i
+      tester servirebbe un dominio verificato (rompe il vincolo €0). Il brief
+      mattutino resta in-app finché non c'è un dominio.
+      — **Passata multiutente del 2026-08-05** (richiesta da Giuseppe: "l'app
+      la useranno molti utenti e tutti diversi tra loro"). Le soglie erano
+      state giudicate guardando i dati di chi misura l'HRV tutti i giorni:
+      **chi ne fa 3 a settimana — la compliance minima valida — non arrivava
+      MAI alle soglie personali**, perché con la finestra a 30 giorni il
+      periodo di riferimento era di ~23 giorni e servivano di fatto 4
+      misure/settimana. Finestra wellness portata a **60 giorni**; per non
+      spargere la compatibilità col nome vecchio della chiave in 13 file è
+      stato introdotto `wellnessOf(mirror)` in `sync.ts`, unico punto che
+      conosce la forma dello snapshot (i 22 accessi diretti a `wellness_30d`
+      passano tutti da lì, e gli snapshot già salvati continuano a leggersi).
+      Effetto collaterale gradito: il grafico "ANDAMENTO · 6 WK" chiedeva 42
+      giorni e ne riceveva 30 — ora ne ha davvero 6, di settimane.
+      Inoltre: **il sonno misurato batte quello dichiarato** (mediana su ≥14
+      notti; chi dichiara 8h e ne dorme 6.5 prendeva ambra ogni notte), e le
+      note sono divise in `pending` (transitorie e azionabili → dashboard) e
+      `applied` (permanenti → card in impostazioni), perché una riga che non
+      cambia mai insegna a non leggere quella riga.
+      — **Potatura del 2026-08-05** (osservazione di Giuseppe guardando la
+      card: "se legge da Intervals la voce si può togliere no?"). Tolta la
+      domanda sulle ore di sonno tipiche: quando le notti misurate ci sono
+      vince la mediana, e quando non ci sono `sleepSecs` è null, il segnale
+      sonno è "non disponibile" e nessuna soglia viene applicata — il valore
+      dichiarato o veniva scavalcato o era inutile. Soglia minima abbassata a
+      7 notti così la fascia intermedia si chiude. Ne esce la regola per
+      l'intervista: **si chiede solo quello che Intervals non sa già.**
+      Nella stessa passata, regressione corretta: il carry-forward di HRV e FC
+      a riposo spazzolava tutta la finestra, quindi allargandola a 60 giorni
+      aveva iniziato a poter ripescare misure vecchie il doppio — ora è
+      limitato a 7 giorni. E l'aggiustamento "mezz'ora in più per lo stress"
+      si applica solo sopra una soglia personale: senza una notte tipica nota
+      alzava la soglia standard in silenzio.
+      — **Terza verifica browser (5 ago)**: il motore era corretto, il
+      commento AI no. Due difetti, entrambi invisibili ai test strutturali e
+      trovati solo guardando la schermata: `lib/ai/context.ts` passava ctl/atl
+      grezzi ("un CTL di 36.21359"), e `oggi-explain-prompt.ts` passava per
+      ogni segnale sia `valore` nudo sia `dettaglio` — il modello prendeva il
+      59 della FC a riposo e lo chiamava HRV. Il check anti-numeri-inventati
+      non poteva vederlo: 59 era un numero legittimo dell'input. Corretto
+      togliendo il campo ridondante (il numero sta già nel `dettaglio` con la
+      sua etichetta) più una riga di prompt che vieta di spostare cifre fra
+      segnali. **Verificato con una chiamata Groq vera** (regola di progetto):
+      il modello ora scrive "La tua HRV è di 63ms, che rientra nel tuo range
+      normale". Corretto anche il grafico "6 WK", che con `slice(-6)` copriva
+      34 giorni invece di 42.
+      — **Taccuino del coach: anello chiuso (5 ago).** Giuseppe ha notato che
+      il commento continuava a nominare un fastidio alla schiena dopo che
+      aveva svuotato il campo nel dossier. Il dato NON era nel dossier
+      (verificato: `dolore_attuale`, `infortuni_attuali`, `injury_periods`
+      tutti vuoti): era in `athlete_memory`, scritta dall'LLM stesso, **senza
+      nessuna UI per vederla o cancellarla**. Su dati sanitari non è un
+      fastidio, è il diritto di rettifica. Peggio, era un anello che si
+      autoalimentava: la nota entrava nel prompt → il modello la ripeteva nel
+      commento → e ne scriveva un'altra su quella. Delle 12 righe reali,
+      quattro erano la stessa frase parafrasata (`unique(user_id, nota)` ferma
+      solo i duplicati esatti) e **10 su 12 erano di tipo `osservazione`,
+      nessuna delle quali un fatto sull'atleta** ("monitorare lo stress e la
+      motivazione dell'atleta" — il modello che si ripete il compito).
+      Fatto: `osservazione` tolto dall'allowlist in `lib/ai/coach-memory.ts`
+      (restano preferenza/infortunio/traguardo, cioè fatti verificabili);
+      `lib/ai/context.ts` filtra i tipi non supportati, così le righe già
+      salvate restano leggibili ma non rientrano nei prompt (nessuna migration
+      da lanciare: il CHECK della 021 accetta ancora il valore vecchio);
+      nuova `CoachMemoryList` in `/settings/profile` con cancellazione via
+      `DELETE /api/settings/memory` (client admin + filtro `user_id`, perché
+      la 021 dà solo la policy select-own). Le 3 righe su schiena/vertebra L2
+      cancellate dal DB su richiesta: da 12 righe nel prompt a 2.
+      Aggiunto anche il bottone "Riscrivi la filosofia" **in Impostazioni** —
+      esisteva già ma solo in `/profile`, mentre le risposte che rendono la
+      filosofia obsoleta si cambiano in Impostazioni; stesso componente
+      (`components/profile/philosophy-button.tsx`), non una seconda copia.
+      — **Debito noto, non fatto**: `stress_vita` e `infortuni_ricorrenti` non
+      scadono. Uno risponde "stress 5" in un mese pesante e sei mesi dopo ha
+      ancora le soglie strette senza saperlo. Serve almeno la data della
+      risposta nella card e un promemoria dopo qualche mese. Rimandato
+      d'accordo con Giuseppe a quando i tester saranno dentro con dati veri.
+      — **Resta da fare (Sessione B)**: `lib/recovery/daily-check.ts` (il gate
+      "vale la pena parlare?"), `app/api/cron/daily/route.ts` con
+      `CRON_SECRET`, `crons` in `vercel.json`, banner flag in dashboard che
+      legge `coach_decisions` (`decision_type='daily_readiness'` — la tabella
+      esiste dalla migration 001 e non l'ha mai scritta nessuno), prune degli
+      snapshot oltre i 90 giorni, e il promemoria review del lunedì.
 - [ ] **Passo 14 — Deploy per i tester**: pubblicazione su Vercel + inviti
 
 I passi grossi (9, 10, 12) possono spezzarsi in sotto-sessioni; la regola

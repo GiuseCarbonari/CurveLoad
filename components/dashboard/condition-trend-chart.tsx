@@ -56,7 +56,10 @@ export function ConditionTrendChart({ days }: { days: WellnessDay[] }) {
       .filter((day) => day.ctl != null && day.atl != null)
       .slice(-42);
     const buckets = usable.filter((_, index) => index % 7 === 0 || index === usable.length - 1);
-    return buckets.slice(-6).map((day) => {
+    // 7 punti, non 6: sei settimane sono sei INTERVALLI, quindi sette estremi.
+    // Con slice(-6) il grafico intitolato "6 WK" ne copriva cinque scarse,
+    // perché buttava via il bucket più vecchio dei sette prodotti dai 42 giorni.
+    return buckets.slice(-7).map((day) => {
       const ctl = day.ctl ?? 0;
       const atl = day.atl ?? 0;
       return {

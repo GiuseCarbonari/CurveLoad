@@ -9,12 +9,26 @@
  * scarta e si conta — mai bloccare il commento per colpa del taccuino.
  */
 
-/** Allowlist dei tipi nota — speculare al CHECK della migration 021. */
+/**
+ * Allowlist dei tipi nota.
+ *
+ * `osservazione` è stato TOLTO il 2026-08-05 dopo aver guardato cosa ci
+ * finiva davvero: su 12 note reali, 10 erano di quel tipo e nessuna era un
+ * fatto sull'atleta — erano il modello che si ripeteva il compito
+ * ("monitorare lo stress e la motivazione dell'atleta"). Peggio: essendo
+ * rilette a ogni prompt si autoalimentavano, e il vincolo unique(user, nota)
+ * non fermava le parafrasi. Restano i tre tipi che descrivono FATTI durevoli
+ * e verificabili dall'atleta.
+ *
+ * Il CHECK della migration 021 accetta ancora il valore vecchio: le righe già
+ * salvate restano leggibili e cancellabili dalla lista in impostazioni, ma
+ * non entrano più nei prompt (vedi SUPPORTED filtro in lib/ai/context.ts) e
+ * nessuna nuova ne viene scritta. Nessuna migration da lanciare a mano.
+ */
 export const MEMORY_TYPES = [
   "preferenza",
   "infortunio",
   "traguardo",
-  "osservazione",
 ] as const;
 export type MemoryType = (typeof MEMORY_TYPES)[number];
 
