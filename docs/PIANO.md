@@ -211,6 +211,19 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       filtrando le corse invece delle uscite MTB — è già sport-agnostica
       dentro), NON il modello fisico semplice. Richiede corse vere
       sincronizzate per calibrarsi bene.
+- **Rifinitura fuori passo, CHIUSA e verificata da Giuseppe nel browser
+      (2026-08-05, commit `28d12c3`, v1.17.0):** briefing pre-piano + motivo
+      di ogni seduta dura. Nata da un prompt di tutorial esterno ("dimmi cosa
+      dicono i dati prima del piano, e perché ogni seduta") portato da
+      Giuseppe: il motore calcolava già tutto (fase, mesociclo 3:1,
+      `session_rationale` col limitatore colpito) ma non arrivava mai a
+      schermo. `lib/planner/briefing.ts` (nuovo, puro) mette in fila
+      `phase_reason`/`mesocycle_reason`/CTL-ACWR-prontezza già salvati in
+      `weekly_plans.validation_metadata`; `week-grid.tsx` mostra
+      `session_rationale` (già in `BuiltSession`, mai renderizzato) sotto le
+      note del coach. Nessuna AI, nessuna migration. Deliberatamente NON
+      fatto: narrativa AI del piano (rimossa apposta con `06e990e`), ricerca
+      web sulla gara (Groq non naviga), "cosa non ti torna" (è il Passo 11).
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro
 - [ ] **Passo 12 — Onboarding a chiacchierata**: il questionario diventa una
       conversazione (+ filosofia di coaching nel dossier)
