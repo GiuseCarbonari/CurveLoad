@@ -32,6 +32,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *    la connessione (il middleware riporterà l'utente a /connect).
  */
 
+/** Zone FC configurate su Intervals.icu per un gruppo di sport (sportSettings[]). */
+export interface SportHrZones {
+  max_hr: number | null;
+  lthr: number | null;
+  /** Limiti superiori Z1..Z7 in bpm, ordine crescente (7 zone stile Coggan di Intervals). */
+  hr_zones: number[] | null;
+}
+
 /** Struttura del mirror salvato in athlete_metrics_snapshots.mirror_data. */
 export interface MirrorData {
   fetched_at: string;
@@ -39,15 +47,48 @@ export interface MirrorData {
     name: string | null;
     weight: number | null;
     resting_hr: number | null;
-    /** FTP dal campo icu_ftp oppure threshold_power (fallback verificato). */
+    /** FTP dal campo icu_ftp/threshold_power oppure, in fallback, da sportSettings[Ride].ftp. */
     ftp: number | null;
     zones: unknown;
+    /** Zone FC reali dell'atleta per bici/corsa, da sportSettings[] — non inventate,
+     *  copiate dalla calibrazione che l'atleta ha già fatto su Intervals.icu.
+     *  null se il gruppo di sport non è configurato. */
+    hr_zones_bike?: SportHrZones | null;
+    hr_zones_run?: SportHrZones | null;
   };
   wellness_30d: WellnessDay[];
   activities_90d: IntervalsActivity[];
   hrv_protocol: HrvProtocol;
   readiness_today: ReadinessResult;
   data_quality_warning: "strava_source_detected" | null;
+}
+
+interface IntervalsSportSettingsRaw {
+  types?: string[];
+  ftp?: number | null;
+  lthr?: number | null;
+  max_hr?: number | null;
+  hr_zones?: number[] | null;
+}
+
+/**
+ * Trova il gruppo `sportSettings[]` che copre il tipo Intervals dato ("Ride"
+ * o "Run"). Le zone/FTP reali dell'atleta vivono qui, non nei campi
+ * top-level del profilo (`icu_ftp`/`threshold_power`/`zones` tornano
+ * `null` sulla risposta vera — verificato via probe, vedi
+ * docs/INTERVALS_API_NOTES.md). Esportata per i test.
+ */
+export function findSportSettings(
+  profile: Record<string, unknown>,
+  type: "Ride" | "Run"
+): IntervalsSportSettingsRaw | null {
+  const list = profile.sportSettings;
+  if (!Array.isArray(list)) return null;
+  return (
+    (list as IntervalsSportSettingsRaw[]).find(
+      (s) => Array.isArray(s?.types) && s.types.includes(type)
+    ) ?? null
+  );
 }
 
 export type SyncOutcome =
@@ -217,13 +258,32 @@ export async function syncIntervalsData(userId: string): Promise<SyncOutcome> {
 
   // --- Profilo: sottoinsieme verificato ------------------------------------
   const profile = profileRaw as Record<string, unknown>;
+  const bikeSettings = findSportSettings(profile, "Ride");
+  const runSettings = findSportSettings(profile, "Run");
   const athleteProfile: MirrorData["athlete_profile"] = {
     name: (profile.name as string) ?? null,
     weight: (profile.weight as number) ?? null,
     resting_hr: (profile.resting_hr as number) ?? null,
     ftp:
-      (profile.icu_ftp as number) ?? (profile.threshold_power as number) ?? null,
+      (profile.icu_ftp as number) ??
+      (profile.threshold_power as number) ??
+      bikeSettings?.ftp ??
+      null,
     zones: profile.zones ?? null,
+    hr_zones_bike: bikeSettings
+      ? {
+          max_hr: bikeSettings.max_hr ?? null,
+          lthr: bikeSettings.lthr ?? null,
+          hr_zones: bikeSettings.hr_zones ?? null,
+        }
+      : null,
+    hr_zones_run: runSettings
+      ? {
+          max_hr: runSettings.max_hr ?? null,
+          lthr: runSettings.lthr ?? null,
+          hr_zones: runSettings.hr_zones ?? null,
+        }
+      : null,
   };
 
   const mirrorData: MirrorData = {

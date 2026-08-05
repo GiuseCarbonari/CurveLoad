@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { MirrorData } from "@/lib/intervals/sync";
 import { buildWeek, type BuiltSession } from "@/lib/planner/build-week";
+import { buildComplianceByDate } from "@/lib/planner/compliance";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import { isInjured } from "@/lib/planner/injury";
 import { hasHealthNote } from "@/lib/planner/health-flag";
@@ -73,24 +74,6 @@ function lockedDates(
     }
   }
   return locked;
-}
-
-/**
- * Compliance 0–100 per data, dalle attività Intervals (gate progressione §5.2).
- * Normalizza i valori 0–1 in 0–100 e tiene il massimo per data.
- */
-function buildComplianceByDate(
-  activities: MirrorData["activities_90d"]
-): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const a of activities) {
-    if (a.compliance == null || !Number.isFinite(a.compliance)) continue;
-    const pct = a.compliance <= 1 ? a.compliance * 100 : a.compliance;
-    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
-    const date = a.start_date_local.slice(0, 10);
-    if (result[date] == null || clamped > result[date]) result[date] = clamped;
-  }
-  return result;
 }
 
 /** Lunedì della settimana corrente, in data locale YYYY-MM-DD. */

@@ -53,7 +53,51 @@ Campi richiesti:
 ### `GET /api/v1/athlete/0/activities?oldest=YYYY-MM-DD&fields=...`
 
 Campi richiesti:
-`id,name,type,start_date_local,moving_time,distance,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type`
+`id,name,type,start_date_local,moving_time,distance,total_elevation_gain,icu_training_load,icu_weighted_avg_watts,average_heartrate,perceived_exertion,sport_type,paired_event_id,compliance,source`
+
+`total_elevation_gain` (metri) verificato via probe reale (Passo review
+settimanale, 2026-08-05): torna sempre popolato quando l'attività ha traccia
+GPS, `null` altrimenti (es. rullo indoor).
+
+`source` (es. `"GARMIN_CONNECT"`, `"STRAVA"`) verificato via probe reale sia
+sull'endpoint lista sia sul singolo `/activity/{id}` (Passo review
+settimanale, 2026-08-05, caso reale trovato su un'attività vera di un
+tester): per le attività con `source: "STRAVA"` Intervals.icu **non
+restituisce nessun altro campo** (`type`, `moving_time`, potenza, tutto
+`undefined`), con un `_note: "STRAVA activities are not available via the
+API"` esplicito sul singolo record. Non è un problema di sincronizzazione
+lato CurveLoad: è una restrizione voluta di Intervals.icu sui dati con
+provenienza Strava (coerente con l'avviso `strava_source_detected` già
+esistente in `lib/intervals/sync.ts`, qui verificato anche a livello di
+singola attività invece che solo come euristica sulle ultime 5).
+
+### `GET /api/v1/athlete/0` — zone reali in `sportSettings[]`, non ai campi top-level
+
+Verificato via probe reale (Passo review settimanale, 2026-08-05): i campi
+`zones`/`icu_ftp`/`threshold_power` letti finora da `lib/intervals/sync.ts`
+tornano **`null`/assenti** sulla risposta vera. I numeri veri stanno in
+`sportSettings[]`, un array con una voce per gruppo di sport:
+
+```jsonc
+{
+  "sportSettings": [
+    {
+      "types": ["Ride", "VirtualRide", "MountainBikeRide", "GravelRide", ...],
+      "ftp": 245,
+      "lthr": 161,
+      "max_hr": 190,
+      "hr_zones": [129, 143, 150, 160, 164, 169, 190],   // limiti superiori Z1..Z7
+      "power_zones": [55, 75, 90, 105, 120, 150, 999],   // % FTP, limiti superiori
+      "hr_zone_names": ["Recovery","Aerobic","Tempo","SubThreshold","SuperThreshold","Aerobic Capacity","Anaerobic"]
+    },
+    { "types": ["Run", "VirtualRun", "TrailRun"], "ftp": null, "lthr": 171, "max_hr": 188, "hr_zones": [...], "power_zones": null, ... }
+  ]
+}
+```
+
+`sync.ts` ora cerca prima la voce con `types` che include `"Ride"` per bici e
+`"Run"` per corsa; i campi top-level (`icu_ftp`, `threshold_power`, `zones`)
+restano come fallback per chi li avesse popolati (nessuna regressione).
 
 ## Endpoint power profile (verificati — Milestone 3, via ispezione reale)
 

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.17.0";
+export const APP_VERSION = "1.18.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.18.0",
+    date: "5 ago 2026",
+    title: "Chiudi la settimana",
+    items: [
+      { type: "new", text: "Nuova pagina Review: chiude la settimana appena finita confrontando quello che era previsto con quello che hai fatto davvero, chiede come ti sei sentito (energia, sonno, dolori, stress, motivazione) e confronta sensazioni e dati — dove non coincidono, te lo dice" },
+      { type: "new", text: "La review guarda anche se le uscite facili erano davvero facili (tempo sopra la soglia aerobica) e se una seduta lunga o dura ha tenuto fino alla fine (deriva del battito rispetto allo sforzo)" },
+      { type: "new", text: "Se un'attività arriva da Strava, Intervals.icu non ne fornisce i dati: la review ora lo segnala chiaramente invece di farla sembrare una seduta saltata" },
+      { type: "fix", text: "Il tuo FTP e le tue zone di frequenza cardiaca ora arrivano correttamente da Intervals.icu — un errore nella lettura del profilo li mostrava come mancanti anche quando erano impostati" },
+    ],
+  },
   {
     version: "1.17.0",
     date: "5 ago 2026",

@@ -105,8 +105,8 @@ function medianOf(values: number[]): number {
     : sorted[mid];
 }
 
-/** Lunedì della settimana ISO della data locale fornita (YYYY-MM-DD). */
-function isoWeekStart(dateStr: string): string {
+/** Lunedì della settimana ISO della data locale fornita (YYYY-MM-DD). Esportata per lib/review. */
+export function isoWeekStart(dateStr: string): string {
   const d = new Date(`${dateStr.slice(0, 10)}T12:00:00`);
   const day = d.getDay(); // 0 = domenica, 1 = lunedì, ...
   const diffToMonday = day === 0 ? -6 : 1 - day;

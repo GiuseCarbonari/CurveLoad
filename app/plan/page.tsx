@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GenerateWeekButton } from "@/components/plan/generate-week-button";
@@ -8,6 +9,7 @@ import { SeasonCard } from "@/components/plan/season-card";
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import type { BuiltSession } from "@/lib/planner/build-week";
 import { buildBriefing } from "@/lib/planner/briefing";
+import { buildCompletionByDate } from "@/lib/planner/compliance";
 import { computeMacrocycle } from "@/lib/planner/macrocycle";
 import { diffPlan } from "@/lib/planner/plan-diff";
 import type { Phase } from "@/lib/planner/phase-detector";
@@ -269,57 +271,16 @@ export default async function PlanPage() {
           />
         </div>
       )}
+
+      {/* Review della settimana appena chiusa (non quella mostrata sopra) */}
+      <Link
+        href="/review"
+        className="block min-w-0 rounded-metric border border-border bg-surface px-4 py-3 text-sm text-secondary hover:bg-surface-2"
+      >
+        📋 Chiudi la settimana scorsa — review
+      </Link>
     </CurveLoadShell>
   );
-}
-
-function buildCompletionByDate(
-  sessions: BuiltSession[],
-  activities: MirrorData["activities_90d"]
-): Record<string, { percent: number; label: string; source: "intervals" | "duration" }> {
-  const plannedByDate = new Map(
-    sessions
-      .filter((session) => !session.rest && session.estimated_duration_min != null)
-      .map((session) => [session.date, session])
-  );
-  const result: Record<string, { percent: number; label: string; source: "intervals" | "duration" }> = {};
-
-  for (const activity of activities) {
-    const date = activity.start_date_local.slice(0, 10);
-    const session = plannedByDate.get(date);
-    if (!session || activity.moving_time == null || activity.moving_time <= 0) {
-      continue;
-    }
-
-    const compliance = normalizeCompliance(activity.compliance ?? null);
-    const plannedSeconds = (session.estimated_duration_min ?? 0) * 60;
-    const percent =
-      compliance ??
-      (plannedSeconds > 0
-        ? Math.max(
-            1,
-            Math.min(100, Math.round((activity.moving_time / plannedSeconds) * 100))
-          )
-        : null);
-    if (percent == null) continue;
-
-    const previous = result[date];
-    if (!previous || percent > previous.percent) {
-      result[date] = {
-        percent,
-        label: `✓ ${percent}%`,
-        source: compliance != null ? "intervals" : "duration",
-      };
-    }
-  }
-
-  return result;
-}
-
-function normalizeCompliance(value: number | null): number | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  const normalized = value <= 1 ? value * 100 : value;
-  return Math.max(0, Math.min(100, Math.round(normalized)));
 }
 
 function StepMarker({

@@ -224,6 +224,49 @@ Giuseppe NON è un programmatore e non ha mai fatto nulla del genere. Quindi:
       note del coach. Nessuna AI, nessuna migration. Deliberatamente NON
       fatto: narrativa AI del piano (rimossa apposta con `06e990e`), ricerca
       web sulla gara (Groq non naviga), "cosa non ti torna" (è il Passo 11).
+- **Rifinitura fuori passo, CHIUSA (2026-08-05, v1.18.0):** review
+      settimanale (`/review`). Nata da un prompt di tutorial esterno ("tira
+      giù Strava, leggi training/plan.md, chiedimi come è andata, scrivi in
+      reviews/") che Giuseppe ha chiesto di adattare a CurveLoad — adattato
+      per intero: Intervals.icu al posto di Strava, `weekly_plans` al posto
+      di `training/plan.md`, tabella Supabase (`weekly_reviews`, migration
+      025) al posto di file `reviews/`. Motore puro in `lib/review/`
+      (finestra settimana, riepilogo reale, abbinamento piano↔reale,
+      decoupling e tempo sopra soglia facile dagli stream 1Hz, confronto
+      sensazioni↔dati con regole deterministiche, tendenze fra le review
+      passate) + `lib/ai/review-prompt.ts`/`lib/review/review-io.ts` (stesso
+      pattern delle altre narrative AI: prompt puro + orchestratore I/O +
+      route sottile). Questionario deterministico (`FeelForm`), non una chat
+      — stessa scelta della filosofia di coaching. **Due bug reali corretti
+      durante il lavoro:** 1) `lib/intervals/sync.ts` leggeva FTP/zone da
+      campi del profilo che sulla risposta vera tornano `null` — i numeri
+      veri stavano in `sportSettings[]` (verificato via probe sull'account
+      reale), corretto con fallback; senza questo fix "le facili erano
+      davvero facili" non era calcolabile. 2) Verificando il prompt con una
+      chiamata Groq vera su un atleta finto (vedi memoria
+      "verificare-prompt-ai-con-chiamata-reale"): il modello citava "dolori
+      riferiti" tra le bandiere anche con `dolori: 1` (= nessun dolore nella
+      scala 1-5) — i numeri grezzi delle sensazioni sono ambigui senza una
+      legenda esplicita; aggiunta `sensazioni.legenda` al prompt, verificato
+      che il difetto sparisce. Aggiunto anche `total_elevation_gain` a
+      `ACTIVITY_FIELDS` (mancava, verificato via probe). Eliminato un
+      doppione trovato en passant: la logica "compliance per data" viveva
+      due volte quasi identica (`app/plan/page.tsx` e
+      `app/api/planner/generate/route.ts`) — unificata in
+      `lib/planner/compliance.ts`.
+      — **Verificato da Giuseppe nel browser sulla review vera della
+      settimana 27 luglio – 2 agosto**, con due bug in più trovati nell'uso
+      reale (oltre ai due già corretti prima): una percentuale inventata dal
+      modello ("60% del piano" invece del vero 3 sedute su 6 — fix: il
+      motore ora passa i conteggi già pronti, mai lasciati calcolare) e
+      un'attività reale di Giuseppe arrivata da Strava che Intervals.icu non
+      restituisce via API (`source: "STRAVA"`, verificato in diretta
+      sull'endpoint) — la review la segnalava come "saltata"/"non
+      pianificata" invece di spiegare il vero motivo; aggiunto
+      `SessionExecution.dataUnavailable`, etichetta dedicata nella UI,
+      frasi precalcolate nel prompt. Migration 025 applicata da Giuseppe in
+      Supabase. 429 test verdi (+63 sul totale pre-passo), tsc/lint/build
+      puliti.
 - [ ] **Passo 11 — Chat col coach**: la chat che vede tutto il tuo quadro
 - [ ] **Passo 12 — Onboarding a chiacchierata**: il questionario diventa una
       conversazione (+ filosofia di coaching nel dossier)
