@@ -71,11 +71,17 @@ export async function callLlm({
   }
 
   const body = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
+    choices?: Array<{ message?: { content?: string | null }; finish_reason?: string }>;
   };
-  const text = body.choices?.[0]?.message?.content;
+  const choice = body.choices?.[0];
+  const text = choice?.message?.content;
   if (!text) {
     throw new GroqCallError(502, "Risposta Groq senza testo");
+  }
+  // Guard: se il modello cambia e introduce il thinking (come Gemini),
+  // catchiamo il troncamento silenzioso.
+  if (choice?.finish_reason === "length") {
+    throw new GroqCallError(502, "Risposta Groq troncata (budget token esaurito)");
   }
   return text;
 }
