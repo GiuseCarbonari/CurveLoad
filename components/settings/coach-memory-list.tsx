@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MEMORY_TYPES } from "@/lib/ai/coach-memory";
 
 /**
- * "Cosa si ricorda il coach" — le note che l'LLM ha scritto su di te, con la
+ * "Gli appunti del coach" — le note che l'LLM ha scritto su di te, con la
  * possibilità di toglierle.
  *
  * Prima non esistevano schermate: le note entravano in ogni prompt e non c'era
@@ -57,18 +57,8 @@ export function CoachMemoryList({ items }: { items: CoachMemoryItem[] }) {
   }
 
   return (
-    <div
-      className="mt-4 rounded-metric px-4 py-4"
-      style={{
-        background: "var(--glass-bg)",
-        border: "1px solid var(--glass-border)",
-        boxShadow: "var(--glass-shadow)",
-      }}
-    >
-      <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
-        Cosa si ricorda il coach
-      </div>
-      <p className="mt-1.5 text-[13px] text-secondary">
+    <div>
+      <p className="text-[13px] text-secondary">
         Note che il coach ha scritto su di te leggendo i tuoi dati. Entrano in
         ogni suo commento: se una non è più vera, toglila da qui.
       </p>

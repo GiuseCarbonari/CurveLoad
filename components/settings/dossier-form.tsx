@@ -123,9 +123,13 @@ const SCUOLE_LABELS = COACHING_SCHOOLS.map((s) => ({
 export function SettingsDossierForm({
   initialForm,
   initialInjuryPeriods = [],
+  children,
 }: {
   initialForm: DossierForm;
   initialInjuryPeriods?: InjuryPeriod[];
+  /** Righe aggiuntive (recupero, gare, taccuino, filosofia AI, chiave Groq),
+   *  appese nella STESSA lista invece che in card separate sotto. */
+  children?: React.ReactNode;
 }) {
   const [saved, setSaved] = useState<DossierForm>(initialForm);
   const [form, setForm] = useState<DossierForm>(initialForm);
@@ -425,6 +429,7 @@ export function SettingsDossierForm({
             </div>
           );
         })}
+        {children}
       </div>
 
       {saveBar}

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.19.0";
+export const APP_VERSION = "1.20.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.20.0",
+    date: "8 ago 2026",
+    title: "Le tue gare",
+    items: [
+      { type: "new", text: "Se corri, in Impostazioni trovi «Le tue gare»: registra i risultati delle gare che hai già fatto (data, distanza, tempo, quanto ti sentivi allenato). Serviranno alle previsioni con la formula di Riegel, in arrivo — con due gare su distanze diverse il coach potrà stimare il tuo esponente personale invece di quello medio" },
+      { type: "improve", text: "La pagina Impostazioni non è più una fila di schede separate: dossier, come recuperi, le tue gare, gli appunti del coach, il testo del coach e la chiave Groq sono ora un'unica lista, tutte con lo stesso stile a fisarmonica" },
+    ],
+  },
   {
     version: "1.19.0",
     date: "5 ago 2026",

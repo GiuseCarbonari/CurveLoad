@@ -48,14 +48,8 @@ export function GroqKeyForm({ hasKey }: { hasKey: boolean }) {
   }
 
   return (
-    <div
-      className="mt-4 rounded-metric px-4 py-4"
-      style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", boxShadow: "var(--glass-shadow)" }}
-    >
-      <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
-        API key Groq (opzionale, gratuita)
-      </div>
-      <p className="mt-1.5 text-[13px] text-secondary">
+    <div>
+      <p className="text-[13px] text-secondary">
         Usa la tua invece di quella condivisa — gratuita in 2 minuti su console.groq.com.
       </p>
 

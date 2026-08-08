@@ -86,18 +86,8 @@ export function RecoveryForm({
   }
 
   return (
-    <div
-      className="mt-4 rounded-metric px-4 py-4"
-      style={{
-        background: "var(--glass-bg)",
-        border: "1px solid var(--glass-border)",
-        boxShadow: "var(--glass-shadow)",
-      }}
-    >
-      <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
-        Come recuperi
-      </div>
-      <p className="mt-1.5 text-[13px] text-secondary">
+    <div>
+      <p className="text-[13px] text-secondary">
         Servono a tarare il controllo di prontezza sui tuoi numeri invece che su
         medie generiche. Puoi lasciarli vuoti: senza risposte si usano le soglie
         standard. Sono dati sulla tua salute e restano nel tuo profilo, come il

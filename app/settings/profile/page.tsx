@@ -2,13 +2,9 @@ import { redirect } from "next/navigation";
 
 import { CurveLoadShell } from "@/components/layout/curveload-shell";
 import { SettingsDossierForm } from "@/components/settings/dossier-form";
-import { PhilosophyButton } from "@/components/profile/philosophy-button";
-import {
-  CoachMemoryList,
-  type CoachMemoryItem,
-} from "@/components/settings/coach-memory-list";
-import { GroqKeyForm } from "@/components/settings/groq-key-form";
-import { RecoveryForm } from "@/components/settings/recovery-form";
+import { MoreSettingsRows } from "@/components/settings/more-settings-rows";
+import type { CoachMemoryItem } from "@/components/settings/coach-memory-list";
+import type { RaceResultItem } from "@/components/settings/race-results-form";
 import {
   DOSSIER_COLUMNS,
   rowToForm,
@@ -17,11 +13,18 @@ import {
 } from "@/lib/onboarding/dossier";
 import type { MirrorData } from "@/lib/intervals/sync";
 import { recoveryInputsFromPreferences } from "@/lib/recovery/baselines";
+import { resolveSportModule } from "@/lib/planner/session-selector";
 import { createClient } from "@/lib/supabase/server";
 
 /**
  * /settings/profile — modifica del dossier atleta (PRD §12) in qualsiasi
  * momento. Carica la riga e la passa pre-compilata al form client.
+ *
+ * Tutte le voci (dossier + recupero + gare + taccuino + testo del coach +
+ * chiave Groq) vivono in UNA sola lista ad accordion (SettingsDossierForm +
+ * MoreSettingsRows come children) invece di card di vetro separate: su
+ * richiesta diretta di Giuseppe dopo aver visto la pagina crescere ad ogni
+ * rifinitura successiva.
  */
 export default async function SettingsProfilePage() {
   const supabase = createClient();
@@ -80,43 +83,33 @@ export default async function SettingsProfilePage() {
     .order("created_at", { ascending: false })
     .returns<CoachMemoryItem[]>();
 
+  // Le gare passate servono solo alla previsione Riegel, corsa-only.
+  const isRunner =
+    resolveSportModule(row?.sport_principali as string[] | null | undefined) === "run";
+  const { data: raceResults } = isRunner
+    ? await supabase
+        .from("race_results")
+        .select("id, nome, data, distanza_km, tempo_finale_s, livello_preparazione")
+        .eq("user_id", user.id)
+        .order("data", { ascending: false })
+        .returns<RaceResultItem[]>()
+    : { data: null };
+
   return (
     <CurveLoadShell>
-      <SettingsDossierForm initialForm={rowToForm(row)} initialInjuryPeriods={initialInjuryPeriods} />
-      <RecoveryForm
-        initial={recoveryInputsFromPreferences(preferencesRow?.preferences)}
-        applied={appliedThresholds}
-      />
-      <CoachMemoryList items={memories ?? []} />
-
-      {/* Il bottone vive anche in /profile, ma le risposte che rendono la
-          filosofia obsoleta si cambiano QUI: senza questo, uno modifica il
-          dossier e non ha modo di sapere che il testo è rimasto quello di
-          prima. Stesso componente, non una seconda implementazione. */}
-      <div
-        className="mt-4 rounded-metric px-4 py-4"
-        style={{
-          background: "var(--glass-bg)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "var(--glass-shadow)",
-        }}
-      >
-        <div className="text-[11px] uppercase tracking-[0.16em] text-muted">
-          La tua filosofia
-        </div>
-        <p className="mb-3 mt-1.5 text-[13px] text-secondary">
-          È stata scritta una volta sui dati di allora e non si aggiorna da
-          sola. Se hai cambiato le risposte qui sopra — o se racconta cose che
-          non valgono più — riscrivila.
-        </p>
-        <PhilosophyButton
-          enabled={aiEnabled && preferencesRow?.filosofia_risposte != null}
+      <SettingsDossierForm initialForm={rowToForm(row)} initialInjuryPeriods={initialInjuryPeriods}>
+        <MoreSettingsRows
+          recoveryInitial={recoveryInputsFromPreferences(preferencesRow?.preferences)}
+          recoveryApplied={appliedThresholds}
+          isRunner={isRunner}
+          raceResults={raceResults ?? []}
+          memories={memories ?? []}
+          aiEnabled={aiEnabled}
           hasPhilosophy={preferencesRow?.filosofia_coaching != null}
-          missingAnswers={preferencesRow?.filosofia_risposte == null}
+          missingPhilosophyAnswers={preferencesRow?.filosofia_risposte == null}
+          hasGroqKey={userRow?.groq_key_encrypted != null}
         />
-      </div>
-
-      <GroqKeyForm hasKey={userRow?.groq_key_encrypted != null} />
+      </SettingsDossierForm>
     </CurveLoadShell>
   );
 }
