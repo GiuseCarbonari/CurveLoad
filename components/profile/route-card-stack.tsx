@@ -9,6 +9,7 @@ import { GapAnalysisButton } from "@/components/profile/gap-analysis-button";
 import { InfoTooltip } from "@/components/profile/info-tooltip";
 import { RaceEstimateView } from "@/components/profile/race-estimate";
 import { RouteMapCard } from "@/components/profile/route-map-card";
+import { RunnerPacingPanel } from "@/components/profile/runner-pacing-panel";
 import { BikeStrategyForm, RepeatabilityForm } from "@/components/profile/route-settings-form";
 import { RouteTubePdfButton } from "@/components/profile/route-tube-pdf-button";
 import type {
@@ -18,6 +19,8 @@ import type {
   Severity,
 } from "@/lib/terrain/gap-analysis";
 import type { TerrainSummary } from "@/lib/terrain/gpx-parser";
+import type { RunnerProfileData } from "@/lib/profile/pace-profile";
+import type { RaceResult } from "@/lib/profile/riegel";
 import type { RaceEstimateV2 } from "@/lib/terrain/race-estimator-v2";
 import type { RaceRouteSettings } from "@/lib/terrain/route-settings";
 import { cn } from "@/lib/utils";
@@ -115,6 +118,8 @@ export function RouteCardStack({
   aiComment,
   aiCommentAt,
   isRunner = false,
+  runnerProfile = null,
+  raceResults = [],
 }: {
   terrain: TerrainSummary | null;
   analysis: SavedGapAnalysis | null;
@@ -127,10 +132,13 @@ export function RouteCardStack({
   aiEnabled: boolean;
   aiComment: string | null;
   aiCommentAt: string | null;
-  /** Chi corre e basta (§C1, minimo onesto): niente limitatori in W/kg né
-   * calibrazione MTB, solo mappa + un messaggio onesto. Default false =
-   * comportamento odierno (ciclismo). */
+  /** Chi corre e basta: niente mappa/limitatori bici, il pannello Riegel/CS-D′
+   * (Sessione 2) al loro posto. Default false = comportamento odierno (ciclismo). */
   isRunner?: boolean;
+  /** CS/D′ (pace-profile.ts), solo per isRunner. */
+  runnerProfile?: RunnerProfileData | null;
+  /** Risultati di gara passati (race_results), solo per isRunner. */
+  raceResults?: RaceResult[];
 }) {
   const [tab, setTab] = useState<Tab>("limiters");
 
@@ -139,7 +147,7 @@ export function RouteCardStack({
   if (!hasAnalysis) {
     return (
       <div className="space-y-4">
-        <Header analysis={null} terrain={null} estimate={null} hasAnalysis={false} />
+        <Header analysis={null} terrain={null} estimate={null} hasAnalysis={false} isRunner={isRunner} />
         <div className="rounded-metric border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
           Seleziona una gara da Intervals.icu o carica un GPX per vedere il
           profilo altimetrico e i limitatori specifici.
@@ -155,24 +163,27 @@ export function RouteCardStack({
 
   return (
     <div className="flex flex-col gap-3">
-      <Header analysis={analysis} terrain={terrain} estimate={estimate} hasAnalysis />
-
-      {/* La mappa resta sempre visibile qui, non è più una tab: le tab sotto
-          scelgono solo cosa mostrare accanto/sotto di lei. Profilo
-          altimetrico e salite sono geometria pura, valgono per qualsiasi
-          sport. */}
-      <RouteMapCard terrain={terrain} demands={demands} />
+      <Header
+        analysis={analysis}
+        terrain={terrain}
+        estimate={estimate}
+        hasAnalysis
+        isRunner={isRunner}
+      />
 
       {isRunner ? (
-        // §C1 (minimo onesto): per chi corre e basta i limitatori in W/kg e
-        // la calibrazione dalle uscite MTB sono informazioni false. Il
-        // motore di stima per la corsa resta rinviato al Passo 10 (Q8/Q9).
-        <div className="rounded-metric border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
-          Le stime di passo per la corsa non ci sono ancora: qui trovi solo
-          il profilo altimetrico del percorso.
-        </div>
+        // Per chi corre: niente mappa generica né limitatori in W/kg (falsi
+        // per la corsa) — il pannello zone/predizioni CS-D′ + Riegel da gare
+        // reali (Sessione 2), l'unico che copre mezza/maratona. La mappa
+        // GPX/salite resta comunque bici-only: il motore corsa su un
+        // percorso specifico resta rinviato al Passo 10.
+        <RunnerPacingPanel runner={runnerProfile} races={raceResults} />
       ) : (
         <>
+          {/* La mappa resta sempre visibile qui, non è più una tab: le tab
+              sotto scelgono solo cosa mostrare accanto/sotto di lei. */}
+          <RouteMapCard terrain={terrain} demands={demands} />
+
           <div className="flex gap-1 rounded-full bg-surface-2 p-1 text-sm">
             {TABS.map((t) => (
               <button
@@ -218,11 +229,16 @@ function Header({
   terrain,
   estimate,
   hasAnalysis,
+  isRunner,
 }: {
   analysis: SavedGapAnalysis | null;
   terrain: TerrainSummary | null;
   estimate: RaceEstimateV2 | null;
   hasAnalysis: boolean;
+  /** La scheda telaio è geometria BICI (frame sizing): niente per chi corre,
+   * a differenza di distanza/D+ sopra che restano un dato di percorso valido
+   * per entrambi gli sport (utile ai trail runner, su richiesta di Giuseppe). */
+  isRunner: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2.5 pb-1 pt-1">
@@ -245,7 +261,7 @@ function Header({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {hasAnalysis && analysis && terrain && estimate && (
+        {hasAnalysis && analysis && terrain && estimate && !isRunner && (
           <RouteTubePdfButton terrain={terrain} estimate={estimate} event={analysis.event} />
         )}
         <GapAnalysisButton hasAnalysis={hasAnalysis} />

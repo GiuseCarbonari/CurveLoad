@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.20.0";
+export const APP_VERSION = "1.21.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.21.0",
+    date: "8 ago 2026",
+    title: "Le previsioni Riegel",
+    items: [
+      { type: "new", text: "Se corri, il percorso mostra ora una vera previsione di gara con la formula di Riegel, calcolata dai risultati che hai registrato: standard, e — con due gare su distanze diverse — anche il tuo esponente personale, con un avviso se le tue gare sono state disperse (allenamento/pacing diversi, non un errore)" },
+      { type: "improve", text: "La pagina del percorso, per chi corre, mostra ora zone di passo e predizioni (dalla curva di allenamento) accanto alle previsioni Riegel (dalle gare vere) invece della mappa generica e del messaggio «non ci sono ancora» — se le due stime divergono di oltre l'8% te lo dice, invece di sceglierne una in silenzio" },
+      { type: "improve", text: "La card del profilo per chi corre ora mostra solo il dato di fitness (velocità critica) con un link al pacing vero, invece di ripetere le stesse tabelle in due posti" },
+      { type: "fix", text: "Il bottone «Scheda telaio (PDF)» — geometria bici — non compare più per chi corre" },
+    ],
+  },
   {
     version: "1.20.0",
     date: "8 ago 2026",
